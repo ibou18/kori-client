@@ -1,32 +1,24 @@
 "use client";
 
-import * as React from "react";
 import {
   BadgeCheck,
-  Box,
   BoxIcon,
-  Crown,
-  FilePlus2,
   Handshake,
   HelpCircle,
-  Landmark,
-  MapPinned,
   MessageCircle,
   Plane,
   ReceiptEuroIcon,
-  Scan,
   Settings2Icon,
   ShieldCheck,
   Sigma,
-  Stars,
   User,
-  Users2,
-  Wallet,
 } from "lucide-react";
+import * as React from "react";
 
 import { NavMain } from "@/components/nav-main";
 
 // import { NavSecondary } from "@/components/nav-secondary";
+import LanguageToggle from "@/app/components/LanguageToggle";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -37,9 +29,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
-import LanguageToggle from "@/app/components/LanguageToggle";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { NavSecondary } from "./nav-secondary";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -194,7 +185,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <BoxIcon className="size-5 text-orange-500" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-lg">Hopop</span>
+                  <span className="truncate font-semibold text-lg">Kori</span>
                   <span className="truncate text-xs">Dashboard</span>
                 </div>
               </Link>

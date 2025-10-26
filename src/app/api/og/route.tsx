@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     // Récupérer les paramètres dynamiques
-    const title = searchParams.get("title") || "Hopop";
+    const title = searchParams.get("title") || "Kori";
     const from = searchParams.get("from") || "";
     const to = searchParams.get("to") || "";
 
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
               width="120"
               height="120"
               style={{ margin: "0 10px" }}
-              alt="Hopop Logo"
+              alt="Kori Logo"
             />
           </div>
           <div

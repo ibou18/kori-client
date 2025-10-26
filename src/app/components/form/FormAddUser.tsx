@@ -1,49 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useQueryClient } from "@tanstack/react-query";
 import { GET_USERS } from "@/shared/constantes";
-import { useRegisterUser, useUpdateUser } from "../../data/hooks";
-import { IUser } from "@/app/interfaceHop";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { message } from "antd";
+import {
+  CheckCircle,
+  DollarSign,
+  Globe,
+  Loader2,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  Plane,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import {
-  Loader2,
-  CheckCircle,
-  User,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  FileText,
-  Lock,
-  CalculatorIcon,
-  CreditCard,
-  DollarSign,
-  Plane,
-} from "lucide-react";
-import { message } from "antd";
+import { useRegisterUser, useUpdateUser } from "../../data/hooks";
 // import { useDropzone } from "react-dropzone";
 
-import apple from "@/assets/photos/apple.png";
 import android from "@/assets/photos/android.png";
+import apple from "@/assets/photos/apple.png";
 
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -57,14 +51,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import Image from "next/image";
-import { motion } from "framer-motion";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
+import Image from "next/image";
 
 // Le schema mis à jour avec les nouveaux champs
 const formSchema = z.object({
@@ -108,7 +102,7 @@ export default function FormAddUser({
   const [showAppDownload, setShowAppDownload] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(
+  const [, setProfileImage] = useState<string | null>(
     dataSelected?.profilePicture || null
   );
 
@@ -233,7 +227,7 @@ export default function FormAddUser({
         );
       } else {
         await createUserMutate(finalValues, {
-          onSuccess: async (response: any) => {
+          onSuccess: async () => {
             setRegisterSuccess(true);
             message.success("Compte créé avec succès!");
             // setShowAppDownload(true);
@@ -736,7 +730,7 @@ export default function FormAddUser({
               className="text-center"
             >
               <h3 className="font-semibold text-xl">
-                Accédez à Hopop en déplacement
+                Accédez à Kori en déplacement
               </h3>
               <p className="text-muted-foreground mt-2">
                 Téléchargez notre application pour gérer vos livraisons où que
@@ -789,7 +783,7 @@ export default function FormAddUser({
               <p className="text-amber-800 text-center">
                 <strong>Conseil Pro :</strong> Pour accéder à toutes les
                 fonctionnalités avancées comme le suivi de colis et la gestion
-                des livraisons, utilisez la version web complète de Hopop.
+                des livraisons, utilisez la version web complète de Kori.
               </p>
             </motion.div>
 
