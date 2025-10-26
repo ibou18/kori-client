@@ -1,0 +1,160 @@
+{
+  "HomePage": {
+    "headline": "Simplifiez votre gestion financière, ",
+    "subheadline": "en quelques clics",
+    "welcome": "Bienvenue",
+    "title": "Bonjour le monde !",
+    "content": "Bienvenue sur notre site web !",
+    "description": "Une solution complète pour gérer vos factures, reçus et taxes. Automatisez vos calculs TPS/TVQ et générez des rapports professionnels.",
+    "getStarted": "Essai Gratuit",
+    "learnMore": "En savoir plus"
+  },
+  "receipts": {
+    "page": {
+      "title": "Reçus",
+      "description": "Gérez vos reçus ici",
+      "actions": {
+        "create": "Créer un reçu",
+        "export": "Exporter"
+      }
+    }
+  },
+  "receipt": {
+    "table": {
+      "header": {
+        "number": "# Reçu",
+        "category": "Catégorie",
+        "storeName": "Nom du magasin",
+        "totalAmount": "Montant total",
+        "tps": "TPS",
+        "tvq": "TVQ",
+        "tips": "Pourboire",
+        "date": "Date"
+      }
+    },
+    "empty": {
+      "title": "Aucun reçu trouvé",
+      "description": "Ajoutez un reçu pour commencer",
+      "button": "Ajouter un reçu"
+    },
+    "search": {
+      "placeholder": "Rechercher un reçu..."
+    },
+    "modal": {
+      "title": "Lien du reçu",
+      "description": "Toutes les URLs disponibles pour ce reçu",
+      "total": "Total",
+      "date": "Date",
+      "taxes": {
+        "tps": "TPS",
+        "tvq": "TVQ"
+      },
+      "files": {
+        "pdfs": "PDFs",
+        "images": "Images",
+        "noReceipt": "Aucun reçu"
+      },
+      "buttons": {
+        "edit": "Modifier le reçu",
+        "close": "Fermer"
+      }
+    },
+    "delete": {
+      "title": "Êtes-vous sûr ?",
+      "description": "Cette action ne peut pas être annulée. Le reçu sera définitivement supprimé.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer"
+    }
+  },
+  "invoices": {
+    "page": {
+      "title": "Factures",
+      "description": "Gérez vos factures ici",
+      "actions": {
+        "create": "Créer une facture",
+        "export": "Exporter"
+      }
+    }
+  },
+  "invoice": {
+    "table": {
+      "header": {
+        "number": "N°",
+        "customer": "Client",
+        "amount": "Montant",
+        "tps": "TPS",
+        "tvq": "TVQ",
+        "fees": "Frais",
+        "tax": "Taxes",
+        "delivery": "Livraison",
+        "status": "Statut",
+        "date": "Date",
+        "link": "Lien",
+        "pdf": "PDF",
+        "actions": "Actions"
+      }
+    },
+    "empty": {
+      "title": "Aucune facture trouvée",
+      "description": "Créez une facture pour commencer",
+      "button": "Créer une facture"
+    },
+    "search": {
+      "placeholder": "Rechercher une facture..."
+    },
+    "status": {
+      "paid": "Payée",
+      "pending": "En attente",
+      "overdue": "En retard",
+      "draft": "Brouillon"
+    },
+    "link": {
+      "noPdf": "aucun PDF"
+    }
+  },
+  "deliveries": {
+    "page": {
+      "title": "Livraisons",
+      "description": "Gérez vos livraisons ici",
+      "actions": {
+        "create": "Créer une livraison",
+        "export": "Exporter"
+      }
+    }
+  },
+  "delivery": {
+    "table": {
+      "header": {
+        "number": "N°",
+        "customer": "Client",
+        "amount": "Montant",
+        "fees": "Frais",
+        "tax": "Taxe",
+        "delivery": "Livraison",
+        "status": "Status",
+        "date": "Date",
+        "pdf": "Doc.",
+        "package": "Colis",
+        "actions": "Actions"
+      }
+    },
+    "empty": {
+      "title": "Aucune livraison trouvée",
+      "description": "Créez une livraison pour commencer",
+      "button": "Créer une livraison"
+    },
+    "search": {
+      "placeholder": "Rechercher une livraison..."
+    },
+    "status": {
+      "pending": "En attente",
+      "pickup": "Collecte",
+      "transit": "En transit",
+      "delivered": "Livré",
+      "cancelled": "Annulé"
+    },
+    "tracking": {
+      "noTracking": "Aucun suivi"
+    }
+  }
+}

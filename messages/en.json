@@ -1,0 +1,160 @@
+{
+  "HomePage": {
+    "headline": "Simplify your financial management, ",
+    "subheadline": "in just a few clicks",
+    "welcome": "Welcome",
+    "title": "Hello world!",
+    "content": "Welcome to our website!",
+    "description": "A complete solution to manage your invoices, receipts and taxes. Automate your GST/PST calculations and generate professional reports.",
+    "getStarted": "Free Trial",
+    "learnMore": "Learn More"
+  },
+  "receipts": {
+    "page": {
+      "title": "Receipts",
+      "description": "Manage your receipts right here",
+      "actions": {
+        "create": "Create Receipt",
+        "export": "Export"
+      }
+    }
+  },
+  "receipt": {
+    "table": {
+      "header": {
+        "number": "# Receipt",
+        "category": "Category",
+        "storeName": "Store Name",
+        "totalAmount": "Total Amount",
+        "tps": "GST",
+        "tvq": "QST",
+        "tips": "Tips",
+        "date": "Date"
+      }
+    },
+    "empty": {
+      "title": "No receipt found",
+      "description": "Add a receipt to get started",
+      "button": "Add Receipt"
+    },
+    "search": {
+      "placeholder": "Search receipt..."
+    },
+    "modal": {
+      "title": "Receipt URLs",
+      "description": "All available URLs for this receipt",
+      "total": "Total",
+      "date": "Date",
+      "taxes": {
+        "tps": "GST",
+        "tvq": "QST"
+      },
+      "files": {
+        "pdfs": "PDFs",
+        "images": "Images",
+        "noReceipt": "No receipt"
+      },
+      "buttons": {
+        "edit": "Edit receipt",
+        "close": "Close"
+      }
+    },
+    "delete": {
+      "title": "Are you sure?",
+      "description": "This action cannot be undone. The receipt will be permanently deleted.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "invoices": {
+    "page": {
+      "title": "Invoices",
+      "description": "Manage your invoices right here",
+      "actions": {
+        "create": "Create Invoice",
+        "export": "Export"
+      }
+    }
+  },
+  "invoice": {
+    "table": {
+      "header": {
+        "number": "#",
+        "customer": "Customer",
+        "amount": "Amount",
+        "tps": "GST",
+        "tvq": "QST",
+        "fees": "Fees",
+        "tax": "Taxes",
+        "delivery": "Delivery",
+        "status": "Status",
+        "date": "Date",
+        "link": "Link",
+        "pdf": "PDF",
+        "actions": "Actions"
+      }
+    },
+    "deliveries": {
+      "page": {
+        "title": "Deliveries",
+        "description": "Manage your deliveries right here",
+        "actions": {
+          "create": "Create Delivery",
+          "export": "Export"
+        }
+      }
+    },
+    "delivery": {
+      "table": {
+        "header": {
+          "number": "#",
+          "customer": "Customer",
+          "amount": "Amount",
+          "fees": "Fees",
+          "tax": "Tax",
+          "delivery": "Delivery",
+          "status": "Status",
+          "date": "Date",
+          "pdf": "Doc.",
+          "package": "Package",
+          "actions": "Actions"
+        }
+      },
+      "empty": {
+        "title": "No deliveries found",
+        "description": "Create a delivery to get started",
+        "button": "Create delivery"
+      },
+      "search": {
+        "placeholder": "Search delivery..."
+      },
+      "status": {
+        "pending": "Pending",
+        "pickup": "Pickup",
+        "transit": "In Transit",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled"
+      },
+      "tracking": {
+        "noTracking": "No tracking"
+      }
+    },
+    "empty": {
+      "title": "No invoices found",
+      "description": "Create an invoice to get started",
+      "button": "Create invoice"
+    },
+    "search": {
+      "placeholder": "Search invoice..."
+    },
+    "status": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "overdue": "Overdue",
+      "draft": "Draft"
+    },
+    "link": {
+      "noPdf": "No PDF"
+    }
+  }
+}

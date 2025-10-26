@@ -1,0 +1,304 @@
+{
+  "location": {
+    "city": {
+      "geoname_id": 5951644,
+      "names": {
+        "en": "Farnham",
+        "fr": "Farnham"
+      }
+    },
+    "continent": {
+      "code": "NA",
+      "geoname_id": 6255149,
+      "names": {
+        "de": "Nordamerika",
+        "en": "North America",
+        "es": "Norteamérica",
+        "fr": "Amérique du Nord",
+        "ja": "北アメリカ",
+        "pt-BR": "América do Norte",
+        "ru": "Северная Америка",
+        "zh-CN": "北美洲"
+      }
+    },
+    "country": {
+      "geoname_id": 6251999,
+      "iso_code": "CA",
+      "names": {
+        "de": "Kanada",
+        "en": "Canada",
+        "es": "Canadá",
+        "fr": "Canada",
+        "ja": "カナダ",
+        "pt-BR": "Canadá",
+        "ru": "Канада",
+        "zh-CN": "加拿大"
+      }
+    },
+    "location": {
+      "accuracy_radius": 20,
+      "latitude": 45.2834,
+      "longitude": -72.9824,
+      "time_zone": "America/Toronto"
+    },
+    "postal": {
+      "code": "J2N"
+    },
+    "registered_country": {
+      "geoname_id": 6251999,
+      "iso_code": "CA",
+      "names": {
+        "de": "Kanada",
+        "en": "Canada",
+        "es": "Canadá",
+        "fr": "Canada",
+        "ja": "カナダ",
+        "pt-BR": "Canadá",
+        "ru": "Канада",
+        "zh-CN": "加拿大"
+      }
+    },
+    "subdivisions": [
+      {
+        "geoname_id": 6115047,
+        "iso_code": "QC",
+        "names": {
+          "en": "Quebec",
+          "fr": "Québec",
+          "pt-BR": "Quebeque"
+        }
+      }
+    ]
+  },
+  "totalAmount": {
+    "data": 16.09,
+    "confidenceLevel": 0.9199999999999999,
+    "text": "CARTE CRÉDIT 16.09",
+    "index": 21,
+    "keyword": "-",
+    "currencyCode": "CAD"
+  },
+  "taxAmount": {
+    "data": 2.1,
+    "confidenceLevel": 0.9199999999999999,
+    "text": "AID: A0000000031010",
+    "index": 32,
+    "keyword": "-",
+    "currencyCode": "CAD"
+  },
+  "discountAmount": {
+    "confidenceLevel": 0
+  },
+  "paidAmount": {
+    "data": 16.09,
+    "confidenceLevel": 0.9199999999999999,
+    "text": "CARTE CRÉDIT 16.09",
+    "index": 21
+  },
+  "confidenceLevel": 0.898,
+  "date": {
+    "data": "2025-02-19T12:00:00.000Z",
+    "confidenceLevel": 0.9199999999999999,
+    "text": "2025-02-19 14:04:13 MEV:15 1-10078451 AVONS",
+    "index": 44
+  },
+  "dueDate": {
+    "confidenceLevel": 0
+  },
+  "text": {
+    "text": "Barkoff\n295, Rue Barkoff\nRÉPONDU À VOS ATTENTES?\nTrois-Rivières QC G8T 2A5\nTél.#: 819-376-7922\nRest #: 29152\nN. TRANS. 1LNY9F6JCM\nBienvenue chez McDonald's\nTPS: 886738517\nTVQ: 1088309142 TQ001\nCS # 7 19/02/2025 14:46:40\nQté Article TOTAL\n1 TR Dble Filet poisson 13.09\nEXTRA Sauce tartare\n732 AVONS-NOUS RÉPONDU À VOS ATTENTES?\n1 M Fruitopia Orange\n1 Poutine 0.90\nTotal partiel 13.99\nTPS 0.70\nTVQ 1.40\nTotal pour emporter 16.09\nCARTE CRÉDIT 16.09\nMonnaie 0.00\nemployés temps plein recherchés\n======== RELEVE DE TRANSACTION ========\nCOMPTE: VISA $ 16.09\nN. DE CARTE: ************ 0479\nDATE/HEURE: 19-Feb-2025 14:48:42\n# REFERENCE: 0011612930 H\n# AUTOR. : 093322\nN. TRANS .: 1LNY9F6JCM\nNOM APP : Visa CREDIT\nAID: A0000000031010\nTYPE: ACHAT AVONS-NOUS RÉPONDU À VOS ATTENTES?\nARQC : 46292F73CE663580\n01 APPROUVÉE - MERCI 027\nAUCUNE SIGNATURE REQUISE\nIMPORTANT - conserver cette copie pour\nvos dossiers\n***** COPIE DU CLIENT *****\nTPS: 0,70 $ TVQ: 1,40 $\nTotal 16,09 $\nPAIEMENT REÇU\nRESTAURANT MCDONALDS\n2025-02-19 14:04:13 MEV:15 1-10078451 AVONS\n295, RUE BARKOFF, TROIS-RIVIERES\nQUEBEC, GOT 2A5"
+  },
+  "amounts": [
+    {
+      "data": 13.09,
+      "index": 12,
+
+      "text": "1 TR Dble Filet poisson 13.09",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 0.9,
+      "index": 16,
+      "text": "1 Poutine 0.90",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 13.99,
+      "index": 17,
+
+      "text": "Total partiel 13.99",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 0.7,
+      "index": 18,
+
+      "text": "TPS 0.70",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 1.4,
+      "index": 19,
+
+      "text": "TVQ 1.40",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 16.09,
+      "index": 20,
+
+      "text": "Total pour emporter 16.09",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 16.09,
+      "index": 21,
+
+      "text": "CARTE CRÉDIT 16.09",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 0,
+      "index": 22,
+
+      "text": "Monnaie 0.00",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 16.09,
+      "index": 25,
+
+      "text": "COMPTE  VISA $ 16.09",
+      "currencyCode": "CAD"
+    },
+    {
+      "data": 0.7,
+      "index": 40,
+
+      "text": "TPS  0,70 $ TVQ  1,40 $",
+      "currencyCode": "CAD"
+    },
+    {
+      "data": 1.4,
+      "index": 40,
+
+      "text": "TPS  0,70 $ TVQ  1,40 $",
+      "currencyCode": "CAD"
+    },
+    {
+      "data": 16.09,
+      "index": 41,
+
+      "text": "Total 16,09 $",
+      "currencyCode": "CAD"
+    }
+  ],
+
+  "entities": {
+    "IBAN": {
+      "confidenceLevel": 0
+    },
+    "invoiceNumber": {
+      "confidenceLevel": 0
+    },
+    "multiTaxLineItems": [
+      {
+        "data": {
+          "taxType": {
+            "text": "TPS",
+            "data": "TPS"
+          },
+          "taxAmount": {
+            "text": "0.70",
+            "data": 0.7
+          }
+        },
+        "confidenceLevel": 0.9400000000000001,
+        "index": 18
+      },
+      {
+        "data": {
+          "taxType": {
+            "text": "TVQ",
+            "data": "TVQ"
+          },
+          "taxAmount": {
+            "text": "1.40",
+            "data": 1.4
+          }
+        },
+        "confidenceLevel": 0.9400000000000001,
+        "index": 19
+      }
+    ],
+    "receiptNumber": {
+      "data": "1LNY9F6JCM",
+      "confidenceLevel": 0.9199999999999999,
+      "text": "N. TRANS. 1LNY9F6JCM",
+      "keyword": "-",
+      "index": 6
+    },
+    "last4": {
+      "data": "0479",
+      "confidenceLevel": 0.9199999999999999,
+      "text": "N. DE CARTE: ************ 0479",
+      "index": 26
+    }
+  },
+  "lineAmounts": [],
+  "itemsCount": {
+    "data": 0,
+    "confidenceLevel": 0
+  },
+  "paymentType": {
+    "confidenceLevel": 0
+  },
+  "trackingId": "T-20250305-3799097",
+  "merchantName": {
+    "data": "McDonald's",
+    "confidenceLevel": 0.8100000000000002,
+    "text": "Bienvenue chez McDonald's",
+    "index": 7
+  },
+  "merchantAddress": {
+    "data": "295 Rue Barkoff, Trois-Rivieres, Québec, G8T 2A5",
+    "confidenceLevel": 0.99,
+    "text": "295, Rue Barkoff, Trois Rivières QC G8T 2A5",
+    "index": 45
+  },
+  "merchantCity": {
+    "data": "Trois-Rivieres",
+    "confidenceLevel": 0.99,
+    "text": "295, Rue Barkoff, Trois Rivières QC G8T 2A5",
+    "index": 45
+  },
+  "merchantState": {
+    "data": "Francheville, Québec",
+    "confidenceLevel": 0.99,
+    "text": "295, Rue Barkoff, Trois Rivières QC G8T 2A5",
+    "index": 45
+  },
+  "merchantCountryCode": {
+    "data": "CA",
+    "confidenceLevel": 0.99,
+    "text": "295, Rue Barkoff, Trois Rivières QC G8T 2A5",
+    "index": 45
+  },
+  "merchantTypes": {
+    "confidenceLevel": 0
+  },
+  "merchantPostalCode": {
+    "data": "G8T",
+    "confidenceLevel": 0.99,
+    "text": "295, Rue Barkoff, Trois Rivières QC G8T 2A5",
+    "index": 45
+  },
+  "merchantTaxId": {
+    "data": "TPS: 886738517",
+    "confidenceLevel": 0.45,
+    "text": "TPS: 886738517",
+    "index": 8
+  },
+  "targetRotation": 0,
+  "elapsed": 5620.400146998465
+}

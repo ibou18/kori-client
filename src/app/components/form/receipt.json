@@ -1,0 +1,1103 @@
+{
+  "location": {
+    "city": {
+      "geoname_id": 5951644,
+      "names": {
+        "en": "Farnham",
+        "fr": "Farnham"
+      }
+    },
+    "continent": {
+      "code": "NA",
+      "geoname_id": 6255149,
+      "names": {
+        "de": "Nordamerika",
+        "en": "North America",
+        "es": "Norteamérica",
+        "fr": "Amérique du Nord",
+        "ja": "北アメリカ",
+        "pt-BR": "América do Norte",
+        "ru": "Северная Америка",
+        "zh-CN": "北美洲"
+      }
+    },
+    "country": {
+      "geoname_id": 6251999,
+      "iso_code": "CA",
+      "names": {
+        "de": "Kanada",
+        "en": "Canada",
+        "es": "Canadá",
+        "fr": "Canada",
+        "ja": "カナダ",
+        "pt-BR": "Canadá",
+        "ru": "Канада",
+        "zh-CN": "加拿大"
+      }
+    },
+    "location": {
+      "accuracy_radius": 20,
+      "latitude": 45.2834,
+      "longitude": -72.9824,
+      "time_zone": "America/Toronto"
+    },
+    "postal": {
+      "code": "J2N"
+    },
+    "registered_country": {
+      "geoname_id": 6251999,
+      "iso_code": "CA",
+      "names": {
+        "de": "Kanada",
+        "en": "Canada",
+        "es": "Canadá",
+        "fr": "Canada",
+        "ja": "カナダ",
+        "pt-BR": "Canadá",
+        "ru": "Канада",
+        "zh-CN": "加拿大"
+      }
+    },
+    "subdivisions": [
+      {
+        "geoname_id": 6115047,
+        "iso_code": "QC",
+        "names": {
+          "en": "Quebec",
+          "fr": "Québec",
+          "pt-BR": "Quebeque"
+        }
+      }
+    ]
+  },
+  "totalAmount": {
+    "data": 40.24,
+    "confidenceLevel": 0.9199999999999999,
+    "text": "CRÉDIT 40.24",
+    "index": 15,
+    "keyword": "-",
+    "currencyCode": "CAD",
+    "regions": [
+      [
+        {
+          "x": 486,
+          "y": 1948
+        },
+        {
+          "x": 742,
+          "y": 1950
+        },
+        {
+          "x": 739,
+          "y": 2028
+        },
+        {
+          "x": 482,
+          "y": 2031
+        }
+      ],
+      [
+        {
+          "x": 1862,
+          "y": 1944
+        },
+        {
+          "x": 2243,
+          "y": 1947
+        },
+        {
+          "x": 2241,
+          "y": 2028
+        },
+        {
+          "x": 1859,
+          "y": 2027
+        }
+      ]
+    ]
+  },
+  "taxAmount": {
+    "data": 5.24,
+    "confidenceLevel": 0.9199999999999999,
+    "text": "CRÉDIT 40.24",
+    "index": 15,
+    "keyword": "-",
+    "currencyCode": "CAD",
+    "regions": [
+      [
+        {
+          "x": 486,
+          "y": 1948
+        },
+        {
+          "x": 742,
+          "y": 1950
+        },
+        {
+          "x": 739,
+          "y": 2028
+        },
+        {
+          "x": 482,
+          "y": 2031
+        }
+      ],
+      [
+        {
+          "x": 1862,
+          "y": 1944
+        },
+        {
+          "x": 2243,
+          "y": 1947
+        },
+        {
+          "x": 2241,
+          "y": 2028
+        },
+        {
+          "x": 1859,
+          "y": 2027
+        }
+      ]
+    ]
+  },
+  "discountAmount": {
+    "confidenceLevel": 0
+  },
+  "paidAmount": {
+    "data": 40.24,
+    "confidenceLevel": 0.9199999999999999,
+    "text": "CRÉDIT 40.24",
+    "index": 15,
+    "regions": [
+      [
+        {
+          "x": 486,
+          "y": 1948
+        },
+        {
+          "x": 742,
+          "y": 1950
+        },
+        {
+          "x": 739,
+          "y": 2028
+        },
+        {
+          "x": 482,
+          "y": 2031
+        }
+      ],
+      [
+        {
+          "x": 1862,
+          "y": 1944
+        },
+        {
+          "x": 2243,
+          "y": 1947
+        },
+        {
+          "x": 2241,
+          "y": 2028
+        },
+        {
+          "x": 1859,
+          "y": 2027
+        }
+      ]
+    ]
+  },
+  "confidenceLevel": 0.898,
+  "date": {
+    "data": "2025-03-03T12:00:00.000Z",
+    "confidenceLevel": 0.9199999999999999,
+    "text": "DATE: 2025-03-03 HEURE : 06:01:53",
+    "index": 6,
+    "regions": [
+      [
+        {
+          "x": 498,
+          "y": 846
+        },
+        {
+          "x": 704,
+          "y": 851
+        },
+        {
+          "x": 703,
+          "y": 923
+        },
+        {
+          "x": 497,
+          "y": 918
+        }
+      ],
+      [
+        {
+          "x": 920,
+          "y": 851
+        },
+        {
+          "x": 1335,
+          "y": 856
+        },
+        {
+          "x": 1332,
+          "y": 932
+        },
+        {
+          "x": 920,
+          "y": 928
+        }
+      ],
+      [
+        {
+          "x": 1454,
+          "y": 851
+        },
+        {
+          "x": 1660,
+          "y": 850
+        },
+        {
+          "x": 1662,
+          "y": 930
+        },
+        {
+          "x": 1453,
+          "y": 928
+        }
+      ],
+      [
+        {
+          "x": 1676,
+          "y": 850
+        },
+        {
+          "x": 1714,
+          "y": 850
+        },
+        {
+          "x": 1716,
+          "y": 930
+        },
+        {
+          "x": 1678,
+          "y": 930
+        }
+      ],
+      [
+        {
+          "x": 1838,
+          "y": 847
+        },
+        {
+          "x": 2174,
+          "y": 843
+        },
+        {
+          "x": 2176,
+          "y": 919
+        },
+        {
+          "x": 1837,
+          "y": 925
+        }
+      ]
+    ]
+  },
+  "dueDate": {
+    "confidenceLevel": 0
+  },
+  "text": {
+    "text": "Proxi Extra\n1975 Prairies\nDes QC\nTrois-Rivieres,\nG8V 1P9\n819-373-7272\nDATE: 2025-03-03 HEURE : 06:01:53\nNo STATN: HAR1003 No TRANS .: 934267\nPaypoint: 03C\nTPS: 103247466 TVQ: 1002757661\n*** DUPLICATA ***\nCARBURANT (L) ($/L) ($)\nDistr. 3\nREGULIER 26.842 1.499 40.24\nTOTAL CAN $ 40.24\nCRÉDIT 40.24\n* TPS INCL. DANS L'ESSENCE $ 1.75\n* TVQ INCL. DANS ESSENCE $ 3.49\nAchat\nVisa\n************ 0479 P\nAID: A0000000031010\nNo FACTURE: 009026\nTERMID: ZB596C03\nNO MARCHAND : 42955035704\nAPPROUVÉF\n: 031713\nRÉF: 206001001003\nACI/ISO 001/00\n*** DUPLICATA ***\nMerci et au plaisir\nde vous revoir",
+    "regions": [
+      {
+        "x": 441,
+        "y": 394
+      },
+      {
+        "x": 2335,
+        "y": 417
+      },
+      {
+        "x": 2336,
+        "y": 3703
+      },
+      {
+        "x": 441,
+        "y": 3707
+      }
+    ]
+  },
+  "amounts": [
+    {
+      "data": 40.24,
+      "index": 13,
+      "regions": [
+        [
+          {
+            "x": 480,
+            "y": 1665
+          },
+          {
+            "x": 2187,
+            "y": 1653
+          },
+          {
+            "x": 2187,
+            "y": 1730
+          },
+          {
+            "x": 482,
+            "y": 1731
+          }
+        ]
+      ],
+      "text": "REGULIER 26.842 1.499 40.24",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 40.24,
+      "index": 14,
+      "regions": [
+        [
+          {
+            "x": 493,
+            "y": 1805
+          },
+          {
+            "x": 2242,
+            "y": 1800
+          },
+          {
+            "x": 2239,
+            "y": 1883
+          },
+          {
+            "x": 493,
+            "y": 1882
+          }
+        ]
+      ],
+      "text": "TOTAL CAN $ 40.24",
+      "currencyCode": "CAD"
+    },
+    {
+      "data": 40.24,
+      "index": 15,
+      "regions": [
+        [
+          {
+            "x": 486,
+            "y": 1948
+          },
+          {
+            "x": 2243,
+            "y": 1947
+          },
+          {
+            "x": 2241,
+            "y": 2028
+          },
+          {
+            "x": 482,
+            "y": 2031
+          }
+        ]
+      ],
+      "text": "CRÉDIT 40.24",
+      "currencyCode": "USD"
+    },
+    {
+      "data": 1.75,
+      "index": 16,
+      "regions": [
+        [
+          {
+            "x": 480,
+            "y": 2110
+          },
+          {
+            "x": 2194,
+            "y": 2104
+          },
+          {
+            "x": 2192,
+            "y": 2179
+          },
+          {
+            "x": 480,
+            "y": 2177
+          }
+        ]
+      ],
+      "text": "* TPS INCL. DANS L'ESSENCE $ 1.75",
+      "currencyCode": "CAD"
+    },
+    {
+      "data": 3.49,
+      "index": 17,
+      "regions": [
+        [
+          {
+            "x": 480,
+            "y": 2183
+          },
+          {
+            "x": 2193,
+            "y": 2185
+          },
+          {
+            "x": 2193,
+            "y": 2260
+          },
+          {
+            "x": 480,
+            "y": 2247
+          }
+        ]
+      ],
+      "text": "* TVQ INCL. DANS ESSENCE $ 3.49",
+      "currencyCode": "CAD"
+    }
+  ],
+  "numbers": [
+    {
+      "data": 1975,
+      "text": "1975 Prairies",
+      "regions": [
+        [
+          {
+            "x": 594,
+            "y": 470
+          },
+          {
+            "x": 1965,
+            "y": 480
+          },
+          {
+            "x": 1965,
+            "y": 550
+          },
+          {
+            "x": 596,
+            "y": 552
+          }
+        ]
+      ],
+      "index": 1
+    },
+    {
+      "data": 103247466,
+      "text": "TPS  103247466 TVQ  1002757661",
+      "regions": [
+        [
+          {
+            "x": 495,
+            "y": 1140
+          },
+          {
+            "x": 2267,
+            "y": 1141
+          },
+          {
+            "x": 2267,
+            "y": 1212
+          },
+          {
+            "x": 495,
+            "y": 1213
+          }
+        ]
+      ],
+      "index": 9,
+      "classifyResult": "primaryTax"
+    },
+    {
+      "data": 1002757661,
+      "text": "TPS  103247466 TVQ  1002757661",
+      "regions": [
+        [
+          {
+            "x": 495,
+            "y": 1140
+          },
+          {
+            "x": 2267,
+            "y": 1141
+          },
+          {
+            "x": 2267,
+            "y": 1212
+          },
+          {
+            "x": 495,
+            "y": 1213
+          }
+        ]
+      ],
+      "index": 9,
+      "classifyResult": "primaryTax"
+    },
+    {
+      "data": 3,
+      "text": "Distr. 3",
+      "regions": [
+        [
+          {
+            "x": 483,
+            "y": 1584
+          },
+          {
+            "x": 824,
+            "y": 1580
+          },
+          {
+            "x": 825,
+            "y": 1655
+          },
+          {
+            "x": 480,
+            "y": 1652
+          }
+        ]
+      ],
+      "index": 12
+    },
+    {
+      "data": 26842,
+      "text": "REGULIER 26.842 1.499 40.24",
+      "regions": [
+        [
+          {
+            "x": 480,
+            "y": 1665
+          },
+          {
+            "x": 2187,
+            "y": 1653
+          },
+          {
+            "x": 2187,
+            "y": 1730
+          },
+          {
+            "x": 482,
+            "y": 1731
+          }
+        ]
+      ],
+      "index": 13
+    },
+    {
+      "data": 1499,
+      "text": "REGULIER 26.842 1.499 40.24",
+      "regions": [
+        [
+          {
+            "x": 480,
+            "y": 1665
+          },
+          {
+            "x": 2187,
+            "y": 1653
+          },
+          {
+            "x": 2187,
+            "y": 1730
+          },
+          {
+            "x": 482,
+            "y": 1731
+          }
+        ]
+      ],
+      "index": 13
+    }
+  ],
+  "entities": {
+    "IBAN": {
+      "confidenceLevel": 0
+    },
+    "invoiceNumber": {
+      "data": "009026",
+      "confidenceLevel": 0.9199999999999999,
+      "text": "No FACTURE: 009026",
+      "keyword": "-"
+    },
+    "multiTaxLineItems": [],
+    "receiptNumber": {
+      "data": "934267",
+      "confidenceLevel": 0.9199999999999999,
+      "text": "No STATN: HAR1003 No TRANS .: 934267",
+      "keyword": "-",
+      "index": 7,
+      "regions": [
+        [
+          {
+            "x": 492,
+            "y": 992
+          },
+          {
+            "x": 578,
+            "y": 993
+          },
+          {
+            "x": 576,
+            "y": 1067
+          },
+          {
+            "x": 490,
+            "y": 1066
+          }
+        ],
+        [
+          {
+            "x": 613,
+            "y": 993
+          },
+          {
+            "x": 882,
+            "y": 996
+          },
+          {
+            "x": 881,
+            "y": 1071
+          },
+          {
+            "x": 612,
+            "y": 1067
+          }
+        ],
+        [
+          {
+            "x": 913,
+            "y": 997
+          },
+          {
+            "x": 1211,
+            "y": 1001
+          },
+          {
+            "x": 1211,
+            "y": 1076
+          },
+          {
+            "x": 912,
+            "y": 1072
+          }
+        ],
+        [
+          {
+            "x": 1472,
+            "y": 994
+          },
+          {
+            "x": 1550,
+            "y": 993
+          },
+          {
+            "x": 1549,
+            "y": 1074
+          },
+          {
+            "x": 1471,
+            "y": 1073
+          }
+        ],
+        [
+          {
+            "x": 1584,
+            "y": 992
+          },
+          {
+            "x": 1785,
+            "y": 990
+          },
+          {
+            "x": 1784,
+            "y": 1076
+          },
+          {
+            "x": 1583,
+            "y": 1075
+          }
+        ],
+        [
+          {
+            "x": 1801,
+            "y": 990
+          },
+          {
+            "x": 1866,
+            "y": 990
+          },
+          {
+            "x": 1865,
+            "y": 1076
+          },
+          {
+            "x": 1800,
+            "y": 1076
+          }
+        ],
+        [
+          {
+            "x": 1882,
+            "y": 990
+          },
+          {
+            "x": 2138,
+            "y": 991
+          },
+          {
+            "x": 2138,
+            "y": 1068
+          },
+          {
+            "x": 1882,
+            "y": 1075
+          }
+        ]
+      ]
+    },
+    "last4": {
+      "data": "0479",
+      "confidenceLevel": 0.9199999999999999,
+      "text": "************ 0479 P",
+      "index": 20,
+      "regions": [
+        [
+          {
+            "x": 481,
+            "y": 2563
+          },
+          {
+            "x": 986,
+            "y": 2559
+          },
+          {
+            "x": 986,
+            "y": 2622
+          },
+          {
+            "x": 483,
+            "y": 2617
+          }
+        ],
+        [
+          {
+            "x": 998,
+            "y": 2559
+          },
+          {
+            "x": 1163,
+            "y": 2557
+          },
+          {
+            "x": 1163,
+            "y": 2625
+          },
+          {
+            "x": 998,
+            "y": 2622
+          }
+        ],
+        [
+          {
+            "x": 1337,
+            "y": 2557
+          },
+          {
+            "x": 1373,
+            "y": 2557
+          },
+          {
+            "x": 1371,
+            "y": 2621
+          },
+          {
+            "x": 1336,
+            "y": 2620
+          }
+        ]
+      ]
+    }
+  },
+  "lineAmounts": [],
+  "itemsCount": {
+    "data": 0,
+    "confidenceLevel": 0
+  },
+  "paymentType": {
+    "data": "visa",
+    "confidenceLevel": 0.99,
+    "text": "visa",
+    "index": 0,
+    "regions": [
+      [
+        {
+          "x": 832,
+          "y": 394
+        },
+        {
+          "x": 1233,
+          "y": 405
+        },
+        {
+          "x": 1233,
+          "y": 492
+        },
+        {
+          "x": 830,
+          "y": 468
+        }
+      ],
+      [
+        {
+          "x": 1339,
+          "y": 408
+        },
+        {
+          "x": 1715,
+          "y": 419
+        },
+        {
+          "x": 1716,
+          "y": 488
+        },
+        {
+          "x": 1339,
+          "y": 494
+        }
+      ]
+    ]
+  },
+  "trackingId": "T-20250318-3124205",
+  "merchantName": {
+    "data": "Proxi Extra",
+    "confidenceLevel": 0.8100000000000002,
+    "text": "Proxi Extra",
+    "index": 0,
+    "regions": [
+      [
+        {
+          "x": 832,
+          "y": 394
+        },
+        {
+          "x": 1233,
+          "y": 405
+        },
+        {
+          "x": 1233,
+          "y": 492
+        },
+        {
+          "x": 830,
+          "y": 468
+        }
+      ],
+      [
+        {
+          "x": 1339,
+          "y": 408
+        },
+        {
+          "x": 1715,
+          "y": 419
+        },
+        {
+          "x": 1716,
+          "y": 488
+        },
+        {
+          "x": 1339,
+          "y": 494
+        }
+      ]
+    ]
+  },
+  "merchantAddress": {
+    "data": "1975 Rue Des Prairies, Trois-Rivieres, Québec, G8V 1P9",
+    "confidenceLevel": 0.9593,
+    "text": "1975 Prairies, Des QC, Trois Rivieres, G8V 1P9",
+    "index": 3,
+    "regions": [
+      [
+        {
+          "x": 593,
+          "y": 552
+        },
+        {
+          "x": 1826,
+          "y": 575
+        },
+        {
+          "x": 1819,
+          "y": 651
+        },
+        {
+          "x": 593,
+          "y": 631
+        }
+      ]
+    ]
+  },
+  "merchantCity": {
+    "data": "Trois-Rivieres",
+    "confidenceLevel": 0.9593,
+    "text": "1975 Prairies, Des QC, Trois Rivieres, G8V 1P9",
+    "index": 3,
+    "regions": [
+      [
+        {
+          "x": 593,
+          "y": 552
+        },
+        {
+          "x": 1826,
+          "y": 575
+        },
+        {
+          "x": 1819,
+          "y": 651
+        },
+        {
+          "x": 593,
+          "y": 631
+        }
+      ]
+    ]
+  },
+  "merchantState": {
+    "data": "Francheville, Québec",
+    "confidenceLevel": 0.9593,
+    "text": "1975 Prairies, Des QC, Trois Rivieres, G8V 1P9",
+    "index": 3,
+    "regions": [
+      [
+        {
+          "x": 593,
+          "y": 552
+        },
+        {
+          "x": 1826,
+          "y": 575
+        },
+        {
+          "x": 1819,
+          "y": 651
+        },
+        {
+          "x": 593,
+          "y": 631
+        }
+      ]
+    ]
+  },
+  "merchantCountryCode": {
+    "data": "CA",
+    "confidenceLevel": 0.9593,
+    "text": "1975 Prairies, Des QC, Trois Rivieres, G8V 1P9",
+    "index": 3,
+    "regions": [
+      [
+        {
+          "x": 593,
+          "y": 552
+        },
+        {
+          "x": 1826,
+          "y": 575
+        },
+        {
+          "x": 1819,
+          "y": 651
+        },
+        {
+          "x": 593,
+          "y": 631
+        }
+      ]
+    ]
+  },
+  "merchantTypes": {
+    "confidenceLevel": 0
+  },
+  "merchantPostalCode": {
+    "data": "G8V",
+    "confidenceLevel": 0.9593,
+    "text": "1975 Prairies, Des QC, Trois Rivieres, G8V 1P9",
+    "index": 3,
+    "regions": [
+      [
+        {
+          "x": 593,
+          "y": 552
+        },
+        {
+          "x": 1826,
+          "y": 575
+        },
+        {
+          "x": 1819,
+          "y": 651
+        },
+        {
+          "x": 593,
+          "y": 631
+        }
+      ]
+    ]
+  },
+  "merchantTaxId": {
+    "data": "GSTIN",
+    "confidenceLevel": 0.45,
+    "text": "Distr. 3",
+    "index": 12,
+    "regions": [
+      [
+        {
+          "x": 483,
+          "y": 1584
+        },
+        {
+          "x": 745,
+          "y": 1584
+        },
+        {
+          "x": 745,
+          "y": 1656
+        },
+        {
+          "x": 480,
+          "y": 1652
+        }
+      ],
+      [
+        {
+          "x": 783,
+          "y": 1583
+        },
+        {
+          "x": 824,
+          "y": 1580
+        },
+        {
+          "x": 825,
+          "y": 1655
+        },
+        {
+          "x": 784,
+          "y": 1656
+        }
+      ]
+    ]
+  },
+  "targetRotation": 0,
+  "elapsed": 5720.34622400254
+}
