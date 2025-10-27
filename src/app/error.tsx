@@ -1,7 +1,6 @@
 "use client";
 
 export default function Error({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -39,7 +38,7 @@ export default function Error({
             Réessayer
           </button>
           <button
-            onClick={() => window.location.href = "/"}
+            onClick={() => (window.location.href = "/")}
             className="rounded bg-gray-600 px-4 py-2 text-white hover:bg-gray-700"
           >
             Retour à l&apos;accueil
