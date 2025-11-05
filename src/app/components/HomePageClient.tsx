@@ -238,7 +238,7 @@ export default function HomePageClient(): JSX.Element {
             }}
             className="hover:opacity-90"
           >
-            {/* <Link href="/download-app">Télécharger l'app</Link> */}
+            {/* <Link href="#">Télécharger l'app</Link> */}
             <Link href="#">Télécharger l'app</Link>
           </Button>
           <Button asChild variant="ghost" size="lg">
@@ -263,10 +263,7 @@ export default function HomePageClient(): JSX.Element {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Link
-            href="/download-app"
-            className="transition-transform hover:scale-105"
-          >
+          <Link href="#" className="transition-transform hover:scale-105">
             <Image
               width={200}
               height={100}
@@ -275,10 +272,7 @@ export default function HomePageClient(): JSX.Element {
               className="h-16 object-contain"
             />
           </Link>
-          <Link
-            href="/download-app"
-            className="transition-transform hover:scale-105"
-          >
+          <Link href="#" className="transition-transform hover:scale-105">
             <Image
               width={220}
               height={120}
@@ -639,7 +633,7 @@ export default function HomePageClient(): JSX.Element {
                   color: KoriEmailColors.primary[600],
                 }}
               >
-                <Link href="/download-app">Télécharger l'application</Link>
+                <Link href="#">Télécharger l'application</Link>
               </Button>
               <Button
                 asChild
@@ -731,7 +725,7 @@ export default function HomePageClient(): JSX.Element {
               <div>
                 <h4 className="font-semibold mb-4">Téléchargez l'app</h4>
                 <div className="space-y-3">
-                  <Link href="/download-app" className="block">
+                  <Link href="#" className="block">
                     <Image
                       src={apple}
                       alt="App Store"
@@ -740,7 +734,7 @@ export default function HomePageClient(): JSX.Element {
                       className="h-12 w-auto"
                     />
                   </Link>
-                  <Link href="/download-app" className="block">
+                  <Link href="#" className="block">
                     <Image
                       src={android}
                       alt="Google Play"
