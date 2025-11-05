@@ -6,6 +6,7 @@ const { Title, Paragraph, Text } = Typography;
 const { Content } = Layout;
 
 export default function TermsAndConditions() {
+  // TODO: Add the terms and conditions for the platform
   return (
     <div style={{ padding: "24px", maxWidth: "900px", margin: "auto" }}>
       <Content>
