@@ -8,7 +8,7 @@ const { Title, Paragraph } = Typography;
 const { Content } = Layout;
 
 /**
- * Conditions de service - Prestataires – Kori (version client)
+ * Conditions générales d'utilisation - Clients – Kori (version client)
  */
 export default function CGUClient(): JSX.Element {
   return (
@@ -36,7 +36,9 @@ export default function CGUClient(): JSX.Element {
 
       <Content>
         <Typography>
-          <Title level={2}>Conditions de service - Prestataires</Title>
+          <Title level={2}>
+            Conditions générales d&apos;utilisation - Clients
+          </Title>
           <Paragraph italic type="secondary" style={{ textAlign: "center" }}>
             Dernière mise à jour : 1er novembre 2025
           </Paragraph>
@@ -45,93 +47,113 @@ export default function CGUClient(): JSX.Element {
 
           <Title level={3}>1. Objet</Title>
           <Paragraph>
-            Les présentes conditions de service (les « Conditions ») régissent
-            la relation entre Korí Beauty Inc. (« Korí ») et les prestataires de
-            services de beauté (« vous », « prestataire ») utilisant la
-            plateforme Korí pour offrir leurs services.
+            Les présentes conditions générales d&apos;utilisation (les «
+            Conditions ») régissent la relation entre Korí Beauty Inc. (« Korí
+            ») et les utilisateurs clients (« vous », « client ») utilisant la
+            plateforme Korí pour réserver et bénéficier de services de beauté.
           </Paragraph>
 
           <Title level={3}>2. Inscription et éligibilité</Title>
           <Paragraph>
-            Pour offrir des services sur Korí, vous devez créer un compte
-            professionnel, fournir des informations exactes (y compris vos
-            coordonnées et votre zone de service) et respecter les lois
-            applicables à votre activité.
+            Pour utiliser la plateforme Korí, vous devez créer un compte,
+            fournir des informations exactes et à jour (y compris vos
+            coordonnées) et être âgé d&apos;au moins 18 ans. Vous êtes
+            responsable de la confidentialité de vos identifiants de connexion.
           </Paragraph>
 
           <Title level={3}>3. Utilisation de la plateforme</Title>
           <Paragraph>
-            Korí fournit un outil technologique permettant aux prestataires
-            d&apos;être visibles et de gérer leurs rendez-vous.
+            Korí est une plateforme de mise en relation qui vous permet de
+            découvrir, réserver et payer des services de beauté auprès de
+            prestataires indépendants.
             <br />
             <br />
-            Les prestataires demeurent indépendants et responsables de la
-            prestation de leurs services.
+            Korí agit uniquement comme intermédiaire technologique et n&apos;est
+            pas partie au contrat de service entre vous et le prestataire.
           </Paragraph>
 
-          <Title level={3}>4. Modèle économique et paiements</Title>
+          <Title level={3}>4. Réservations et paiements</Title>
           <Paragraph>
-            Korí perçoit des frais de réservation (6 % du montant total) payés
-            par le client, ainsi qu&apos;un acompte de 15 % du montant de la
-            prestation, reversé au prestataire pour confirmer la réservation.
-            <br />
-            <br />
-            Le solde est payé directement au prestataire lors du rendez-vous.
-            <br />
-            <br />
-            La première année, Korí est gratuite pour les prestataires. Ensuite,
-            un modèle freemium/premium sera introduit.
+            Lors de la réservation d&apos;un service, vous acceptez de payer :
+            <ul>
+              <li>
+                Un acompte de 15% du montant du service pour confirmer la
+                réservation
+              </li>
+              <li>
+                Des frais de réservation de 6% du montant total, payés à Korí
+              </li>
+              <li>
+                Le solde restant directement au prestataire lors du rendez-vous
+              </li>
+            </ul>
+            Les paiements sont sécurisés via Stripe. Les prix sont affichés en
+            dollars canadiens (CAD) et incluent les taxes applicables.
           </Paragraph>
 
           <Title level={3}>5. Annulations et remboursements</Title>
           <Paragraph>
-            En cas d&apos;annulation d&apos;un rendez-vous, le prestataire doit
-            informer le client dès que possible. Les politiques
-            d&apos;annulation sont définies par chaque prestataire, mais doivent
-            être raisonnables et transparentes.
+            Les politiques d&apos;annulation sont définies dans notre politique
+            d&apos;annulation dédiée. En général :
+            <ul>
+              <li>
+                Annulation plus de 24h à l&apos;avance : remboursement intégral
+                de l&apos;acompte
+              </li>
+              <li>
+                Annulation moins de 24h à l&apos;avance : 100% de l&apos;acompte
+                est retenu
+              </li>
+              <li>
+                En cas d&apos;annulation par le prestataire : remboursement
+                intégral immédiat
+              </li>
+            </ul>
           </Paragraph>
 
-          <Title level={3}>6. Obligations du prestataire</Title>
+          <Title level={3}>6. Obligations du client</Title>
           <Paragraph>
-            Le prestataire s&apos;engage à :
+            En tant que client, vous vous engagez à :
             <ul>
-              <li>Fournir des services professionnels et sécuritaires.</li>
               <li>
-                Respecter les horaires et les engagements pris envers les
-                clients.
+                Respecter les rendez-vous confirmés ou annuler dans les délais
+                prévus
               </li>
+              <li>Fournir des informations exactes et à jour</li>
+              <li>Respecter les prestataires et leur travail</li>
               <li>
                 Ne pas utiliser la plateforme à des fins illégales ou
-                trompeuses.
+                frauduleuses
               </li>
-              <li>
-                Maintenir à jour son profil et ses informations de service.
-              </li>
+              <li>Payer les services réservés selon les modalités convenues</li>
             </ul>
           </Paragraph>
 
           <Title level={3}>7. Responsabilités de Korí</Title>
           <Paragraph>
             Korí agit comme intermédiaire technologique et n&apos;est pas partie
-            au contrat de service entre le prestataire et le client.
+            au contrat de service entre vous et le prestataire.
             <br />
             <br />
-            Korí ne garantit pas le nombre de réservations ni la performance du
-            prestataire.
+            Korí ne garantit pas la qualité des services fournis par les
+            prestataires, mais s&apos;efforce de maintenir un niveau élevé de
+            professionnalisme sur la plateforme.
           </Paragraph>
 
-          <Title level={3}>8. Propriété intellectuelle</Title>
+          <Title level={3}>8. Avis et évaluations</Title>
           <Paragraph>
-            Les prestataires conservent la propriété de leur contenu (photos,
-            descriptions, etc.) mais accordent à Korí une licence non exclusive
-            pour l&apos;afficher sur la plateforme.
+            Vous pouvez laisser des avis et évaluations sur les services reçus.
+            Ces avis doivent être honnêtes, respectueux et conformes à la
+            réalité de votre expérience. Korí se réserve le droit de modérer ou
+            supprimer tout contenu inapproprié.
           </Paragraph>
 
           <Title level={3}>9. Suspension ou résiliation</Title>
           <Paragraph>
             Korí se réserve le droit de suspendre ou de supprimer tout compte
-            prestataire en cas de non-respect de ces Conditions ou de
-            comportement inapproprié.
+            client en cas de non-respect de ces Conditions, de comportement
+            inapproprié, de fraude ou d&apos;utilisation abusive de la
+            plateforme.
           </Paragraph>
 
           <Title level={3}>10. Droit applicable</Title>
@@ -142,89 +164,106 @@ export default function CGUClient(): JSX.Element {
 
           <Divider />
 
-          <Title level={3}>SERVICE PROVIDER AGREEMENT</Title>
+          <Title level={3}>CLIENT TERMS OF SERVICE</Title>
 
           <Title level={4}>1. Purpose</Title>
           <Paragraph>
-            These Service Provider Terms (&quot;Terms&quot;) govern the
-            relationship between Korí Beauty Inc. (&quot;Korí&quot;) and beauty
-            professionals (&quot;you&quot;, &quot;provider&quot;) using the Korí
-            platform to offer their services.
+            These Client Terms of Service (&quot;Terms&quot;) govern the
+            relationship between Korí Beauty Inc. (&quot;Korí&quot;) and users
+            (&quot;you&quot;, &quot;client&quot;) using the Korí platform to
+            book and receive beauty services.
           </Paragraph>
 
           <Title level={4}>2. Registration and Eligibility</Title>
           <Paragraph>
-            To offer services on Korí, you must create a professional account,
-            provide accurate information (including contact details and service
-            area), and comply with all applicable laws.
+            To use the Korí platform, you must create an account, provide
+            accurate and up-to-date information (including contact details), and
+            be at least 18 years old. You are responsible for maintaining the
+            confidentiality of your login credentials.
           </Paragraph>
 
           <Title level={4}>3. Use of the Platform</Title>
           <Paragraph>
-            Korí provides a technological tool that allows providers to gain
-            visibility and manage bookings.
+            Korí is a connection platform that allows you to discover, book, and
+            pay for beauty services from independent providers.
             <br />
             <br />
-            Providers remain independent and are solely responsible for
-            delivering their services.
+            Korí acts solely as a technological intermediary and is not a party
+            to the service contract between you and the provider.
           </Paragraph>
 
-          <Title level={4}>4. Business Model and Payments</Title>
+          <Title level={4}>4. Bookings and Payments</Title>
           <Paragraph>
-            Korí collects a reservation fee (6% of the total amount) paid by the
-            client, and a deposit of 15% of the service price, transferred to
-            the provider to confirm the booking.
-            <br />
-            <br />
-            The remaining balance is paid directly to the provider during the
-            appointment.
-            <br />
-            <br />
-            During the first year, Korí is free for providers. Afterward, a
-            freemium/premium model will apply.
+            When booking a service, you agree to pay:
+            <ul>
+              <li>
+                A deposit of 15% of the service amount to confirm the booking
+              </li>
+              <li>A reservation fee of 6% of the total amount, paid to Korí</li>
+              <li>
+                The remaining balance directly to the provider during the
+                appointment
+              </li>
+            </ul>
+            Payments are secured via Stripe. Prices are displayed in Canadian
+            dollars (CAD) and include applicable taxes.
           </Paragraph>
 
           <Title level={4}>5. Cancellations and Refunds</Title>
           <Paragraph>
-            If a booking must be canceled, the provider must inform the client
-            as soon as possible.
-            <br />
-            <br />
-            Each provider defines their own cancellation policy, which must be
-            reasonable and transparent.
+            Cancellation policies are defined in our dedicated cancellation
+            policy. In general:
+            <ul>
+              <li>
+                Cancellation more than 24h in advance: full deposit refund
+              </li>
+              <li>
+                Cancellation less than 24h in advance: 100% of deposit is
+                retained
+              </li>
+              <li>If canceled by the provider: immediate full refund</li>
+            </ul>
           </Paragraph>
 
-          <Title level={4}>6. Provider Obligations</Title>
+          <Title level={4}>6. Client Obligations</Title>
           <Paragraph>
-            The provider agrees to:
+            As a client, you agree to:
             <ul>
-              <li>Deliver professional and safe services.</li>
-              <li>Honor appointments and commitments with clients.</li>
-              <li>Not use the platform for illegal or misleading purposes.</li>
-              <li>Keep their profile and service information up to date.</li>
+              <li>
+                Honor confirmed appointments or cancel within the specified
+                timeframes
+              </li>
+              <li>Provide accurate and up-to-date information</li>
+              <li>Respect providers and their work</li>
+              <li>Not use the platform for illegal or fraudulent purposes</li>
+              <li>Pay for booked services according to the agreed terms</li>
             </ul>
           </Paragraph>
 
           <Title level={4}>7. Korí&apos;s Responsibilities</Title>
           <Paragraph>
-            Korí acts solely as a technological intermediary and is not a party
-            to the service contract between the provider and the client.
+            Korí acts as a technological intermediary and is not a party to the
+            service contract between you and the provider.
             <br />
             <br />
-            Korí does not guarantee booking volume or provider performance.
+            Korí does not guarantee the quality of services provided by
+            providers, but strives to maintain a high level of professionalism
+            on the platform.
           </Paragraph>
 
-          <Title level={4}>8. Intellectual Property</Title>
+          <Title level={4}>8. Reviews and Ratings</Title>
           <Paragraph>
-            Providers retain ownership of their content (photos, descriptions,
-            etc.) but grant Korí a non-exclusive license to display it on the
-            platform.
+            You may leave reviews and ratings on services received. These
+            reviews must be honest, respectful, and reflect the reality of your
+            experience. Korí reserves the right to moderate or remove any
+            inappropriate content.
           </Paragraph>
 
           <Title level={4}>9. Suspension or Termination</Title>
           <Paragraph>
-            Korí reserves the right to suspend or delete any provider account in
-            case of violation of these Terms or inappropriate behavior.
+            Korí reserves the right to suspend or delete any client account in
+            case of violation of these Terms, inappropriate behavior, fraud, or
+            misuse of the platform.
           </Paragraph>
 
           <Title level={4}>10. Governing Law</Title>
@@ -236,12 +275,12 @@ export default function CGUClient(): JSX.Element {
           <Divider />
 
           <Paragraph italic>
-            En utilisant la plateforme Korí en tant que prestataire, vous
-            acceptez ces conditions de service.
+            En utilisant la plateforme Korí en tant que client, vous acceptez
+            ces conditions générales d&apos;utilisation.
             <br />
             <br />
-            By using the Korí platform as a service provider, you agree to these
-            Terms.
+            By using the Korí platform as a client, you agree to these Terms of
+            Service.
           </Paragraph>
         </Typography>
       </Content>
