@@ -74,7 +74,7 @@ export const navigation = [
   },
   {
     name: "Conditions",
-    href: "/privacy",
+    href: "/terms/privacy-policy",
     current: false,
     icon: <FileTextIcon className="size-4 mr-2" />,
   },

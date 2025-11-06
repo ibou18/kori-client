@@ -133,7 +133,9 @@ export default function CancellationPolicy(): JSX.Element {
             <br />
             Support client :{" "}
             <Text strong>
-              <Link href={`mailto:support@kori.app`}>support@kori.app</Link>
+              <Link href={`mailto:support@koribeauty.com`}>
+                support@koribeauty.com
+              </Link>
             </Text>
             {/* <br />
             Téléphone : <Text strong>{process.env.PHONE_CONTACT}</Text>

@@ -1,8 +1,5 @@
 "use client";
-import { LOGO_BLACK } from "@/shared/constantes";
 import { Divider, Layout, Typography } from "antd";
-import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 
 const { Title, Paragraph, Text } = Typography;
@@ -14,7 +11,7 @@ const { Content } = Layout;
 export default function PrivacyPolicy(): JSX.Element {
   return (
     <div style={{ padding: "24px", maxWidth: "900px", margin: "auto" }}>
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, scale: 0.5, y: -50 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{
@@ -33,7 +30,7 @@ export default function PrivacyPolicy(): JSX.Element {
           alt="Kori"
           className="inset-0 text-center mx-auto m-8 h-[200px] w-[500px] object-contain"
         />
-      </motion.div>
+      </motion.div> */}
 
       <Content>
         <Typography>
@@ -133,13 +130,10 @@ export default function PrivacyPolicy(): JSX.Element {
             <br />
             E-mail :{" "}
             <Text strong>
-              <Link href={`mailto:privacy@kori.app`}>privacy@kori.app</Link>
+              <Link href={`mailto:support@koribeauty.com`}>
+                support@koribeauty.com
+              </Link>
             </Text>
-            <br />
-            Téléphone : <Text strong>+1 (555) 123-4567</Text>
-            <br />
-            Adresse :{" "}
-            <Text strong>123 Rue de la Beauté, Montréal, QC, Canada</Text>
           </Paragraph>
 
           <Divider />
