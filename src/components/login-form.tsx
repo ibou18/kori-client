@@ -224,8 +224,8 @@ export function LoginForm({
 
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
         En cliquant sur continuer, vous acceptez nos{" "}
-        <Link href="/cgv">Conditions Générales de Vente</Link> et notre{" "}
-        <Link href="/privacy">Politique de confidentialité</Link>
+        <Link href="/terms/cgv">Conditions Générales de Vente</Link> et notre{" "}
+        <Link href="/terms/privacy">Politique de confidentialité</Link>
       </div>
 
       {/* Overlay de redirection */}

@@ -31,7 +31,6 @@ import apple from "@/assets/photos/apple.png";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-import logo from "@/assets/logo-black.png";
 import { KoriEmailColors } from "@/utils/koriColors";
 
 // Animation variants
@@ -177,7 +176,7 @@ export default function HomePageClient(): JSX.Element {
     >
       {/* Section Hero */}
 
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, scale: 0.5, y: -50 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{
@@ -196,7 +195,7 @@ export default function HomePageClient(): JSX.Element {
           alt="korí"
           className="inset-0 text-center mx-auto m-8 h-[200px] w-[500px] object-contain hover:scale-105 transition-transform duration-300"
         />
-      </motion.div>
+      </motion.div> */}
 
       <div className="mx-auto max-w-7xl px-4 pt-10 text-center sm:pt-5">
         <motion.div
@@ -679,13 +678,18 @@ export default function HomePageClient(): JSX.Element {
                     </Link>
                   </li>
                   <li>
-                    <Link href="/terms" className="hover:text-white">
-                      Conditions d'utilisation
+                    <Link href="/terms/cgu-pro" className="hover:text-white">
+                      Conditions de service - Prestataires
                     </Link>
                   </li>
                   <li>
-                    <Link href="/privacy" className="hover:text-white">
+                    <Link href="/terms/privacy" className="hover:text-white">
                       Politique de confidentialité
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/terms/cgv" className="hover:text-white">
+                      Conditions générales de vente
                     </Link>
                   </li>
                   <li>
