@@ -683,6 +683,11 @@ export default function HomePageClient(): JSX.Element {
                     </Link>
                   </li>
                   <li>
+                    <Link href="/terms/cgu-client" className="hover:text-white">
+                      Conditions de service - Clients
+                    </Link>
+                  </li>
+                  <li>
                     <Link href="/terms/privacy" className="hover:text-white">
                       Politique de confidentialité
                     </Link>
