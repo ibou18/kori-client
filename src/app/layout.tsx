@@ -17,7 +17,7 @@ import TanstackWrapperProvider from "@/lib/TanstackWrapperProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "🔗 korí - Plateforme de réservation",
+  title: "korí - Plateforme de réservation",
   description:
     "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
   openGraph: {
