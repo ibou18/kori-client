@@ -91,7 +91,7 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden border-0 shadow-lg">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <div className="relative hidden bg-gradient-to-br from-teal-400 to-slate-600 md:block">
+          <div className="relative hidden bg-gradient-to-br from-[#53745D] to-[#3a5a47] md:block">
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-white">
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
@@ -214,7 +214,7 @@ export function LoginForm({
                 )}
               </Button>
 
-              <div className="text-center text-sm">
+              {/* <div className="text-center text-sm">
                 Pas encore de compte ?{" "}
                 <Link
                   href="/auth/register"
@@ -222,7 +222,7 @@ export function LoginForm({
                 >
                   S&apos;inscrire
                 </Link>
-              </div>
+              </div> */}
             </div>
           </form>
         </CardContent>

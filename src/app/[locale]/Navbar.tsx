@@ -311,6 +311,10 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
 
               {/* Right side actions (Desktop) */}
               <div className="hidden md:flex items-center gap-4">
+                <Link href="/auth/signin" className="flex items-center gap-2">
+                  <LogInIcon className="size-4" />
+                  <span>Se connecter</span>
+                </Link>
                 <LanguageToggle />
 
                 {/* {session ? (
