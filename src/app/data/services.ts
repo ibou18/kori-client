@@ -1,48 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { handleError, requestWrapper } from "../../config/requestsConfig";
-import { IPlan, IInvoice } from "../interface";
 
-export const uploadLogoApi = async (companyId: string, file: File) => {
-  const formData = new FormData();
-  formData.append("logo", file);
+// ============================================================================
+// AUTHENTICATION
+// ============================================================================
 
-  const response = await requestWrapper.post(
-    `/companies/${companyId}/logo`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
-  return response.data;
-};
-
-export const sendMailSupportApi = async (data: any) => {
+export const loginApi = async (data: { email: string; password: string }) => {
   try {
-    const response = await requestWrapper.post("/users/send-mail", data);
+    const response = await requestWrapper.post("/auth/login", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error creating user");
-    return null;
-  }
-};
-
-export const createUserApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.post("/users", data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error creating user");
-    return null;
-  }
-};
-
-export const inviteUserApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.post("/users/invite", data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error creating user");
+    handleError(error, "Erreur lors de la connexion");
     return null;
   }
 };
@@ -52,172 +20,21 @@ export const registerApi = async (data: any) => {
     const response = await requestWrapper.post("/auth/register", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error creating user");
+    handleError(error, "Erreur lors de l'inscription");
     return null;
   }
 };
 
-export const getUsersApi = async () => {
+export const registerSalonApi = async (data: any) => {
   try {
-    const response = await requestWrapper.get("/users");
+    const response = await requestWrapper.post("/auth/register-salon", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error fetching users");
-
+    handleError(error, "Erreur lors de l'inscription du salon");
     return null;
   }
 };
 
-export const getUserApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.get(`/users/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching user");
-    return null;
-  }
-};
-
-export const getUserByTokenApi = async (token: string) => {
-  try {
-    const response = await requestWrapper.get(`/users/token/${token}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching user");
-    return null;
-  }
-};
-
-export const deleteUserApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.delete(`/users/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error deleting user");
-    return null;
-  }
-};
-
-export const updateUserApi = async (data: any) => {
-  console.log("data", data);
-  try {
-    const response = await requestWrapper.put(`/users/${data.id}`, data.data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error updating user");
-    return null;
-  }
-};
-
-export const createClientApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.post("/clients", data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error creating client");
-    return null;
-  }
-};
-
-export const getClientsApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/clients`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching clients");
-
-    return null;
-  }
-};
-
-export const getClientApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.get(`/clients/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching client");
-    return null;
-  }
-};
-
-export const deleteClientApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.delete(`/clients/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error deleting client");
-    return null;
-  }
-};
-
-export const updateClientApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.put(`/clients/${data.id}`, data.data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error updating client");
-    return null;
-  }
-};
-
-export const getProductsApi = async () => {
-  try {
-    const response = await requestWrapper.get("/subscriptions/products");
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching plans");
-    return null;
-  }
-};
-
-// _________ Pans __________
-// Créer un plan
-export const createPlanApi = async (data: IPlan) => {
-  try {
-    const response = await requestWrapper.post("/plans", data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error creating plan");
-    return null;
-  }
-};
-// Récupérer tous les plans
-
-// Récupérer un plan par son ID
-export const getPlanApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.get(`/plans/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching plan");
-    return null;
-  }
-};
-// Mettre à jour un plan
-export const updatePlanApi = async (data: {
-  id: string;
-  data: Partial<IPlan>;
-}) => {
-  try {
-    const response = await requestWrapper.put(`/plans/${data.id}`, data.data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error updating plan");
-    return null;
-  }
-};
-// Supprimer un plan
-export const deletePlanApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.delete(`/plans/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error deleting plan");
-    return null;
-  }
-};
-
-// Forgot password
 export const forgotPasswordApi = async (email: string) => {
   try {
     const response = await requestWrapper.post("/auth/forgot-password", {
@@ -225,17 +42,16 @@ export const forgotPasswordApi = async (email: string) => {
     });
     return response.data;
   } catch (error) {
-    handleError(error, "Error sending forgot password email");
+    handleError(error, "Erreur lors de l'envoi de l'email");
     return null;
   }
 };
 
-//Reset password
 export const resetPasswordApi = async ({
   token,
   password,
 }: {
-  token: any;
+  token: string;
   password: string;
 }) => {
   try {
@@ -245,460 +61,1091 @@ export const resetPasswordApi = async ({
     });
     return response.data;
   } catch (error) {
-    handleError(error, "Error resetting password");
+    handleError(error, "Erreur lors de la réinitialisation");
     return null;
   }
 };
 
-// _________ Checkout Stripe Paiement __________
-export const checkoutStripeApi = async (data: any) => {
+export const getMeApi = async () => {
   try {
-    const response = await requestWrapper.post(
-      "/subscriptions/create-checkout-session",
-      data
-    );
+    const response = await requestWrapper.get("/auth/me");
     return response.data;
   } catch (error) {
-    handleError(error, "Error checking out");
+    handleError(error, "Erreur lors de la récupération du profil");
     return null;
   }
 };
 
-export const currentSubscriptionApi = async () => {
+// ============================================================================
+// USERS
+// ============================================================================
+
+export const getUsersApi = async () => {
   try {
-    const response = await requestWrapper.get("/subscriptions/current");
+    const response = await requestWrapper.get("/user");
     return response.data;
   } catch (error) {
-    handleError(error, "Error checking out");
+    handleError(error, "Erreur lors de la récupération des utilisateurs");
     return null;
   }
 };
 
-export const getSmsApi = async () => {
+export const getUserApi = async (id: string) => {
   try {
-    const response = await requestWrapper.get("/sms");
+    const response = await requestWrapper.get(`/user/${id}`);
     return response.data;
   } catch (error) {
-    handleError(error, "Error fetching stats");
+    handleError(error, "Erreur lors de la récupération de l'utilisateur");
     return null;
   }
 };
 
-export const sendSmsApi = async (data: any) => {
+export const createUserApi = async (data: any) => {
   try {
-    const response = await requestWrapper.post("/sms", data);
+    const response = await requestWrapper.post("/user", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error sending sms");
+    handleError(error, "Erreur lors de la création de l'utilisateur");
     return null;
   }
 };
 
-export const sendSmsBulkApi = async (data: any) => {
+export const updateUserApi = async (data: { id: string; data: any }) => {
   try {
-    const response = await requestWrapper.post("/sms/send", data);
+    const response = await requestWrapper.put(`/user/${data.id}`, data.data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error sending sms");
+    handleError(error, "Erreur lors de la mise à jour de l'utilisateur");
     return null;
   }
 };
 
-// _________ Invoices __________
-
-//Send invoice by email
-
-export const sendInvoiceApi = async (data: any) => {
+export const updateUserProfileApi = async (data: any) => {
   try {
-    const response = await requestWrapper.post("/invoices/send-mail", data);
+    const response = await requestWrapper.put("/user/profile", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error sending invoice");
+    handleError(error, "Erreur lors de la mise à jour du profil");
     return null;
   }
 };
-// Créer une facture
-export const createInvoiceApi = async (data: IInvoice) => {
+
+export const deleteUserApi = async (id: string) => {
   try {
-    const response = await requestWrapper.post("/invoices", data);
-    return response.data;
-  } catch (error: any) {
-    // Capture l'erreur spécifique si disponible
-    const errorResponse = error.response?.data;
-
-    // Si l'erreur indique que la mise à niveau est requise, on la renvoie telle quelle
-    if (errorResponse?.upgradeRequired) {
-      throw {
-        message: errorResponse.error || "Limite du plan atteinte",
-        upgradeRequired: true,
-      };
-    }
-
-    // Sinon, on utilise le gestionnaire d'erreur standard
-    handleError(error, "Error creating invoice");
-    throw error; // On s'assure que l'erreur est propagée pour être traitée par le hook
-  }
-};
-
-export const getInvoicesApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/invoices`);
+    const response = await requestWrapper.delete(`/user/${id}`);
     return response.data;
   } catch (error) {
-    handleError(error, "Error fetching invoices");
+    handleError(error, "Erreur lors de la suppression de l'utilisateur");
     return null;
   }
 };
 
-// stats invoices
-export const getStatsInvoicesApi = async () => {
+export const bulkDeleteUsersApi = async (userIds: string[]) => {
   try {
-    const response = await requestWrapper.get(`/invoices/stats`);
+    const response = await requestWrapper.post("/user/bulk-delete", {
+      userIds,
+    });
     return response.data;
   } catch (error) {
-    handleError(error, "Error fetching invoices");
+    handleError(error, "Erreur lors de la suppression en masse");
     return null;
   }
 };
 
-// Récupérer un Paiements par son ID
-export const getInvoiceApi = async (id: string) => {
+export const getUserStatsApi = async () => {
   try {
-    const response = await requestWrapper.get(`/invoices/${id}`);
+    const response = await requestWrapper.get("/user/stats");
     return response.data;
   } catch (error) {
-    handleError(error, "Error fetching invoices");
+    handleError(error, "Erreur lors de la récupération des statistiques");
     return null;
   }
 };
-// Mettre à jour un Paiements
-export const updateInvoiceApi = async (data: any) => {
-  console.log("data_updateInvoiceApi", data);
+
+export const getUserPreferencesApi = async () => {
   try {
-    const response = await requestWrapper.put(`/invoices/${data.id}`, data);
+    const response = await requestWrapper.get("/user/preferences");
     return response.data;
   } catch (error) {
-    handleError(error, "Error updating invoices");
+    handleError(error, "Erreur lors de la récupération des préférences");
     return null;
   }
 };
 
-// Supprimer un Paiements
-export const deleteInvoiceApi = async (id: string) => {
+export const updateUserPreferencesApi = async (data: any) => {
   try {
-    const response = await requestWrapper.delete(`/invoices/${id}`);
+    const response = await requestWrapper.put("/user/preferences", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error deleting invoices");
+    handleError(error, "Erreur lors de la mise à jour des préférences");
     return null;
   }
 };
 
-// _________ Fin Invoices __________
-
-// _________ Receipts __________
-// Get all receipts
-export const getReceiptsApi = async () => {
+export const contactApi = async (data: any) => {
   try {
-    const response = await requestWrapper.get(`/receipts`);
+    const response = await requestWrapper.post("/user/contact", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error fetching receipts");
+    handleError(error, "Erreur lors de l'envoi du message");
     return null;
   }
 };
 
-export const getStatsReceiptsApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/receipts/stats`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching receipts");
-    return null;
-  }
-};
+// ============================================================================
+// SALONS
+// ============================================================================
 
-//create a receipt
-export const createReceiptApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.post("/receipts", data);
-    return response.data;
-  } catch (error: any) {
-    // Capture l'erreur spécifique si disponible
-    const errorResponse = error.response?.data;
-
-    // Si l'erreur indique que la mise à niveau est requise, on la renvoie telle quelle
-    if (errorResponse?.upgradeRequired) {
-      throw {
-        message: errorResponse.message || "Limite du plan atteinte",
-        upgradeRequired: true,
-      };
-    }
-
-    // Sinon, on utilise le gestionnaire d'erreur standard
-    handleError(error, "Error creating invoice");
-    throw error; // On s'assure que l'erreur est propagée pour être traitée par le hook
-  }
-};
-
-// Get a receipt by its ID
-export const getReceiptApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.get(`/receipts/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching receipt");
-    return null;
-  }
-};
-
-// Get a receipt by its ID
-export const getReceiptTaxesApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/receipts/taxes`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching receipt");
-    return null;
-  }
-};
-
-// Update a receipt
-export const updateReceiptApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.put(`/receipts/${data.id}`, data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error updating receipt");
-    return null;
-  }
-};
-
-// Delete a receipt
-export const deleteReceiptApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.delete(`/receipts/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error deleting receipt");
-    return null;
-  }
-};
-
-// _________ Fin Receipts __________
-
-// _________ Trackings __________
-// Get all trackings
-export const getTrackingsApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/trackings`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching trackings");
-    return null;
-  }
-};
-
-//create a tracking
-export const createTrackingApi = async (data: any) => {
-  try {
-    const response = await requestWrapper.post("/trackings", data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error creating tracking");
-    return null;
-  }
-};
-
-// Get a tracking by its ID
-export const getTrackingApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/trackings}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching tracking");
-    return null;
-  }
-};
-
-// Update a tracking
-export const updateTrackingApi = async (data: any) => {
-  console.log("data____", data);
-  try {
-    const response = await requestWrapper.put(`/trackings/${data.id}`, data);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error updating tracking");
-    return null;
-  }
-};
-
-// Delete a tracking
-export const deleteTrackingApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.delete(`/trackings/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error deleting tracking");
-    return null;
-  }
-};
-
-// _________ Stats __________
-// Get all stats
-export const getStatsApi = async () => {
-  try {
-    const response = await requestWrapper.get(`/trackings/stats`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching stats");
-    return null;
-  }
-};
-
-// _________ Subscriptions __________
-
-// Get current user subscription
-export const getSubscriptionsApi = async () => {
-  try {
-    const response = await requestWrapper.get("/subscriptions");
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching current subscription");
-    return null;
-  }
-};
-
-export const getSubscriptionsByCessionApi = async (id: string) => {
-  try {
-    const response = await requestWrapper.get(`/subscriptions/session/${id}`);
-    return response.data;
-  } catch (error) {
-    handleError(error, "Error fetching current subscription");
-    return null;
-  }
-};
-
-// Create a new subscription
-export const createSubscriptionApi = async (data: {
-  planId: string;
-  billingCycle: "MONTHLY" | "ANNUAL";
+export const getSalonsApi = async (params?: {
+  limit?: number;
+  offset?: number;
+  salonType?: string;
+  city?: string;
+  search?: string;
 }) => {
   try {
-    const response = await requestWrapper.post("/subscriptions", data);
+    const response = await requestWrapper.get("/salons", { params });
     return response.data;
   } catch (error) {
-    handleError(error, "Error creating subscription");
+    handleError(error, "Erreur lors de la récupération des salons");
     return null;
   }
 };
 
-// Cancel subscription
-export const cancelSubscriptionApi = async (subscriptionId: string) => {
+export const getSalonApi = async (id: string) => {
   try {
-    const response = await requestWrapper.delete(
-      `/subscriptions/${subscriptionId}`
+    const response = await requestWrapper.get(`/salons/${id}/detail`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du salon");
+    return null;
+  }
+};
+
+export const createSalonApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/salons", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création du salon");
+    return null;
+  }
+};
+
+export const updateSalonApi = async (data: { id: string; data: any }) => {
+  try {
+    const response = await requestWrapper.put(`/salons/${data.id}`, data.data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour du salon");
+    return null;
+  }
+};
+
+export const deleteSalonApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.delete(`/salons/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression du salon");
+    return null;
+  }
+};
+
+export const getMySalonApi = async () => {
+  try {
+    const response = await requestWrapper.get("/salons/my-salon");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de mon salon");
+    return null;
+  }
+};
+
+export const getSalonServicesApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/salons/${salonId}/services`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des services");
+    return null;
+  }
+};
+
+export const getSalonReviewsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/salons/${salonId}/reviews`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des avis");
+    return null;
+  }
+};
+
+export const getSalonStatsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/salons/${salonId}/stats`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des statistiques");
+    return null;
+  }
+};
+
+export const searchSalonsApi = async (params: {
+  query?: string;
+  salonType?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  limit?: number;
+  offset?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/salons/search", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la recherche de salons");
+    return null;
+  }
+};
+
+export const getNearestSalonsApi = async (params: {
+  latitude: number;
+  longitude: number;
+  radius?: number;
+  limit?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/salons/nearest", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des salons proches");
+    return null;
+  }
+};
+
+// ============================================================================
+// SALON AVAILABILITY
+// ============================================================================
+
+export const getSalonAvailabilityApi = async (
+  salonId: string,
+  date: string
+) => {
+  try {
+    const response = await requestWrapper.get(
+      `/salons/${salonId}/availability`,
+      {
+        params: { date },
+      }
     );
     return response.data;
   } catch (error) {
-    handleError(error, "Error canceling subscription");
+    handleError(error, "Erreur lors de la récupération des disponibilités");
     return null;
   }
 };
 
-// Update subscription
-export const updateSubscriptionApi = async (
-  subscriptionId: string,
-  data: any
+export const getSalonBookingAvailabilityApi = async (
+  salonId: string,
+  date: string,
+  duration: number
 ) => {
   try {
-    const response = await requestWrapper.put(
-      `/subscriptions/${subscriptionId}`,
+    const response = await requestWrapper.get(
+      `/salons/${salonId}/booking-availability`,
+      {
+        params: { date, duration },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de la récupération des disponibilités de réservation"
+    );
+    return null;
+  }
+};
+
+export const getSalonAvailabilityRangeApi = async (
+  salonId: string,
+  startDate: string,
+  endDate: string
+) => {
+  try {
+    const response = await requestWrapper.get(
+      `/salons/${salonId}/availability/range`,
+      {
+        params: { startDate, endDate },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de la récupération de la plage de disponibilités"
+    );
+    return null;
+  }
+};
+
+// ============================================================================
+// BOOKINGS
+// ============================================================================
+
+export const getBookingsApi = async (params?: {
+  status?: string;
+  clientId?: string;
+  salonId?: string;
+  isHomeService?: boolean;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/bookings", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des réservations");
+    return null;
+  }
+};
+
+export const getBookingApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.get(`/bookings/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la réservation");
+    return null;
+  }
+};
+
+export const createBookingApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/bookings", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de la réservation");
+    return null;
+  }
+};
+
+export const updateBookingApi = async (data: { id: string; data: any }) => {
+  try {
+    const response = await requestWrapper.put(`/bookings/${data.id}`, data.data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de la réservation");
+    return null;
+  }
+};
+
+export const getClientBookingsApi = async (
+  clientId: string,
+  params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }
+) => {
+  try {
+    const response = await requestWrapper.get(`/bookings/client/${clientId}`, {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de la récupération des réservations du client"
+    );
+    return null;
+  }
+};
+
+export const getSalonBookingsApi = async (
+  salonId: string,
+  params?: {
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }
+) => {
+  try {
+    const response = await requestWrapper.get(`/bookings/salon/${salonId}`, {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de la récupération des réservations du salon"
+    );
+    return null;
+  }
+};
+
+// ============================================================================
+// PAYMENTS
+// ============================================================================
+
+export const getStripeConfigApi = async () => {
+  try {
+    const response = await requestWrapper.get("/payments/stripe-config");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la config Stripe");
+    return null;
+  }
+};
+
+export const createCheckoutSessionApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post(
+      "/payments/create-checkout-session",
       data
     );
     return response.data;
   } catch (error) {
-    handleError(error, "Error updating subscription");
+    handleError(error, "Erreur lors de la création de la session de paiement");
     return null;
   }
 };
 
-export const getPortalBillingApi = async () => {
+export const getCheckoutSessionApi = async (sessionId: string) => {
   try {
-    const response = await requestWrapper.get(`/subscriptions/portal`);
+    const response = await requestWrapper.get(
+      `/payments/session/${sessionId}`
+    );
     return response.data;
   } catch (error) {
-    handleError(error, "Error updating subscription");
+    handleError(error, "Erreur lors de la récupération de la session");
     return null;
   }
 };
 
-export const getCurrentStatusApi = async () => {
+export const createPaymentIntentApi = async (data: any) => {
   try {
-    const response = await requestWrapper.get(`/subscriptions/current-status`);
+    const response = await requestWrapper.post(
+      "/payments/create-payment-intent",
+      data
+    );
     return response.data;
   } catch (error) {
-    handleError(error, "Error get Current subscription");
+    handleError(error, "Erreur lors de la création du PaymentIntent");
     return null;
   }
 };
 
-export const getSettingsApi = async () => {
+export const confirmPaymentApi = async (data: any) => {
   try {
-    const response = await requestWrapper.get(`/settings`);
+    const response = await requestWrapper.post("/payments/confirm-payment", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error get All Settings");
+    handleError(error, "Erreur lors de la confirmation du paiement");
     return null;
   }
 };
 
-export const updateSettingApi = async (data: any) => {
+export const calculateTaxesApi = async (data: any) => {
   try {
-    const response = await requestWrapper.put(`/settings/${data.id}`, data);
+    const response = await requestWrapper.post("/payments/calculate-taxes", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error POST Setting");
+    handleError(error, "Erreur lors du calcul des taxes");
     return null;
   }
 };
 
-export const getCompaniesApi = async () => {
+// ============================================================================
+// SALON SERVICES
+// ============================================================================
+
+export const getSalonServicesListApi = async (params?: {
+  salonId?: string;
+  categoryId?: string;
+  isActive?: boolean;
+}) => {
   try {
-    const response = await requestWrapper.get(`/companies`);
+    const response = await requestWrapper.get("/salon-services", { params });
     return response.data;
   } catch (error) {
-    handleError(error, "Error get All companies Api");
+    handleError(error, "Erreur lors de la récupération des services");
     return null;
   }
 };
 
-export const getCompanyApi = async (id: string) => {
+export const getSalonServiceApi = async (serviceId: string) => {
   try {
-    const response = await requestWrapper.get(`/companies/${id}`);
+    const response = await requestWrapper.get(`/salon-services/${serviceId}`);
     return response.data;
   } catch (error) {
-    handleError(error, "Error get All companies Api");
+    handleError(error, "Erreur lors de la récupération du service");
     return null;
   }
 };
 
-export const getLimitsCheckApi = async () => {
+export const createSalonServiceApi = async (data: any) => {
   try {
-    const response = await requestWrapper.get(`/limits/check`);
+    const response = await requestWrapper.post("/salon-services", data);
     return response.data;
   } catch (error) {
-    handleError(error, "Error get Limits Check");
+    handleError(error, "Erreur lors de la création du service");
     return null;
   }
 };
 
-export const deleteCompanyApi = async (id: string) => {
+export const updateSalonServiceApi = async (data: {
+  serviceId: string;
+  data: any;
+}) => {
   try {
-    const response = await requestWrapper.delete(`/companies/${id}`);
+    const response = await requestWrapper.patch(
+      `/salon-services/${data.serviceId}`,
+      data.data
+    );
     return response.data;
   } catch (error) {
-    handleError(error, "Error delete companie");
+    handleError(error, "Erreur lors de la mise à jour du service");
+    return null;
+  }
+};
+
+export const reactivateSalonServiceApi = async (serviceId: string) => {
+  try {
+    const response = await requestWrapper.patch(
+      `/salon-services/${serviceId}/reactivate`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la réactivation du service");
+    return null;
+  }
+};
+
+export const deleteSalonServiceApi = async (serviceId: string) => {
+  try {
+    const response = await requestWrapper.delete(
+      `/salon-services/${serviceId}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression du service");
+    return null;
+  }
+};
+
+// ============================================================================
+// SERVICE OPTIONS
+// ============================================================================
+
+export const getServiceOptionsApi = async (params?: {
+  serviceId?: string;
+  salonId?: string;
+  optionType?: string;
+}) => {
+  try {
+    const response = await requestWrapper.get("/service-options", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des options");
+    return null;
+  }
+};
+
+export const getServiceOptionApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.get(`/service-options/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de l'option");
+    return null;
+  }
+};
+
+export const createServiceOptionApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/service-options", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de l'option");
+    return null;
+  }
+};
+
+export const updateServiceOptionApi = async (data: { id: string; data: any }) => {
+  try {
+    const response = await requestWrapper.put(
+      `/service-options/${data.id}`,
+      data.data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de l'option");
+    return null;
+  }
+};
+
+export const deleteServiceOptionApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.delete(`/service-options/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression de l'option");
+    return null;
+  }
+};
+
+export const bulkCreateServiceOptionsApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/service-options/bulk", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création en masse des options");
+    return null;
+  }
+};
+
+// ============================================================================
+// SERVICE CATEGORIES
+// ============================================================================
+
+export const getServiceCategoriesApi = async () => {
+  try {
+    const response = await requestWrapper.get("/service-categories");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des catégories");
+    return null;
+  }
+};
+
+// ============================================================================
+// DEFAULT SERVICES
+// ============================================================================
+
+export const getDefaultServicesApi = async (params?: {
+  salonType?: string;
+  categoryId?: string;
+  group?: string;
+}) => {
+  try {
+    const response = await requestWrapper.get("/default-services", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des services par défaut");
+    return null;
+  }
+};
+
+export const applyDefaultServicesApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.post(
+      `/default-services/apply/${salonId}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'application des services par défaut");
+    return null;
+  }
+};
+
+// ============================================================================
+// REVIEWS
+// ============================================================================
+
+export const getReviewsApi = async (params?: {
+  salonId?: string;
+  userId?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/reviews", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des avis");
+    return null;
+  }
+};
+
+export const getReviewApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.get(`/reviews/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de l'avis");
+    return null;
+  }
+};
+
+export const createReviewApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/reviews", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de l'avis");
+    return null;
+  }
+};
+
+export const updateReviewApi = async (data: { id: string; data: any }) => {
+  try {
+    const response = await requestWrapper.put(`/reviews/${data.id}`, data.data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de l'avis");
+    return null;
+  }
+};
+
+export const deleteReviewApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.delete(`/reviews/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression de l'avis");
+    return null;
+  }
+};
+
+export const reportReviewApi = async (id: string, data: any) => {
+  try {
+    const response = await requestWrapper.post(`/reviews/${id}/report`, data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors du signalement de l'avis");
+    return null;
+  }
+};
+
+// ============================================================================
+// RATINGS
+// ============================================================================
+
+export const createRatingApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/ratings", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de la note");
+    return null;
+  }
+};
+
+export const getSalonRatingsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/ratings/salon/${salonId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des notes");
+    return null;
+  }
+};
+
+export const getSalonRatingStatsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/ratings/salon/${salonId}/stats`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des statistiques de notes");
+    return null;
+  }
+};
+
+// ============================================================================
+// PHOTOS
+// ============================================================================
+
+export const uploadSalonPhotoApi = async (salonId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+
+  try {
+    const response = await requestWrapper.post(
+      `/photos/salon/${salonId}/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'upload de la photo");
+    return null;
+  }
+};
+
+export const uploadServicePhotoApi = async (serviceId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+
+  try {
+    const response = await requestWrapper.post(
+      `/photos/service/${serviceId}/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'upload de la photo");
+    return null;
+  }
+};
+
+export const getSalonPhotosApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/photos/salon/${salonId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des photos");
+    return null;
+  }
+};
+
+export const deleteSalonPhotoApi = async (photoId: string) => {
+  try {
+    const response = await requestWrapper.delete(`/photos/salon/${photoId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression de la photo");
+    return null;
+  }
+};
+
+// ============================================================================
+// STATS
+// ============================================================================
+
+export const getAdminStatsApi = async () => {
+  try {
+    const response = await requestWrapper.get("/stats/admin");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des statistiques admin");
+    return null;
+  }
+};
+
+export const getSalonDashboardStatsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(
+      `/stats/salon/${salonId}/dashboard`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des statistiques");
+    return null;
+  }
+};
+
+export const getSalonMonthlyRevenueApi = async (
+  salonId: string,
+  params?: { year?: number; month?: number }
+) => {
+  try {
+    const response = await requestWrapper.get(
+      `/stats/salon/${salonId}/monthly-revenue`,
+      { params }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du revenu mensuel");
+    return null;
+  }
+};
+
+// ============================================================================
+// CANCELLATIONS
+// ============================================================================
+
+export const cancelBookingApi = async (bookingId: string, data: any) => {
+  try {
+    const response = await requestWrapper.post(
+      `/cancellations/${bookingId}/cancel`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'annulation");
+    return null;
+  }
+};
+
+export const markBookingAsNoShowApi = async (bookingId: string) => {
+  try {
+    const response = await requestWrapper.post(
+      `/cancellations/${bookingId}/no-show`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors du marquage comme no-show");
+    return null;
+  }
+};
+
+// ============================================================================
+// SALON HOLIDAYS
+// ============================================================================
+
+export const getSalonHolidaysApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(
+      `/salon-holidays/salon/${salonId}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des vacances");
+    return null;
+  }
+};
+
+export const createSalonHolidayApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/salon-holidays", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de la vacance");
+    return null;
+  }
+};
+
+export const updateSalonHolidayApi = async (data: { id: string; data: any }) => {
+  try {
+    const response = await requestWrapper.put(
+      `/salon-holidays/${data.id}`,
+      data.data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de la vacance");
+    return null;
+  }
+};
+
+export const deleteSalonHolidayApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.delete(`/salon-holidays/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression de la vacance");
+    return null;
+  }
+};
+
+// ============================================================================
+// PAYOUTS
+// ============================================================================
+
+export const getBookingPayoutApi = async (bookingId: string) => {
+  try {
+    const response = await requestWrapper.get(`/payouts/booking/${bookingId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du paiement");
+    return null;
+  }
+};
+
+export const processBookingPayoutApi = async (bookingId: string) => {
+  try {
+    const response = await requestWrapper.post(
+      `/payouts/booking/${bookingId}/process`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors du traitement du paiement");
+    return null;
+  }
+};
+
+export const getSalonPendingPayoutsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(
+      `/payouts/salon/${salonId}/pending`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des paiements en attente");
+    return null;
+  }
+};
+
+// ============================================================================
+// PLATFORM CONFIG
+// ============================================================================
+
+export const getPlatformConfigApi = async () => {
+  try {
+    const response = await requestWrapper.get("/platform-config");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la configuration");
+    return null;
+  }
+};
+
+export const updatePlatformConfigApi = async (data: { id: string; data: any }) => {
+  try {
+    const response = await requestWrapper.put(
+      `/platform-config/${data.id}`,
+      data.data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de la configuration");
+    return null;
+  }
+};
+
+// ============================================================================
+// STRIPE CONNECT
+// ============================================================================
+
+export const createStripeConnectAccountApi = async (data: any) => {
+  try {
+    const response = await requestWrapper.post("/stripe-connect/accounts", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création du compte Stripe Connect");
+    return null;
+  }
+};
+
+export const getStripeConnectAccountStatusApi = async (accountId: string) => {
+  try {
+    const response = await requestWrapper.get(
+      `/stripe-connect/accounts/${accountId}/status`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du statut");
+    return null;
+  }
+};
+
+// ============================================================================
+// SALON TYPES
+// ============================================================================
+
+export const getSalonTypesApi = async () => {
+  try {
+    const response = await requestWrapper.get("/salon-types");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des types de salon");
     return null;
   }
 };

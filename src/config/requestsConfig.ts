@@ -2,9 +2,13 @@
 import axios from "axios";
 import { getSession } from "next-auth/react";
 
+// URL de base de l'API avec valeur par défaut
+const API_BASE_URL =
+  process.env.NEXT_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:2020";
+
 // Request wrapper
 export const requestWrapper = axios.create({
-  baseURL: process.env.NEXT_API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

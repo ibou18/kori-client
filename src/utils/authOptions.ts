@@ -24,8 +24,9 @@ export const authOptions: NextAuthOptions = {
 
         try {
           console.log("credentials", credentials);
+          console.log("🔗 Tentative de connexion à l'API...");
           const response = await apiClientWithoutUserId.post(
-            `${process.env.NEXT_API_URL}/auth/login`,
+            "/auth/login",
             {
               email: credentials.email,
               password: credentials.password,
@@ -40,22 +41,22 @@ export const authOptions: NextAuthOptions = {
           // Récupérer les données selon la structure réelle du payload
           const responseData = response.data;
 
-          if (!responseData.success || !responseData.data) {
+          // Vérifier que la réponse contient un utilisateur
+          if (!responseData.user) {
             throw new Error(
               responseData.message || "Erreur d'authentification"
             );
           }
 
-          const user = responseData.data.user;
-          const token = responseData.data.token;
+          const user = responseData.user;
+          const token = responseData.token;
 
-          if (!user) {
-            throw new Error("Aucun utilisateur trouvé avec cet email");
+          if (!user || !token) {
+            throw new Error("Données d'authentification incomplètes");
           }
 
           // La vérification du mot de passe est déjà faite côté serveur,
           // car le token est renvoyé uniquement si l'authentification a réussi
-          // Suppression de la vérification bcrypt ici
 
           return {
             id: user.id.toString(),
@@ -64,12 +65,28 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             role: user.role,
             token: token, // Utiliser le token du payload
-            isVerified: user.isVerified,
-            verificationStatus: user.verificationStatus,
+            isVerified: user.isEmailVerified || false,
+            phone: user.phone,
+            avatar: user.avatar,
             // Autres données si nécessaire
           };
         } catch (error: any) {
-          console.error("Error during authentication:", error);
+          console.error("❌ Error during authentication:", error);
+
+          // Gestion spécifique des erreurs de connexion
+          if (
+            error.code === "ECONNREFUSED" ||
+            error.message?.includes("ECONNREFUSED")
+          ) {
+            console.error("❌ Impossible de se connecter au serveur API");
+            console.error(
+              "💡 Vérifiez que le serveur backend est démarré sur http://localhost:2020"
+            );
+            throw new Error(
+              "Impossible de se connecter au serveur. Vérifiez que le serveur backend est démarré."
+            );
+          }
+
           throw new Error(
             error.response?.data?.message ||
               error.message ||
@@ -92,7 +109,8 @@ export const authOptions: NextAuthOptions = {
         token.firstName = user.firstName;
         token.lastName = user.lastName;
         token.isVerified = user.isVerified;
-        token.verificationStatus = user.verificationStatus;
+        token.phone = user.phone;
+        token.avatar = user.avatar;
         // Autres données si nécessaire
       }
       return token;
@@ -105,7 +123,8 @@ export const authOptions: NextAuthOptions = {
         session.user.firstName = token.firstName;
         session.user.lastName = token.lastName;
         session.user.isVerified = token.isVerified;
-        session.user.verificationStatus = token.verificationStatus;
+        session.user.phone = token.phone;
+        session.user.avatar = token.avatar;
         // Autres données si nécessaire
       }
       return session;

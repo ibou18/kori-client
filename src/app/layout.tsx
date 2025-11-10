@@ -75,7 +75,7 @@ export default async function RootLayout({
         <LocaleProvider initialLocale={locale}>
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-            style={{ margin: "0 auto" }}
+            style={{ margin: "0 auto", backgroundColor: "#FEFCF9" }}
           >
             <TanstackWrapperProvider>
               <StyledComponentsRegistry>

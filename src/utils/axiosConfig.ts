@@ -2,9 +2,18 @@
 import axios from "axios";
 import { getSession } from "next-auth/react";
 
+// URL de base de l'API avec valeur par défaut
+const API_BASE_URL =
+  process.env.NEXT_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:2020";
+
+// Log pour déboguer (uniquement en développement)
+if (process.env.NODE_ENV === "development") {
+  console.log("🔗 API Base URL:", API_BASE_URL);
+}
+
 // Instance d'axios avec userId dans les paramètres
 const apiClientWithUserId = axios.create({
-  baseURL: process.env.NEXT_API_URL,
+  baseURL: API_BASE_URL,
 });
 
 apiClientWithUserId.interceptors.request.use(
@@ -29,7 +38,7 @@ apiClientWithUserId.interceptors.request.use(
 
 // Instance d'axios sans userId dans les paramètres
 const apiClientWithoutUserId = axios.create({
-  baseURL: process.env.NEXT_API_URL,
+  baseURL: API_BASE_URL,
 });
 
 apiClientWithoutUserId.interceptors.request.use(

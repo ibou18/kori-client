@@ -1,130 +1,227 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  createPlanApi,
+  GET_BOOKING,
+  GET_BOOKINGS,
+  GET_DEFAULT_SERVICES,
+  GET_MY_SALON,
+  GET_PAYOUTS,
+  GET_PLATFORM_CONFIG,
+  GET_RATINGS,
+  GET_REVIEW,
+  GET_REVIEWS,
+  GET_SALON,
+  GET_SALON_AVAILABILITY,
+  GET_SALON_BOOKING_AVAILABILITY,
+  GET_SALON_DASHBOARD_STATS,
+  GET_SALON_HOLIDAYS,
+  GET_SALON_PHOTOS,
+  GET_SALON_RATING_STATS,
+  GET_SALON_SERVICE,
+  GET_SALON_SERVICES,
+  GET_SALON_STATS,
+  GET_SALON_TYPES,
+  GET_SALONS,
+  GET_SERVICE_CATEGORIES,
+  GET_SERVICE_OPTIONS,
+  GET_STRIPE_CONFIG,
+  GET_USERS,
+} from "@/shared/constantes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { message } from "antd";
+import {
+  applyDefaultServicesApi,
+  bulkCreateServiceOptionsApi,
+  bulkDeleteUsersApi,
+  calculateTaxesApi,
+  // Cancellations
+  cancelBookingApi,
+  confirmPaymentApi,
+  contactApi,
+  createBookingApi,
+  createCheckoutSessionApi,
+  createPaymentIntentApi,
+  // Ratings
+  createRatingApi,
+  createReviewApi,
+  createSalonApi,
+  createSalonHolidayApi,
+  createSalonServiceApi,
+  createServiceOptionApi,
+  // Stripe Connect
+  createStripeConnectAccountApi,
   createUserApi,
-  deletePlanApi,
+  deleteReviewApi,
+  deleteSalonApi,
+  deleteSalonHolidayApi,
+  deleteSalonPhotoApi,
+  deleteSalonServiceApi,
+  deleteServiceOptionApi,
   deleteUserApi,
   forgotPasswordApi,
-  getPlanApi,
-  getProductsApi,
+  // Stats
+  getAdminStatsApi,
+  getBookingApi,
+  // Payouts
+  getBookingPayoutApi,
+  // Bookings
+  getBookingsApi,
+  getCheckoutSessionApi,
+  getClientBookingsApi,
+  // Default Services
+  getDefaultServicesApi,
+  getMeApi,
+  getMySalonApi,
+  getNearestSalonsApi,
+  // Platform Config
+  getPlatformConfigApi,
+  getReviewApi,
+  // Reviews
+  getReviewsApi,
+  getSalonApi,
+  // Salon Availability
+  getSalonAvailabilityApi,
+  getSalonAvailabilityRangeApi,
+  getSalonBookingAvailabilityApi,
+  getSalonBookingsApi,
+  getSalonDashboardStatsApi,
+  // Salon Holidays
+  getSalonHolidaysApi,
+  getSalonMonthlyRevenueApi,
+  getSalonPendingPayoutsApi,
+  getSalonPhotosApi,
+  getSalonRatingsApi,
+  getSalonRatingStatsApi,
+  getSalonReviewsApi,
+  // Salons
+  getSalonsApi,
+  getSalonServiceApi,
+  getSalonServicesApi,
+  // Salon Services
+  getSalonServicesListApi,
+  getSalonStatsApi,
+  // Salon Types
+  getSalonTypesApi,
+  // Service Categories
+  getServiceCategoriesApi,
+  getServiceOptionApi,
+  // Service Options
+  getServiceOptionsApi,
+  // Payments
+  getStripeConfigApi,
+  getStripeConnectAccountStatusApi,
   getUserApi,
-  getUserByTokenApi,
+  getUserPreferencesApi,
+  // Users
   getUsersApi,
-  resetPasswordApi,
-  updatePlanApi,
-  updateUserApi,
-  checkoutStripeApi,
+  getUserStatsApi,
+  // Auth
+  loginApi,
+  markBookingAsNoShowApi,
+  processBookingPayoutApi,
+  reactivateSalonServiceApi,
   registerApi,
-  getSmsApi,
-  sendSmsApi,
-  sendSmsBulkApi,
-  getInvoicesApi,
-  getStatsInvoicesApi,
-  getClientsApi,
-  createInvoiceApi,
-  updateInvoiceApi,
-  deleteInvoiceApi,
-  getInvoiceApi,
-  createReceiptApi,
-  deleteReceiptApi,
-  getReceiptApi,
-  getReceiptsApi,
-  getReceiptTaxesApi,
-  createClientApi,
-  getTrackingsApi,
-  getTrackingApi,
-  createTrackingApi,
-  updateTrackingApi,
-  deleteTrackingApi,
-  getStatsApi,
-  getSubscriptionsApi,
-  getPortalBillingApi,
-  getCurrentStatusApi,
-  updateClientApi,
-  currentSubscriptionApi,
-  inviteUserApi,
-  getSubscriptionsByCessionApi,
-  uploadLogoApi,
-  sendMailSupportApi,
-  sendInvoiceApi,
-  getSettingsApi,
-  updateSettingApi,
-  getCompaniesApi,
-  getCompanyApi,
-  deleteCompanyApi,
-  createSubscriptionApi,
-  getLimitsCheckApi,
+  registerSalonApi,
+  reportReviewApi,
+  resetPasswordApi,
+  searchSalonsApi,
+  updateBookingApi,
+  updatePlatformConfigApi,
+  updateReviewApi,
+  updateSalonApi,
+  updateSalonHolidayApi,
+  updateSalonServiceApi,
+  updateServiceOptionApi,
+  updateUserApi,
+  updateUserPreferencesApi,
+  updateUserProfileApi,
+  // Photos
+  uploadSalonPhotoApi,
+  uploadServicePhotoApi,
 } from "./services";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// ============================================================================
+// AUTHENTICATION HOOKS
+// ============================================================================
 
-import {
-  IInvoice,
-  ILimitsCheckResponse,
-  IPlan,
-  ITaxes,
-  IUser,
-} from "../interface";
-import {
-  GET_PLANS,
-  GET_USERS,
-  GET_USERS_BY_TOKEN,
-  GET_SMS,
-  GET_INVOICES_STATS,
-  GET_INVOICES,
-  GET_CLIENTS,
-  GET_RECEIPTS,
-  GET_RECEIPTS_TAXES,
-  GET_RECEIPTS_STATS,
-  GET_TRACKINGS,
-  GET_TRACKING_STATS,
-  GET_SUBSCRIPTIONS,
-  GET_PORTAL,
-  GET_CURRENT_STATUS,
-  GET_SETTINGS,
-  GET_COMPANIES,
-  GET_COMPANY,
-  GET_LIMIT_CHECK,
-} from "@/shared/constantes";
-import { message } from "antd";
-
-import queryClient from "@/config/reactQueryConfig";
-import axios from "axios";
-
-export const useUploadLogo = () => {
-  const queryClient = useQueryClient();
-
+export const useLogin = () => {
   return useMutation({
-    mutationFn: ({ companyId, file }: { companyId: string; file: File }) =>
-      uploadLogoApi(companyId, file),
+    mutationFn: loginApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["company"] });
-      message.success("Logo mis à jour avec succès");
+      message.success("Connexion réussie !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour du logo");
-      console.error("Error uploading logo:", error);
+      message.error(error?.message || "Erreur lors de la connexion");
     },
   });
 };
 
-export const useSendMail = () => {
+export const useRegister = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: sendMailSupportApi,
+    mutationFn: registerApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sendMail"] });
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      message.success("Inscription réussie !");
     },
-    onError: (error) => {
-      console.error("Error creating user:", error);
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'inscription");
     },
   });
 };
 
-// Users
+export const useRegisterSalon = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: registerSalonApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
+      message.success("Inscription du salon réussie !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'inscription du salon");
+    },
+  });
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: forgotPasswordApi,
+    onSuccess: () => {
+      message.success("Email de réinitialisation envoyé !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'envoi de l'email");
+    },
+  });
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: resetPasswordApi,
+    onSuccess: () => {
+      message.success("Mot de passe réinitialisé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la réinitialisation");
+    },
+  });
+};
+
+export const useGetMe = () => {
+  return useQuery({
+    queryKey: ["me"],
+    queryFn: getMeApi,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+  });
+};
+
+// ============================================================================
+// USERS HOOKS
+// ============================================================================
+
 export const useGetUsers = () => {
-  return useQuery<IUser[], Error>({
+  return useQuery({
     queryKey: [GET_USERS],
     queryFn: getUsersApi,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -134,661 +231,1079 @@ export const useGetUsers = () => {
 };
 
 export const useGetUser = (id: string) => {
-  return useQuery<IUser, Error>({
+  return useQuery({
     queryKey: [GET_USERS, id],
     queryFn: () => getUserApi(id),
+    enabled: !!id,
     retry: 2,
     refetchOnWindowFocus: true,
-    enabled: !!id || false || undefined,
   });
 };
 
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: createUserApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      message.success("Utilisateur créé avec succès !");
     },
-    onError: (error) => {
-      console.error("Error creating user:", error);
-    },
-  });
-};
-
-export const useInviteUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: inviteUserApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-    },
-    onError: (error) => {
-      console.error("Error creating user:", error);
-    },
-  });
-};
-
-export const useRegisterUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: registerApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-    },
-    onError: (error) => {
-      console.error("Error creating user:", error);
-    },
-  });
-};
-
-export const useDeleteUser = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: deleteUserApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-    },
-    onError: (error) => {
-      console.error("Error deleting user:", error);
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
     },
   });
 };
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: updateUserApi,
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-    },
-    onError: (error) => {
-      console.error("Error updating user:", error);
-    },
-  });
-};
-//_____ end of users
-
-// Plans
-// Hook pour récupérer tous les plans
-export const useGetProductsApi = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_PLANS],
-    queryFn: getProductsApi,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-};
-
-// Hook pour récupérer un plan spécifique
-export const useGetPlan = (id: string) => {
-  return useQuery<IPlan, Error>({
-    queryKey: [GET_PLANS, id],
-    queryFn: () => getPlanApi(id),
-    staleTime: 1000 * 60 * 5,
-    enabled: !!id,
-  });
-};
-
-// Hook pour créer un plan
-export const useCreatePlan = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createPlanApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_PLANS] });
-    },
-    onError: (error) => {
-      console.error("Error creating plan:", error);
-    },
-  });
-};
-
-// Hook pour mettre à jour un plan
-export const useUpdatePlan = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: updatePlanApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_PLANS] });
-    },
-    onError: (error) => {
-      console.error("Error deleting plan:", error);
-    },
-  });
-};
-
-// Hook pour supprimer un plan
-export const useDeletePlan = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: deletePlanApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_PLANS] });
-    },
-    onError: (error) => {
-      console.error("Error deleting plan:", error);
-    },
-  });
-};
-
-//_____ end of plans
-
-// Forgot password  Hook
-export const useForgotPassword = () => {
-  return useMutation({
-    mutationFn: forgotPasswordApi,
-    onSuccess: () => {
-      console.log("Password reset email sent");
-    },
-    onError: (error) => {
-      console.error("Error sending password reset email", error);
-    },
-  });
-};
-
-export const useGetUsersbyToken = (token: string) => {
-  return useQuery<IUser[], Error>({
-    queryKey: [GET_USERS_BY_TOKEN],
-    queryFn: () => getUserByTokenApi(token),
-    retry: 2,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-  });
-};
-
-//reset password
-export const useResetPassword = () => {
-  return useMutation({
-    mutationFn: resetPasswordApi,
-    onSuccess: () => {
-      console.log("Password reset email sent");
-    },
-    onError: (error) => {
-      console.error("Error sending password reset email", error);
-    },
-  });
-};
-
-// ******* Checkout Stripe ***********
-// Hook pour créer une session stripe
-export const useCheckoutStripeApi = () => {
-  return useMutation({
-    mutationFn: checkoutStripeApi,
-    onSuccess: () => {
-      console.log("Stripe session created successfully");
-    },
-    onError: (error) => {
-      console.error("Error creating stripe session:", error);
-    },
-  });
-};
-
-export const useGetCurrentSubscription = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_CURRENT_STATUS],
-    queryFn: currentSubscriptionApi,
-  });
-};
-
-export const useGetSms = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_SMS],
-    queryFn: getSmsApi,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    // refetchOnMount: true,
-  });
-};
-
-export const useSendSms = () => {
-  return useMutation({
-    mutationFn: sendSmsApi,
-    onSuccess: () => {
-      console.log("SMS envoyé avec succès !");
-    },
-    onError: (error) => {
-      console.error("Erreur lors de l'envoi du SMS:", error);
-    },
-  });
-};
-
-export const useSendBulkSms = () => {
-  return useMutation({
-    mutationFn: sendSmsBulkApi,
-    onSuccess: () => {
-      console.log("SMS envoyé avec succès !");
-    },
-    onError: (error) => {
-      console.error("Erreur lors de l'envoi du SMS:", error);
-    },
-  });
-};
-
-// ******* INVOICES *******
-
-//Send Invoice
-export const useSendInvoice = () => {
-  return useMutation({
-    mutationFn: sendInvoiceApi,
-    onSuccess: () => {
-      console.log("Invoice sent successfully !");
-    },
-    onError: (error) => {
-      console.error("Error sending invoice:", error);
-    },
-  });
-};
-
-// Create INVOICE
-export const useCreateInvoice = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createInvoiceApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_INVOICES] });
-      message.success("Facture créée avec succès !");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS, variables.id] });
+      message.success("Utilisateur mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la création");
-      console.error("Error creating Invoice:", error);
+      message.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
 
-// Hook pour récupérer toutes les factures
-export const useGetInvoices = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_INVOICES],
-    queryFn: () => getInvoicesApi(),
-    staleTime: 0,
-    refetchOnMount: true,
-  });
-};
-
-// STATS INVOICES
-export const useGetStatsInvoices = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_INVOICES_STATS],
-    queryFn: () => getStatsInvoicesApi(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-};
-
-// Hook pour récupérer une facture spécifique
-export const useGetInvoice = (id: string) => {
-  return useQuery<IInvoice, Error>({
-    queryKey: [GET_INVOICES, id],
-    queryFn: () => getInvoiceApi(id),
-    staleTime: 1000 * 60 * 5,
-    enabled: !!id,
-  });
-};
-
-// UPDATE INVOICE
-export const useUpdateInvoice = () => {
-  return useMutation({
-    mutationFn: updateInvoiceApi,
-    onSuccess: () => {
-      message.success("Facture mise à jour avec succès !");
-      queryClient.invalidateQueries({ queryKey: [GET_INVOICES] });
-    },
-  });
-};
-
-// DELETE INVOICE
-export const useDeleteInvoice = () => {
+export const useUpdateUserProfile = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: deleteInvoiceApi,
+    mutationFn: updateUserProfileApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_INVOICES] });
-      message.success("Facture supprimée avec succès !");
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+      message.success("Profil mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la suppression");
-      console.error("Error deleting Invoice:", error);
+      message.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
 
-// ******* End INVOICES *******
-
-// ******* Clients *******
-// create client
-export const useCreateClient = () => {
+export const useDeleteUser = () => {
   const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: createClientApi,
-    onSuccess: () => {
-      message.success("Client added successfully");
-      queryClient.invalidateQueries({ queryKey: [GET_CLIENTS] });
-    },
-    onError: (error) => {
-      console.error("Error adding client:", error);
-      message.error("Error adding client");
-    },
-  });
-};
-
-// Hook pour récupérer tous les clients
-export const useGetClients = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_CLIENTS],
-    queryFn: () => getClientsApi(),
-  });
-};
-
-// Hook pour récupérer un client spécifique
-export const useGetClient = (id: string) => {
-  return useQuery<IUser, Error>({
-    queryKey: [GET_CLIENTS, id],
-    queryFn: () => getUserApi(id),
-    staleTime: 1000 * 60 * 5,
-    enabled: !!id,
-  });
-};
-
-// Hook pour supprimer un client
-export const useDeleteClient = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: deleteUserApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_CLIENTS] });
-      message.success("Client supprimé avec succès !");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      message.success("Utilisateur supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la suppression");
-      console.error("Error deleting Client:", error);
+      message.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
-// update client
-export const useUpdateClient = () => {
+
+export const useBulkDeleteUsers = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: updateClientApi,
+    mutationFn: bulkDeleteUsersApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_CLIENTS] });
-      message.success("🎉Client updated Successfully !");
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      message.success("Utilisateurs supprimés avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la mise à jour");
-      console.error("Error updating Client:", error);
+      message.error(error?.message || "Erreur lors de la suppression en masse");
     },
   });
 };
-// ******* End Clients *******
 
-// ******* Receipts *******
-// Create Receipt
-export const useCreateReceipt = () => {
+export const useGetUserStats = () => {
+  return useQuery({
+    queryKey: ["user-stats"],
+    queryFn: getUserStatsApi,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetUserPreferences = () => {
+  return useQuery({
+    queryKey: ["user-preferences"],
+    queryFn: getUserPreferencesApi,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useUpdateUserPreferences = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: createReceiptApi,
+    mutationFn: updateUserPreferencesApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_RECEIPTS] });
-      message.success("Reçu créé avec succès !");
+      queryClient.invalidateQueries({ queryKey: ["user-preferences"] });
+      message.success("Préférences mises à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message);
-      console.error("Error creating Receipt:", error);
+      message.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
 
-export const useReceiptStats = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_RECEIPTS_STATS],
-    queryFn: () => getReceiptsApi(),
-    staleTime: 0,
-    refetchOnMount: true,
+export const useContact = () => {
+  return useMutation({
+    mutationFn: contactApi,
+    onSuccess: () => {
+      message.success("Message envoyé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'envoi");
+    },
   });
 };
 
-// Hook pour récupérer tous les reçus
-export const useGetReceipts = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_RECEIPTS],
-    queryFn: () => getReceiptsApi(),
-    staleTime: 0,
-    refetchOnMount: true,
+// ============================================================================
+// SALONS HOOKS
+// ============================================================================
+
+export const useGetSalons = (params?: {
+  limit?: number;
+  offset?: number;
+  salonType?: string;
+  city?: string;
+  search?: string;
+}) => {
+  return useQuery({
+    queryKey: [GET_SALONS, params],
+    queryFn: () => getSalonsApi(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
 };
 
-// Hook pour récupérer un reçu spécifique
-export const useGetReceipt = (id: string) => {
-  return useQuery<IInvoice, Error>({
-    queryKey: [GET_RECEIPTS, id],
-    queryFn: () => getReceiptApi(id),
+export const useGetSalon = (id: string) => {
+  return useQuery({
+    queryKey: [GET_SALON, id],
+    queryFn: () => getSalonApi(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
 };
 
-// Hook pour récupérer un reçu spécifique
-export const useGetReceiptTaxes = () => {
-  return useQuery<ITaxes, Error>({
-    queryKey: [GET_RECEIPTS_TAXES],
-    queryFn: () => getReceiptTaxesApi(),
-    staleTime: 20, // 20 seconds
-  });
-};
-
-// Hook pour supprimer un reçu
-export const useDeleteReceipt = () => {
+export const useCreateSalon = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: deleteReceiptApi,
+    mutationFn: createSalonApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_RECEIPTS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
+      queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
+      message.success("Salon créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la suppression");
-      console.error("Error deleting Receipt:", error);
+      message.error(error?.message || "Erreur lors de la création");
     },
   });
 };
 
-// ******* End Receipts *******
-
-// ******* Trackings *******
-// ******* Trackings *******
-// Hook pour récupérer tous les trackings
-export const useGetTrackings = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_TRACKINGS],
-    queryFn: getTrackingsApi,
-  });
-};
-
-// Hook pour récupérer un tracking spécifique
-export const useGetTracking = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_TRACKINGS],
-    queryFn: () => getTrackingApi(),
-  });
-};
-
-// Hook pour créer un tracking
-export const useCreateTracking = () => {
+export const useUpdateSalon = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: createTrackingApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_TRACKINGS] });
-      message.success("Tracking créé avec succès !");
+    mutationFn: updateSalonApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON, variables.id] });
+      queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
+      message.success("Salon mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la création");
-      console.error("Error creating tracking:", error);
+      message.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
 
-// Hook pour mettre à jour un tracking
-export const useUpdateTracking = () => {
+export const useDeleteSalon = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: updateTrackingApi,
+    mutationFn: deleteSalonApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_TRACKINGS] });
-      message.success("Tracking mis à jour avec succès !");
+      queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
+      queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
+      message.success("Salon supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la mise à jour");
-      console.error("Error updating tracking:", error);
+      message.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
 
-// Hook pour supprimer un tracking
-export const useDeleteTracking = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: deleteTrackingApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_TRACKINGS] });
-      message.success("Tracking supprimé avec succès !");
-    },
-    onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la suppression");
-      console.error("Error deleting tracking:", error);
-    },
+export const useGetMySalon = () => {
+  return useQuery({
+    queryKey: [GET_MY_SALON],
+    queryFn: getMySalonApi,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
 };
 
-// Hook pour les statistiques
-export const useGetTrackingStats = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_TRACKING_STATS],
-    queryFn: getStatsApi,
+export const useGetSalonServices = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_SERVICES, salonId],
+    queryFn: () => getSalonServicesApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetSalonReviews = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_REVIEWS, salonId],
+    queryFn: () => getSalonReviewsApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetSalonStats = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_STATS, salonId],
+    queryFn: () => getSalonStatsApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useSearchSalons = (params: {
+  query?: string;
+  salonType?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  limit?: number;
+  offset?: number;
+}) => {
+  return useQuery({
+    queryKey: [GET_SALONS, "search", params],
+    queryFn: () => searchSalonsApi(params),
+    enabled: !!(params.query || params.city || params.latitude),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useGetNearestSalons = (params: {
+  latitude: number;
+  longitude: number;
+  radius?: number;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: [GET_SALONS, "nearest", params],
+    queryFn: () => getNearestSalonsApi(params),
+    enabled: !!params.latitude && !!params.longitude,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+// ============================================================================
+// SALON AVAILABILITY HOOKS
+// ============================================================================
+
+export const useGetSalonAvailability = (salonId: string, date: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_AVAILABILITY, salonId, date],
+    queryFn: () => getSalonAvailabilityApi(salonId, date),
+    enabled: !!salonId && !!date,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+export const useGetSalonBookingAvailability = (
+  salonId: string,
+  date: string,
+  duration: number
+) => {
+  return useQuery({
+    queryKey: [GET_SALON_BOOKING_AVAILABILITY, salonId, date, duration],
+    queryFn: () => getSalonBookingAvailabilityApi(salonId, date, duration),
+    enabled: !!salonId && !!date && !!duration,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+export const useGetSalonAvailabilityRange = (
+  salonId: string,
+  startDate: string,
+  endDate: string
+) => {
+  return useQuery({
+    queryKey: [GET_SALON_AVAILABILITY, salonId, "range", startDate, endDate],
+    queryFn: () => getSalonAvailabilityRangeApi(salonId, startDate, endDate),
+    enabled: !!salonId && !!startDate && !!endDate,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+// ============================================================================
+// BOOKINGS HOOKS
+// ============================================================================
+
+export const useGetBookings = (params?: {
+  status?: string;
+  clientId?: string;
+  salonId?: string;
+  isHomeService?: boolean;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  return useQuery({
+    queryKey: [GET_BOOKINGS, params],
+    queryFn: () => getBookingsApi(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
     refetchOnWindowFocus: true,
   });
 };
 
-// ******* End Trackings *******
-
-// ******* Subscriptions *******
-export const useGetSubscriptions = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_SUBSCRIPTIONS],
-    queryFn: getSubscriptionsApi,
+export const useGetBooking = (id: string) => {
+  return useQuery({
+    queryKey: [GET_BOOKING, id],
+    queryFn: () => getBookingApi(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 
-export const useCreateSubscription = () => {
+export const useCreateBooking = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: createSubscriptionApi,
+    mutationFn: createBookingApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_SUBSCRIPTIONS] });
-      message.success("Abonnement créé avec succès!");
+      queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      message.success("Réservation créée avec succès !");
     },
     onError: (error: any) => {
-      message.error(
-        error.message || "Erreur lors de la création de l'abonnement"
-      );
-      console.error("Error creating subscription:", error);
+      message.error(error?.message || "Erreur lors de la création");
     },
   });
 };
 
-export const useGetPortalBilling = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_PORTAL],
-    queryFn: getPortalBillingApi,
-  });
-};
-
-export const useGetCurrentStatusApi = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_CURRENT_STATUS],
-    queryFn: getCurrentStatusApi,
-  });
-};
-
-export const useGetSubscriptionByCSession = (id: string) => {
-  return useQuery<any, Error>({
-    queryKey: [GET_CURRENT_STATUS],
-    queryFn: () => getSubscriptionsByCessionApi(id),
-  });
-};
-
-export const useGetSettings = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_SETTINGS],
-    queryFn: () => getSettingsApi(),
-  });
-};
-
-export const useUpdateSetting = () => {
+export const useUpdateBooking = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: updateSettingApi,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_SETTINGS] });
-      message.success("Setting mis à jour avec succès !");
+    mutationFn: updateBookingApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({ queryKey: [GET_BOOKING, variables.id] });
+      message.success("Réservation mise à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la mise à jour");
-      console.error("Error updating setting:", error);
+      message.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
 
-export const useGetCompanies = () => {
-  return useQuery<any, Error>({
-    queryKey: [GET_COMPANIES],
-    queryFn: () => getCompaniesApi(),
+export const useGetClientBookings = (
+  clientId: string,
+  params?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }
+) => {
+  return useQuery({
+    queryKey: [GET_BOOKINGS, "client", clientId, params],
+    queryFn: () => getClientBookingsApi(clientId, params),
+    enabled: !!clientId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 
-export const useGetCompany = (id: string) => {
-  return useQuery<any, Error>({
-    queryKey: [GET_COMPANY, id],
-    queryFn: () => getCompanyApi(id),
+export const useGetSalonBookings = (
+  salonId: string,
+  params?: {
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+    offset?: number;
+  }
+) => {
+  return useQuery({
+    queryKey: [GET_BOOKINGS, "salon", salonId, params],
+    queryFn: () => getSalonBookingsApi(salonId, params),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
 
-export const useGetLimitcheck = () => {
-  return useQuery<ILimitsCheckResponse, Error>({
-    queryKey: [GET_LIMIT_CHECK],
-    queryFn: () => getLimitsCheckApi(),
+// ============================================================================
+// PAYMENTS HOOKS
+// ============================================================================
+
+export const useGetStripeConfig = () => {
+  return useQuery({
+    queryKey: [GET_STRIPE_CONFIG],
+    queryFn: getStripeConfigApi,
+    staleTime: 1000 * 60 * 60, // 1 hour
   });
 };
 
-export const useDeleteCompany = () => {
-  const queryClient = useQueryClient();
-
+export const useCreateCheckoutSession = () => {
   return useMutation({
-    mutationFn: deleteCompanyApi,
+    mutationFn: createCheckoutSessionApi,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [GET_COMPANIES] });
-      message.success("Company supprimé avec succès !");
+      message.success("Session de paiement créée !");
     },
     onError: (error: any) => {
-      message.error(error.message || "Erreur lors de la suppression");
-      console.error("Error deleting company:", error);
+      message.error(error?.message || "Erreur lors de la création");
     },
+  });
+};
+
+export const useGetCheckoutSession = (sessionId: string) => {
+  return useQuery({
+    queryKey: ["checkout-session", sessionId],
+    queryFn: () => getCheckoutSessionApi(sessionId),
+    enabled: !!sessionId,
+  });
+};
+
+export const useCreatePaymentIntent = () => {
+  return useMutation({
+    mutationFn: createPaymentIntentApi,
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useConfirmPayment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: confirmPaymentApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      message.success("Paiement confirmé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la confirmation");
+    },
+  });
+};
+
+export const useCalculateTaxes = () => {
+  return useMutation({
+    mutationFn: calculateTaxesApi,
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors du calcul");
+    },
+  });
+};
+
+// ============================================================================
+// SALON SERVICES HOOKS
+// ============================================================================
+
+export const useGetSalonServicesList = (params?: {
+  salonId?: string;
+  categoryId?: string;
+  isActive?: boolean;
+}) => {
+  return useQuery({
+    queryKey: [GET_SALON_SERVICES, params],
+    queryFn: () => getSalonServicesListApi(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetSalonService = (serviceId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_SERVICE, serviceId],
+    queryFn: () => getSalonServiceApi(serviceId),
+    enabled: !!serviceId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useCreateSalonService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createSalonServiceApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
+      message.success("Service créé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useUpdateSalonService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateSalonServiceApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
+      queryClient.invalidateQueries({
+        queryKey: [GET_SALON_SERVICE, variables.serviceId],
+      });
+      message.success("Service mis à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useReactivateSalonService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reactivateSalonServiceApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
+      message.success("Service réactivé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la réactivation");
+    },
+  });
+};
+
+export const useDeleteSalonService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteSalonServiceApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
+      message.success("Service supprimé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
+    },
+  });
+};
+
+// ============================================================================
+// SERVICE OPTIONS HOOKS
+// ============================================================================
+
+export const useGetServiceOptions = (params?: {
+  serviceId?: string;
+  salonId?: string;
+  optionType?: string;
+}) => {
+  return useQuery({
+    queryKey: [GET_SERVICE_OPTIONS, params],
+    queryFn: () => getServiceOptionsApi(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetServiceOption = (id: string) => {
+  return useQuery({
+    queryKey: [GET_SERVICE_OPTIONS, id],
+    queryFn: () => getServiceOptionApi(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateServiceOption = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createServiceOptionApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
+      message.success("Option créée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useUpdateServiceOption = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateServiceOptionApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
+      queryClient.invalidateQueries({
+        queryKey: [GET_SERVICE_OPTIONS, variables.id],
+      });
+      message.success("Option mise à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useDeleteServiceOption = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteServiceOptionApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
+      message.success("Option supprimée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
+    },
+  });
+};
+
+export const useBulkCreateServiceOptions = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bulkCreateServiceOptionsApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
+      message.success("Options créées avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+// ============================================================================
+// SERVICE CATEGORIES HOOKS
+// ============================================================================
+
+export const useGetServiceCategories = () => {
+  return useQuery({
+    queryKey: [GET_SERVICE_CATEGORIES],
+    queryFn: getServiceCategoriesApi,
+    staleTime: 1000 * 60 * 60, // 1 hour (rarely changes)
+  });
+};
+
+// ============================================================================
+// DEFAULT SERVICES HOOKS
+// ============================================================================
+
+export const useGetDefaultServices = (params?: {
+  salonType?: string;
+  categoryId?: string;
+  group?: string;
+}) => {
+  return useQuery({
+    queryKey: [GET_DEFAULT_SERVICES, params],
+    queryFn: () => getDefaultServicesApi(params),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
+export const useApplyDefaultServices = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: applyDefaultServicesApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
+      message.success("Services par défaut appliqués avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'application");
+    },
+  });
+};
+
+// ============================================================================
+// REVIEWS HOOKS
+// ============================================================================
+
+export const useGetReviews = (params?: {
+  salonId?: string;
+  userId?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  return useQuery({
+    queryKey: [GET_REVIEWS, params],
+    queryFn: () => getReviewsApi(params),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetReview = (id: string) => {
+  return useQuery({
+    queryKey: [GET_REVIEW, id],
+    queryFn: () => getReviewApi(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateReview = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createReviewApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_REVIEWS] });
+      message.success("Avis créé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useUpdateReview = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateReviewApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_REVIEWS] });
+      queryClient.invalidateQueries({ queryKey: [GET_REVIEW, variables.id] });
+      message.success("Avis mis à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useDeleteReview = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteReviewApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_REVIEWS] });
+      message.success("Avis supprimé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
+    },
+  });
+};
+
+export const useReportReview = () => {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      reportReviewApi(id, data),
+    onSuccess: () => {
+      message.success("Avis signalé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors du signalement");
+    },
+  });
+};
+
+// ============================================================================
+// RATINGS HOOKS
+// ============================================================================
+
+export const useCreateRating = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createRatingApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_RATINGS] });
+      message.success("Note créée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useGetSalonRatings = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_RATINGS, salonId],
+    queryFn: () => getSalonRatingsApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetSalonRatingStats = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_RATING_STATS, salonId],
+    queryFn: () => getSalonRatingStatsApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// ============================================================================
+// PHOTOS HOOKS
+// ============================================================================
+
+export const useUploadSalonPhoto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ salonId, file }: { salonId: string; file: File }) =>
+      uploadSalonPhotoApi(salonId, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [GET_SALON_PHOTOS, variables.salonId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [GET_SALON, variables.salonId],
+      });
+      message.success("Photo uploadée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'upload");
+    },
+  });
+};
+
+export const useUploadServicePhoto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ serviceId, file }: { serviceId: string; file: File }) =>
+      uploadServicePhotoApi(serviceId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
+      message.success("Photo uploadée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'upload");
+    },
+  });
+};
+
+export const useGetSalonPhotos = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_PHOTOS, salonId],
+    queryFn: () => getSalonPhotosApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useDeleteSalonPhoto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteSalonPhotoApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_PHOTOS] });
+      message.success("Photo supprimée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
+    },
+  });
+};
+
+// ============================================================================
+// STATS HOOKS
+// ============================================================================
+
+export const useGetAdminStats = () => {
+  return useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: getAdminStatsApi,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
+export const useGetSalonDashboardStats = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_DASHBOARD_STATS, salonId],
+    queryFn: () => getSalonDashboardStatsApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useGetSalonMonthlyRevenue = (
+  salonId: string,
+  params?: { year?: number; month?: number }
+) => {
+  return useQuery({
+    queryKey: [GET_SALON_DASHBOARD_STATS, salonId, "revenue", params],
+    queryFn: () => getSalonMonthlyRevenueApi(salonId, params),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// ============================================================================
+// CANCELLATIONS HOOKS
+// ============================================================================
+
+export const useCancelBooking = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: string; data: any }) =>
+      cancelBookingApi(bookingId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({
+        queryKey: [GET_BOOKING, variables.bookingId],
+      });
+      message.success("Réservation annulée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'annulation");
+    },
+  });
+};
+
+export const useMarkBookingAsNoShow = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markBookingAsNoShowApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      message.success("Réservation marquée comme no-show !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors du marquage");
+    },
+  });
+};
+
+// ============================================================================
+// SALON HOLIDAYS HOOKS
+// ============================================================================
+
+export const useGetSalonHolidays = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_SALON_HOLIDAYS, salonId],
+    queryFn: () => getSalonHolidaysApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useCreateSalonHoliday = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createSalonHolidayApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_HOLIDAYS] });
+      message.success("Vacance créée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useUpdateSalonHoliday = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateSalonHolidayApi,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_HOLIDAYS] });
+      queryClient.invalidateQueries({
+        queryKey: [GET_SALON_HOLIDAYS, variables.id],
+      });
+      message.success("Vacance mise à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useDeleteSalonHoliday = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteSalonHolidayApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_HOLIDAYS] });
+      message.success("Vacance supprimée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
+    },
+  });
+};
+
+// ============================================================================
+// PAYOUTS HOOKS
+// ============================================================================
+
+export const useGetBookingPayout = (bookingId: string) => {
+  return useQuery({
+    queryKey: [GET_PAYOUTS, "booking", bookingId],
+    queryFn: () => getBookingPayoutApi(bookingId),
+    enabled: !!bookingId,
+  });
+};
+
+export const useProcessBookingPayout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: processBookingPayoutApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_PAYOUTS] });
+      message.success("Paiement traité avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors du traitement");
+    },
+  });
+};
+
+export const useGetSalonPendingPayouts = (salonId: string) => {
+  return useQuery({
+    queryKey: [GET_PAYOUTS, "salon", salonId, "pending"],
+    queryFn: () => getSalonPendingPayoutsApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+// ============================================================================
+// PLATFORM CONFIG HOOKS
+// ============================================================================
+
+export const useGetPlatformConfig = () => {
+  return useQuery({
+    queryKey: [GET_PLATFORM_CONFIG],
+    queryFn: getPlatformConfigApi,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+};
+
+export const useUpdatePlatformConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updatePlatformConfigApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_PLATFORM_CONFIG] });
+      message.success("Configuration mise à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+// ============================================================================
+// STRIPE CONNECT HOOKS
+// ============================================================================
+
+export const useCreateStripeConnectAccount = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createStripeConnectAccountApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
+      message.success("Compte Stripe Connect créé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useGetStripeConnectAccountStatus = (accountId: string) => {
+  return useQuery({
+    queryKey: ["stripe-connect", accountId],
+    queryFn: () => getStripeConnectAccountStatusApi(accountId),
+    enabled: !!accountId,
+  });
+};
+
+// ============================================================================
+// SALON TYPES HOOKS
+// ============================================================================
+
+export const useGetSalonTypes = () => {
+  return useQuery({
+    queryKey: [GET_SALON_TYPES],
+    queryFn: getSalonTypesApi,
+    staleTime: 1000 * 60 * 60 * 24, // 24 hours (rarely changes)
   });
 };

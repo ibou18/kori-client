@@ -3,22 +3,22 @@
 import {
   BadgeCheck,
   BoxIcon,
+  Calendar,
+  ChartBarIcon,
+  DollarSign,
   Handshake,
   HelpCircle,
-  MessageCircle,
-  Plane,
-  ReceiptEuroIcon,
+  LayoutDashboard,
   Settings2Icon,
   ShieldCheck,
-  Sigma,
-  User,
+  Store,
+  Users,
+  Wrench,
 } from "lucide-react";
 import * as React from "react";
 
-import { NavMain } from "@/components/nav-main";
-
-// import { NavSecondary } from "@/components/nav-secondary";
 import LanguageToggle from "@/app/components/LanguageToggle";
+import { NavMainSimple } from "@/components/nav-main-simple";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -40,109 +40,95 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     user: {
       name: session?.user?.firstName + " " + session?.user?.lastName,
       email: session?.user?.email,
-      avatar: "/avatars/shadcn.jpg",
+      avatar: session?.user?.image || "",
     },
     navMain: [
       {
+        title: "Dashboard",
+        url: "/admin/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
         title: "Utilisateurs",
         url: "/admin/users",
-        icon: User,
-        isActive: true,
-      },
-      // {
-      //   title: "Factures",
-      //   url: "/admin/invoices",
-      //   icon: FilePlus2,
-      //   items: [
-      //     {
-      //       title: "+Facture",
-      //       url: "/admin/invoices/create",
-      //     },
-      //   ],
-      // },
-      {
-        title: "Livraisons",
-        url: "/admin/deliveries",
-        icon: ReceiptEuroIcon,
-        items: [
-          {
-            title: "+Livraison",
-            url: "/admin/deliveries/create",
-          },
-        ],
+        icon: Users,
+        // items: [
+        //   {
+        //     title: "Tous les utilisateurs",
+        //     url: "/admin/users",
+        //   },
+        // {
+        //   title: "Clients",
+        //   url: "/admin/users?role=CLIENT",
+        // },
+        // {
+        //   title: "Propriétaires",
+        //   url: "/admin/users?role=OWNER",
+        // },
+        // ],
       },
       {
-        title: "Chats",
-        url: "/admin/conversations",
-        icon: MessageCircle,
-        items: [
-          {
-            title: "+Livraison",
-            url: "/admin/deliveries/create",
-          },
-        ],
+        title: "Salons",
+        url: "/admin/salons",
+        icon: Store,
+        // items: [
+        //   {
+        //     title: "Tous les salons",
+        //     url: "/admin/salons",
+        //   },
+        // {
+        //   title: "Salons actifs",
+        //   url: "/admin/salons?status=active",
+        // },
+        // {
+        //   title: "Salons en attente",
+        //   url: "/admin/salons?status=pending",
+        // },
+        // ],
       },
       {
-        title: "Voyages",
-        url: "/admin/trips",
-        icon: Plane,
-        items: [
-          {
-            title: "+Livraison",
-            url: "/admin/deliveries/create",
-          },
-        ],
-      },
-      // {
-      //   title: "Scanner",
-      //   url: "/admin/scan-receipt",
-      //   icon: Scan,
-      //   items: [
-      //     {
-      //       title: "+Reçu",
-      //       url: "/admin/invoices/create",
-      //     },
-      //   ],
-      // },
-      // {
-      //   title: "Clients",
-      //   url: "/admin/clients",
-      //   icon: Users2,
-      // },
-      // {
-      //   title: "Suivi Km",
-      //   url: "/admin/tracking",
-      //   icon: MapPinned,
-      //   items: [
-      //     {
-      //       title: "Stats",
-      //       url: "/admin/tracking/stats",
-      //     },
-      //   ],
-      // },
-
-      // {
-      //   title: "SMS",
-      //   url: "/admin/sms",
-      //   icon: SmilePlus,
-      // },
-      // {
-      //   title: "Settings",
-      //   url: "/admin/settings",
-      //   icon: Settings2,
-      // },
-    ],
-    navAdmin: [
-      {
-        title: "Entreprises",
-        url: "/admin/companies",
-        icon: Sigma,
-        isActive: true,
+        title: "Réservations",
+        url: "/admin/bookings",
+        icon: Calendar,
+        // items: [
+        //   {
+        //     title: "Toutes les réservations",
+        //     url: "/admin/bookings",
+        //   },
+        // {
+        //   title: "Aujourd'hui",
+        //   url: "/admin/bookings?filter=today",
+        // },
+        // {
+        //   title: "En attente",
+        //   url: "/admin/bookings?status=PENDING",
+        // },
+        // ],
       },
       {
-        title: "Réglages",
-        url: "/admin/settings",
-        icon: Settings2Icon,
+        title: "Paiements",
+        url: "/admin/payments",
+        icon: DollarSign,
+        // items: [
+        //   {
+        //     title: "Tous les paiements",
+        //     url: "/admin/payments",
+        //   },
+        //   {
+        //     title: "Paiements en attente",
+        //     url: "/admin/payments?status=pending",
+        //   },
+        // ],
+      },
+      {
+        title: "Services",
+        url: "/admin/services",
+        icon: Wrench,
+      },
+      {
+        title: "Statistiques",
+        url: "/admin/stats",
+        icon: ChartBarIcon,
       },
     ],
     navSecondary: [
@@ -162,11 +148,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: Handshake,
       },
       {
-        title: "Privacy",
+        title: "Confidentialité",
         url: "/admin/privacy-policy",
         icon: ShieldCheck,
       },
-
       {
         title: "Réglages",
         url: "/admin/settings",
@@ -174,6 +159,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ],
   };
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -181,12 +167,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <BoxIcon className="size-5 text-orange-500" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#F0F4F1]">
+                  <BoxIcon className="size-5 text-[#53745D]" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-lg">Kori</span>
-                  <span className="truncate text-xs">Dashboard</span>
+                  <span className="truncate font-semibold text-lg">
+                    Kori Beauty
+                  </span>
+                  <span className="truncate text-xs">Administration</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -194,17 +182,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        {/* <NavProjects projects={data.projects} /> */}
+        <NavMainSimple items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <div className="flex-end mx-auto text-xs font-thin text-gray-500">
+      <div className="flex-end mx-auto text-xs font-thin text-gray-500 px-4 py-2">
         ✨Version de test Beta
       </div>
       <div className="flex justify-center p-1">
         <LanguageToggle />
       </div>
-      {/* <NavAdmin user={data.user} navAdmin={data.navAdmin} /> */}
       <SidebarFooter className="mb-5">
         <NavUser user={data.user} />
       </SidebarFooter>

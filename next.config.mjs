@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig = {
   env: {
-    NEXT_API_URL: process.env.NEXT_API_URL,
+    NEXT_API_URL: process.env.NEXT_API_URL || "http://localhost:2020",
   },
   images: {
     remotePatterns: [

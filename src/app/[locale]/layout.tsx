@@ -1,13 +1,13 @@
+import { AppSidebar } from "@/components/app-sidebar";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
 
-import { getServerSession } from "next-auth";
 import { authOptions } from "@/utils/authOptions";
+import { getServerSession } from "next-auth";
 
 import WelcomeComponent from "../components/WelcomeComponent";
 import Navbar from "./Navbar";
@@ -20,7 +20,7 @@ export default async function LocaleLayout({
   const session: any = await getServerSession(authOptions);
 
   return (
-    <div className="flex flex-col py-2">
+    <div className="flex flex-col py-2 bg-[#FEFCF9] min-h-screen">
       {session?.user?.role === "ADMIN" ? (
         <SidebarProvider>
           <AppSidebar />

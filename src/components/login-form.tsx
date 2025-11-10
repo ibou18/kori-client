@@ -18,7 +18,7 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("laguidev@gmail.com");
+  const [email, setEmail] = useState("support@koribeauty.com");
   const [password, setPassword] = useState("test1234");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
