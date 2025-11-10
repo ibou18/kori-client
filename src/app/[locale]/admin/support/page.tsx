@@ -1,6 +1,8 @@
 "use client";
 
 import PageWrapper from "@/app/components/block/PageWrapper";
+import { useSendMail } from "@/app/data/hooks";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,15 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Video, Lightbulb, Send } from "lucide-react";
-import { useEffect, useState } from "react";
-import { message } from "antd";
+import { Textarea } from "@/components/ui/textarea";
+import { Lightbulb, MessageCircle, Send, Video } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { set } from "date-fns";
-import { useSendMail } from "@/app/data/hooks";
+import { useEffect, useState } from "react";
 
 export default function Support() {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +31,7 @@ export default function Support() {
   });
 
   useEffect(() => {
-    if (session) {
+    if (session?.user) {
       setMailMessage({
         name: session?.user?.firstName + " " + session?.user?.lastName,
         email: session?.user?.email,
@@ -41,38 +39,26 @@ export default function Support() {
         message: "",
       });
     }
-  }, []);
+  }, [session]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      await sendMail(mailMessage, {
-        onSuccess: () => {
-          setMailMessage({
-            name: session?.user?.firstName + " " + session?.user?.lastName,
-            email: session?.user?.email,
-            subject: "",
-            message: "",
-          });
-          setIsLoading(false);
-          message.success("Message envoyé avec succès!");
-        },
-        onError: () => {
-          setIsLoading(false);
-
-          message.error("Une erreur est survenue");
-        },
-      });
-      // Ajoutez ici votre logique d'envoi de message
-    } catch (error) {
-      setIsLoading(false);
-
-      message.error("Une erreur est survenue");
-    } finally {
-      setIsLoading(false);
-    }
+    sendMail(mailMessage, {
+      onSuccess: () => {
+        setMailMessage({
+          name: session?.user?.firstName + " " + session?.user?.lastName,
+          email: session?.user?.email,
+          subject: "",
+          message: "",
+        });
+        setIsLoading(false);
+      },
+      onError: () => {
+        setIsLoading(false);
+      },
+    });
   };
 
   const handleInputChange = (e: any) => {
@@ -81,8 +67,6 @@ export default function Support() {
       [e.target.name]: e.target.value,
     });
   };
-
-  console.log("mailMessage", mailMessage);
 
   const tips = [
     {

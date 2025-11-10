@@ -18,8 +18,14 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [email, setEmail] = useState("support@koribeauty.com");
-  const [password, setPassword] = useState("test1234");
+  const [email, setEmail] = useState(
+    process.env.NODE_ENV === "development"
+      ? "support@koribeauty.com"
+      : "support@koribeauty.com"
+  );
+  const [password, setPassword] = useState(
+    process.env.NODE_ENV === "development" ? "test1234" : "test1234"
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);

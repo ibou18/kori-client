@@ -17,13 +17,13 @@ import TanstackWrapperProvider from "@/lib/TanstackWrapperProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "🔗 korí - Services du quotidien, transferts et colis",
+  title: "🔗 korí - Plateforme de réservation",
   description:
-    "La plateforme qui vous connecte aux bonnes personnes pour des services du quotidien, des transferts d'argent sécurisés et le transport de colis. Simple, rapide et de confiance.",
+    "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
   openGraph: {
-    title: "korí - Services du quotidien, transferts et colis",
+    title: "korí - Plateforme de réservation",
     description:
-      "La plateforme qui vous connecte aux bonnes personnes pour des services du quotidien, des transferts d'argent sécurisés et le transport de colis. Simple, rapide et de confiance.",
+      "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
     type: "website",
     url: "https://korí.app",
     images: [
@@ -31,16 +31,16 @@ export const metadata: Metadata = {
         url: "https://korí.app/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "korí - Services du quotidien, transferts et colis",
+        alt: "korí - Plateforme de réservation",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
     site: "@korí",
-    title: "korí - Services du quotidien, transferts et colis",
+    title: "korí - Plateforme de réservation",
     description:
-      "La plateforme qui vous connecte aux bonnes personnes pour des services du quotidien, des transferts d'argent sécurisés et le transport de colis. Simple, rapide et de confiance.",
+      "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
     images: "https://korí.app/twitter-image.jpg",
   },
 };

@@ -1,9 +1,9 @@
 "use client";
 
-import { useVerifyEmail } from "@/app/data/hooksHop";
+import { useVerifyEmail } from "@/app/data/hooks";
+import { CheckCircleIcon, Hourglass, XCircleIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
-import { CheckCircleIcon, XCircleIcon, Hourglass } from "lucide-react";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -23,7 +23,7 @@ export default function VerifyEmailPage() {
       }, 3000);
     } else if (isError) {
       setTimeout(() => {
-        window.location.href = "/auth/register";
+        router.push("/auth/signin");
       }, 3000);
     }
   }, [userVerified, isError, router]);

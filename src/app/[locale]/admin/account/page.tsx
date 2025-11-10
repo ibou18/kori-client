@@ -1,11 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { message } from "antd";
 import {
   Form,
   FormControl,
@@ -22,6 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 import {
   Collapsible,
@@ -29,8 +28,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -38,40 +37,38 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+import PageWrapper from "@/app/components/block/PageWrapper";
+import {
+  useGetBookings,
+  useGetClientBookings,
+  useGetMe,
+  useUpdateUserProfile,
+} from "@/app/data/hooks";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  PhoneIcon,
-  MailIcon,
-  EditIcon,
-  UserIcon,
-  ChevronDownIcon,
-  QrCodeIcon,
-  CreditCardIcon,
-  WalletIcon,
-  CheckCircleIcon,
-  ScanEye,
-  Folder,
-  VerifiedIcon,
   BadgeDollarSign,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  EditIcon,
+  MailIcon,
+  PhoneIcon,
+  QrCodeIcon,
+  UserIcon,
+  VerifiedIcon,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import PageWrapper from "@/app/components/block/PageWrapper";
-import { useGetUser, useUpdateUser, useUploadLogo } from "@/app/data/hooksHop";
-import { useQueryClient } from "@tanstack/react-query";
-import { GET_USERS } from "@/shared/constantes";
-import { ImageUpload } from "@/app/components/ImageUpload";
 import Image from "next/image";
 
-import { IPackage } from "@/app/interfaceHop";
+import { IDelivery, IPackage } from "@/app/interfaceHop";
 
-import { useRouter } from "next/navigation";
 import {
   useDeliveryStatusBadge,
   usePaymentStatusBadge,
 } from "@/app/hooks/useDeliveryStatus";
-import Link from "next/link";
-import { getStripeConnectLoginLinkApi } from "@/app/data/servicesHop";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BookingStatusBadge } from "@/utils/statusUtils";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -90,7 +87,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function AccountPage() {
-  const queryClient = useQueryClient();
   const { data: session }: any = useSession();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -98,54 +94,135 @@ export default function AccountPage() {
   const { getPaymentStatusBadge } = usePaymentStatusBadge();
   const { getDeliveryStatusBadge } = useDeliveryStatusBadge();
 
-  const { data: user, isLoading: loadingUser } = useGetUser(session?.user?.id);
-  const { mutate: updateUser } = useUpdateUser();
-  const { mutate: uploadLogo } = useUploadLogo();
+  // ✅ Utiliser useGetMe pour récupérer l'utilisateur connecté
+  const { data: user, isLoading: loadingUser, error: userError } = useGetMe();
 
-  console.log("loadingUser", loadingUser);
+  // ✅ Utiliser useUpdateUserProfile pour mettre à jour le profil
+  const { mutate: updateUserProfile, isPending: isUpdating } =
+    useUpdateUserProfile();
 
-  const [isLoading, setIsLoading] = useState(false);
+  // ✅ Récupérer les bookings du client
+  const { data: clientBookingsData, isLoading: loadingBookings } =
+    useGetClientBookings(user?.id || "", { limit: 10 });
+
+  // ✅ Récupérer tous les bookings pour les paiements
+  const { data: bookingsData, isLoading: loadingPayments } = useGetBookings({
+    clientId: user?.id,
+    limit: 20,
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
       address: "",
       city: "",
       postalCode: "",
-      preferredCurrency: (user?.preferredCurrency as any) || "CAD",
+      preferredCurrency: "CAD",
       company: "",
     },
   });
 
+  // ✅ Mettre à jour le formulaire quand l'utilisateur est chargé
   useEffect(() => {
-    if (user && isEditing) {
+    if (user) {
       form.reset({
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
         email: user?.email || "",
         phone: user?.phone || "",
-        address: "",
-        city: "",
-        postalCode: "",
-        company: "",
+        address: user?.address || "",
+        city: user?.city || "",
+        postalCode: user?.postalCode || "",
+        preferredCurrency: (user?.preferredCurrency as any) || "CAD",
+        company: user?.company || "",
       });
     }
-  }, [user, isEditing, form]);
+  }, [user, form]);
 
-  if (!isLoading && loadingUser) {
-    return <div>Loading...</div>;
+  // ✅ États de chargement améliorés
+  if (loadingUser) {
+    return (
+      <PageWrapper title="Mon Compte">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // ✅ Gestion d'erreur - Ne pas bloquer si user est null mais pas d'erreur (peut être en chargement)
+  if (userError) {
+    return (
+      <PageWrapper title="Mon Compte">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center">
+                <p className="text-red-500 mb-4">
+                  Erreur lors du chargement de votre profil. Veuillez rafraîchir
+                  la page.
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={() => window.location.reload()}>
+                    Rafraîchir
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/auth/signin")}
+                  >
+                    Se connecter
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  // ✅ Si pas d'utilisateur après chargement, afficher un message
+  if (!user && !loadingUser) {
+    return (
+      <PageWrapper title="Mon Compte">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center">
+                <p className="text-gray-500 mb-4">
+                  Vous devez être connecté pour accéder à cette page
+                </p>
+                <Button onClick={() => router.push("/auth/signin")}>
+                  Se connecter
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PageWrapper>
+    );
   }
 
   const onSubmit = async (data: FormValues) => {
-    setIsLoading(true);
-
     try {
-      const payload = {
-        id: user?.id,
-        data: {
+      // ✅ Utiliser updateUserProfile avec la bonne structure
+      updateUserProfile(
+        {
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
@@ -153,26 +230,16 @@ export default function AccountPage() {
           address: data.address,
           city: data.city,
           postalCode: data.postalCode,
+          preferredCurrency: data.preferredCurrency,
           company: data.company,
         },
-      };
-      await updateUser(payload, {
-        onSuccess: () => {
-          message.success("Profil mis à jour avec succès!");
-          queryClient.invalidateQueries({ queryKey: [GET_USERS, user?.id] });
-          setIsEditing(false);
-          setIsLoading(false);
-        },
-        onError: (error: any) => {
-          setIsLoading(false);
-
-          message.error(
-            error.response?.data?.message || "Erreur lors de la mise à jour"
-          );
-        },
-      });
+        {
+          onSuccess: () => {
+            setIsEditing(false);
+          },
+        }
+      );
     } catch (error) {
-      setIsLoading(false);
       console.error("Error updating profile:", error);
     }
   };
@@ -214,45 +281,10 @@ export default function AccountPage() {
     </div>
   );
 
-  const handleLogoUpload = async (file: File) => {
-    setIsLoading(true);
-    if (!user?.id) return;
-
-    try {
-      await uploadLogo(
-        { companyId: user?.id, file },
-        {
-          onSuccess: () => {
-            message.success("Logo mis à jour avec succès!");
-            queryClient.invalidateQueries({ queryKey: [GET_USERS, user?.id] });
-            setIsLoading(false);
-          },
-          onError: (error: any) => {
-            message.error(
-              error.response?.data?.message ||
-                "Erreur lors de la mise à jour du logo"
-            );
-            setIsLoading(false);
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Error uploading logo:", error);
-      setIsLoading(false);
-    }
-  };
-
   const handleConnectDashboard = async () => {
     try {
-      const response = await getStripeConnectLoginLinkApi();
-      if (response?.success && response?.url) {
-        // Ouvrir le lien dans un nouvel onglet
-        window.open(response.url, "_blank");
-      } else {
-        toast.error(
-          response?.message || "Impossible d'accéder au dashboard Stripe"
-        );
-      }
+      // TODO: Implémenter l'API pour récupérer le lien Stripe Connect
+      toast.info("Fonctionnalité en cours de développement");
     } catch (error) {
       toast.error(
         "Une erreur est survenue lors de l'accès au dashboard Stripe"
@@ -594,7 +626,7 @@ export default function AccountPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {user?.sentDeliveries?.map((delivery) => (
+                          {user?.sentDeliveries?.map((delivery: IDelivery) => (
                             <TableRow key={delivery.id}>
                               <TableCell>
                                 <div className="flex flex-col">
@@ -664,12 +696,13 @@ export default function AccountPage() {
               </Collapsible>
             </div>
 
-            {/* Liste des paiements */}
-            <div className="border-t pt-4 ">
+            {/* Liste des réservations */}
+            <div className="border-t pt-4">
               <Collapsible>
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold mb-2">
-                    Vos Paiements ({user?.payments?.length || 0})
+                    Vos Réservations (
+                    {clientBookingsData?.bookings?.length || 0})
                   </h3>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -679,7 +712,115 @@ export default function AccountPage() {
                 </div>
 
                 <CollapsibleContent>
-                  {user?.payments && user?.payments.length > 0 ? (
+                  {loadingBookings ? (
+                    <div className="space-y-2 p-4">
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                  ) : clientBookingsData?.bookings &&
+                    clientBookingsData.bookings.length > 0 ? (
+                    <div className="border rounded-lg overflow-hidden mt-2">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Salon</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead className="hidden md:table-cell">
+                              Montant
+                            </TableHead>
+                            <TableHead className="text-right">
+                              Actions
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {clientBookingsData.bookings.map((booking: any) => (
+                            <TableRow key={booking.id}>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {booking.salon?.name || "N/A"}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {new Date(
+                                    booking.appointmentStartDateTime
+                                  ).toLocaleDateString("fr-CA")}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(
+                                    booking.appointmentStartDateTime
+                                  ).toLocaleTimeString("fr-CA", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <BookingStatusBadge status={booking.status} />
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                {booking.payment?.total
+                                  ? `${(booking.payment.total / 100).toFixed(2)} ${
+                                      user?.preferredCurrency || "CAD"
+                                    }`
+                                  : "-"}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    router.push(
+                                      `/admin/bookings/${booking.id}`
+                                    );
+                                  }}
+                                >
+                                  Détails
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center p-6 border border-dashed rounded-lg mt-2">
+                      <p className="text-gray-500">
+                        Aucune réservation trouvée.
+                      </p>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+
+            {/* Liste des paiements */}
+            <div className="border-t pt-4">
+              <Collapsible>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold mb-2">
+                    Vos Paiements (
+                    {bookingsData?.data?.filter((b: any) => b.payment).length ||
+                      0}
+                    )
+                  </h3>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <ChevronDownIcon className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+
+                <CollapsibleContent>
+                  {loadingPayments ? (
+                    <div className="space-y-2 p-4">
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                  ) : bookingsData?.data?.filter((b: any) => b.payment).length >
+                    0 ? (
                     <div className="border rounded-lg overflow-hidden mt-2">
                       <Table>
                         <TableHeader>
@@ -687,10 +828,7 @@ export default function AccountPage() {
                             <TableHead>Montant</TableHead>
                             <TableHead>Statut</TableHead>
                             <TableHead className="hidden md:table-cell">
-                              Méthode
-                            </TableHead>
-                            <TableHead className="hidden lg:table-cell">
-                              Livraison associée
+                              Réservation
                             </TableHead>
                             <TableHead className="hidden md:table-cell">
                               Date
@@ -701,74 +839,72 @@ export default function AccountPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {user?.payments?.map((payment) => (
-                            <TableRow key={payment.id}>
-                              <TableCell>
-                                <div className="font-medium">
-                                  {Number(payment.amount).toFixed(2)}{" "}
-                                  {payment.currency}
-                                </div>
-                                {payment.platformFee > 0 && (
-                                  <div className="text-xs text-gray-500">
-                                    Frais:{" "}
-                                    {Number(payment.platformFee).toFixed(2)}
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {getPaymentStatusBadge(payment.status)}
-                                {/* <PaymentStatusBadge status={payment.status} /> */}
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell">
-                                <div className="flex items-center">
-                                  <span className="text-gray-500 mr-2">
-                                    {(payment.paymentMethod as string) ===
-                                    "stripe" ? (
-                                      <CreditCardIcon className="h-4 w-4" />
-                                    ) : (
-                                      <WalletIcon className="h-4 w-4" />
+                          {bookingsData.data
+                            .filter((booking: any) => booking.payment)
+                            .map((booking: any) => {
+                              const payment = booking.payment;
+                              return (
+                                <TableRow key={payment.id}>
+                                  <TableCell>
+                                    <div className="font-medium">
+                                      {payment.total
+                                        ? `${(payment.total / 100).toFixed(2)} ${
+                                            user?.preferredCurrency || "CAD"
+                                          }`
+                                        : "-"}
+                                    </div>
+                                    {payment.platformFee > 0 && (
+                                      <div className="text-xs text-gray-500">
+                                        Frais:{" "}
+                                        {(payment.platformFee / 100).toFixed(2)}
+                                      </div>
                                     )}
-                                  </span>
-                                  <span>{payment.paymentMethod}</span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="hidden lg:table-cell">
-                                {payment.deliveryId ? (
-                                  <Button
-                                    variant="link"
-                                    className="p-0 h-auto"
-                                    onClick={() => {
-                                      router.push(
-                                        `/admin/deliveries/${payment.deliveryId}/detail`
-                                      );
-                                    }}
-                                  >
-                                    Voir livraison
-                                  </Button>
-                                ) : (
-                                  <span className="text-gray-500">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell">
-                                <span className="text-sm text-gray-600">
-                                  {new Date(
-                                    payment.createdAt
-                                  ).toLocaleDateString("fr-CA")}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    /* Fonction pour voir les détails de paiement */
-                                  }}
-                                >
-                                  Détails
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getPaymentStatusBadge(
+                                      payment.paymentStatus || "PENDING"
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell">
+                                    <Button
+                                      variant="link"
+                                      className="p-0 h-auto"
+                                      onClick={() => {
+                                        router.push(
+                                          `/admin/bookings/${booking.id}`
+                                        );
+                                      }}
+                                    >
+                                      Voir réservation
+                                    </Button>
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell">
+                                    <span className="text-sm text-gray-600">
+                                      {payment.paidAt
+                                        ? new Date(
+                                            payment.paidAt
+                                          ).toLocaleDateString("fr-CA")
+                                        : new Date(
+                                            payment.createdAt
+                                          ).toLocaleDateString("fr-CA")}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        router.push(
+                                          `/admin/bookings/${booking.id}`
+                                        );
+                                      }}
+                                    >
+                                      Détails
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
                         </TableBody>
                       </Table>
                     </div>
@@ -1075,8 +1211,8 @@ export default function AccountPage() {
                   >
                     Annuler
                   </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Mise à jour..." : "Sauvegarder"}
+                  <Button type="submit" disabled={isUpdating}>
+                    {isUpdating ? "Mise à jour..." : "Sauvegarder"}
                   </Button>
                 </div>
               </form>

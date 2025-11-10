@@ -91,15 +91,31 @@ export const handleError = (
     finalMessage = errorMessage;
   }
 
-  // Logger l'erreur pour débogage
-  console.error("API Error:", {
-    status,
-    url: err.config?.url,
-    method: err.config?.method,
-    message: finalMessage,
-    responseData,
-    originalError: err,
-  });
+  // Logger l'erreur pour débogage (seulement si responseData n'est pas vide)
+  if (responseData && Object.keys(responseData).length > 0) {
+    console.error("API Error:", {
+      status,
+      url: err.config?.url,
+      method: err.config?.method,
+      message: finalMessage,
+      responseData,
+    });
+  } else {
+    // Si responseData est vide, logger plus d'informations
+    console.error("API Error (empty response):", {
+      status,
+      url: err.config?.url,
+      method: err.config?.method,
+      message: finalMessage,
+      errorMessage: err.message,
+      response: err.response,
+      request: {
+        url: err.config?.url,
+        baseURL: err.config?.baseURL,
+        headers: err.config?.headers,
+      },
+    });
+  }
 
   // Enrichir l'erreur originale avec des informations structurées
   err.formattedMessage = finalMessage;

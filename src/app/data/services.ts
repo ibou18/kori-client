@@ -66,12 +66,51 @@ export const resetPasswordApi = async ({
   }
 };
 
+export const verifyEmailApi = async (token: string) => {
+  try {
+    const response = await requestWrapper.get(`/user/token/${token}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la vérification de l'email");
+    return null;
+  }
+};
+
+export const getUsersbyTokenApi = async (token: string) => {
+  try {
+    const response = await requestWrapper.get(`/user/token/${token}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de l'utilisateur");
+    return null;
+  }
+};
+
 export const getMeApi = async () => {
   try {
     const response = await requestWrapper.get("/auth/me");
     return response.data;
-  } catch (error) {
-    handleError(error, "Erreur lors de la récupération du profil");
+  } catch (error: any) {
+    // ✅ Ne pas appeler handleError ici car il lance une exception
+    // On veut juste logger et retourner null pour que le hook puisse gérer l'erreur
+    console.error("❌ Erreur getMeApi:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers,
+      },
+    });
+    
+    // Si c'est une erreur 401, ne pas logger comme erreur critique
+    if (error.response?.status === 401) {
+      console.warn("⚠️ Non authentifié - redirection vers login nécessaire");
+    }
+    
+    // Retourner null pour que React Query puisse gérer l'erreur
     return null;
   }
 };
@@ -726,6 +765,27 @@ export const getServiceCategoriesApi = async () => {
   }
 };
 
+export const updateServiceCategoryApi = async (data: {
+  id: string;
+  updates: {
+    name?: string;
+    description?: string;
+    icon?: string;
+    isActive?: boolean;
+  };
+}) => {
+  try {
+    const response = await requestWrapper.put(
+      `/service-categories/${data.id}`,
+      data.updates
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de la catégorie");
+    return null;
+  }
+};
+
 // ============================================================================
 // DEFAULT SERVICES
 // ============================================================================
@@ -752,6 +812,54 @@ export const applyDefaultServicesApi = async (salonId: string) => {
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de l'application des services par défaut");
+    return null;
+  }
+};
+
+export const createDefaultServiceApi = async (data: {
+  name: string;
+  description?: string;
+  duration: number;
+  categoryId: string;
+  salonType: string;
+  group: string;
+  hasThicknessOptions?: boolean;
+  requiresExtensions?: boolean;
+  availableLocations?: string[];
+  isActive?: boolean;
+}) => {
+  try {
+    const response = await requestWrapper.post("/default-services", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création du service");
+    return null;
+  }
+};
+
+export const updateDefaultServiceApi = async (data: {
+  id: string;
+  updates: {
+    name?: string;
+    description?: string;
+    duration?: number;
+    isActive?: boolean;
+    categoryId?: string;
+    salonType?: string;
+    group?: string;
+    hasThicknessOptions?: boolean;
+    requiresExtensions?: boolean;
+    availableLocations?: string[];
+  };
+}) => {
+  try {
+    const response = await requestWrapper.put(
+      `/default-services/${data.id}`,
+      data.updates
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour du service");
     return null;
   }
 };

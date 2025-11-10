@@ -19,7 +19,7 @@ export default function ResetPassword() {
   console.log("userByToken", userByToken);
   return (
     <main className="mx-auto min-h-screen max-w-2xl mt-12">
-      <ResetForm user={userByToken} />
+      <ResetForm user={userByToken} token={token} />
     </main>
   );
 }

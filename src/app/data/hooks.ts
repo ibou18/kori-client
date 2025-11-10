@@ -39,6 +39,7 @@ import {
   contactApi,
   createBookingApi,
   createCheckoutSessionApi,
+  createDefaultServiceApi,
   createPaymentIntentApi,
   // Ratings
   createRatingApi,
@@ -113,6 +114,7 @@ import {
   getUserPreferencesApi,
   // Users
   getUsersApi,
+  getUsersbyTokenApi,
   getUserStatsApi,
   // Auth
   loginApi,
@@ -125,11 +127,13 @@ import {
   resetPasswordApi,
   searchSalonsApi,
   updateBookingApi,
+  updateDefaultServiceApi,
   updatePlatformConfigApi,
   updateReviewApi,
   updateSalonApi,
   updateSalonHolidayApi,
   updateSalonServiceApi,
+  updateServiceCategoryApi,
   updateServiceOptionApi,
   updateUserApi,
   updateUserPreferencesApi,
@@ -137,6 +141,7 @@ import {
   // Photos
   uploadSalonPhotoApi,
   uploadServicePhotoApi,
+  verifyEmailApi,
 } from "./services";
 
 // ============================================================================
@@ -207,12 +212,39 @@ export const useResetPassword = () => {
   });
 };
 
+export const useVerifyEmail = (token: string | null) => {
+  return useQuery({
+    queryKey: ["verify-email", token],
+    queryFn: () => verifyEmailApi(token!),
+    enabled: !!token,
+    retry: false,
+  });
+};
+
+export const useGetUsersbyToken = (token: string | null) => {
+  return useQuery({
+    queryKey: ["user-by-token", token],
+    queryFn: () => getUsersbyTokenApi(token!),
+    enabled: !!token,
+    retry: false,
+  });
+};
+
 export const useGetMe = () => {
   return useQuery({
     queryKey: ["me"],
     queryFn: getMeApi,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: (failureCount, error: any) => {
+      // ✅ Ne pas réessayer si c'est une erreur 401 (non authentifié)
+      if (error?.response?.status === 401) {
+        return false;
+      }
+      // Réessayer une seule fois pour les autres erreurs
+      return failureCount < 1;
+    },
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -342,6 +374,18 @@ export const useUpdateUserPreferences = () => {
 };
 
 export const useContact = () => {
+  return useMutation({
+    mutationFn: contactApi,
+    onSuccess: () => {
+      message.success("Message envoyé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de l'envoi");
+    },
+  });
+};
+
+export const useSendMail = () => {
   return useMutation({
     mutationFn: contactApi,
     onSuccess: () => {
@@ -872,6 +916,21 @@ export const useGetServiceCategories = () => {
   });
 };
 
+export const useUpdateServiceCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateServiceCategoryApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_CATEGORIES] });
+      queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
+      message.success("Catégorie mise à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
 // ============================================================================
 // DEFAULT SERVICES HOOKS
 // ============================================================================
@@ -885,6 +944,34 @@ export const useGetDefaultServices = (params?: {
     queryKey: [GET_DEFAULT_SERVICES, params],
     queryFn: () => getDefaultServicesApi(params),
     staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
+export const useCreateDefaultService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createDefaultServiceApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
+      message.success("Service créé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
+export const useUpdateDefaultService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateDefaultServiceApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
+      message.success("Service mis à jour avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la mise à jour");
+    },
   });
 };
 

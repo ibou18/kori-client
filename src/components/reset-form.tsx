@@ -1,24 +1,30 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { cn } from "@/lib/utils";
 import { message, Spin } from "antd";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 
 import logo from "@/assets/logo-black.png";
 import Image from "next/image";
 
-import Link from "next/link";
-import { IUser } from "@/app/interface";
 import { useResetPassword } from "@/app/data/hooks";
-import { useRouter } from "next/navigation";
+import { IUser } from "@/app/interface";
 import useUserStore from "@/app/store/useUserStore";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default function ResetForm({ user }: { user: IUser }) {
+export default function ResetForm({
+  user,
+  token,
+}: {
+  user: IUser;
+  token?: string;
+}) {
   const clearUser = useUserStore((state) => state.clearUser);
 
   const router = useRouter();
@@ -33,11 +39,20 @@ export default function ResetForm({ user }: { user: IUser }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Utiliser le token passé en prop ou celui de l'utilisateur
+    const resetToken = token || user.token;
+
+    if (!resetToken) {
+      setError("Token de réinitialisation manquant");
+      return;
+    }
+
     setLoading(true);
 
     await resetPassword(
       {
-        token: user.token,
+        token: resetToken,
         password: password,
       },
       {

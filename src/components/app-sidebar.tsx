@@ -2,7 +2,6 @@
 
 import {
   BadgeCheck,
-  BoxIcon,
   Calendar,
   ChartBarIcon,
   DollarSign,
@@ -29,7 +28,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { LOGO_BLACK } from "@/shared/constantes";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
 import { NavSecondary } from "./nav-secondary";
 
@@ -168,12 +169,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin/dashboard">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#F0F4F1]">
-                  <BoxIcon className="size-5 text-[#53745D]" />
+                  <Image src={LOGO_BLACK} alt="Kori" width={32} height={32} />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-lg">
-                    Kori Beauty
-                  </span>
                   <span className="truncate text-xs">Administration</span>
                 </div>
               </Link>
@@ -186,7 +184,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <div className="flex-end mx-auto text-xs font-thin text-gray-500 px-4 py-2">
-        ✨Version de test Beta
+        ✨Version 1.0
       </div>
       <div className="flex justify-center p-1">
         <LanguageToggle />
