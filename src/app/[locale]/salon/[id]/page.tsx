@@ -86,7 +86,42 @@ export default function SalonSharePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasTriedDeepLink, setHasTriedDeepLink] = useState(false);
 
-  // Récupérer les données du salon
+  // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
+  useEffect(() => {
+    if (!salonId || hasTriedDeepLink) return;
+
+    const tryOpenApp = () => {
+      console.log("🚀 Tentative d'ouverture de l'application mobile");
+      console.log("📱 Salon ID:", salonId);
+
+      setHasTriedDeepLink(true);
+      const deepLink = `kori://salon/salon-detail?id=${salonId}`;
+
+      console.log("🔗 Deep Link généré:", deepLink);
+      console.log("🌐 User Agent:", navigator.userAgent);
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      console.log(
+        "📱 Plateforme détectée:",
+        isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web"
+      );
+
+      // Essayer d'ouvrir l'app immédiatement
+      console.log("⏳ Redirection vers l'application...");
+      window.location.href = deepLink;
+      console.log("✅ Redirection effectuée");
+
+      // Si l'app ne s'ouvre pas dans les 2 secondes, on laisse la page web s'afficher
+      // (pas de redirection automatique vers le store pour ne pas interrompre l'expérience)
+    };
+
+    // Essayer d'ouvrir l'app immédiatement au chargement
+    console.log("🎯 Initialisation de la redirection vers l'app");
+    tryOpenApp();
+  }, [salonId, hasTriedDeepLink]);
+
+  // Récupérer les données du salon (en parallèle de la tentative d'ouverture de l'app)
   useEffect(() => {
     const fetchSalon = async () => {
       try {
@@ -110,35 +145,6 @@ export default function SalonSharePage() {
     }
   }, [salonId]);
 
-  // Essayer d'ouvrir l'app automatiquement au chargement
-  useEffect(() => {
-    if (!salon || hasTriedDeepLink) return;
-
-    const tryOpenApp = () => {
-      setHasTriedDeepLink(true);
-      const deepLink = `kori://salon/salon-detail?id=${salonId}`;
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const storeUrl = isIOS ? IOS_STORE_URL : ANDROID_STORE_URL;
-      const start = Date.now();
-
-      const timeoutId = window.setTimeout(() => {
-        if (Date.now() - start < 2000) {
-          // L'app ne s'est pas ouverte, ne pas rediriger automatiquement
-          // Laisser l'utilisateur voir la page et choisir d'ouvrir l'app
-        }
-      }, 1500);
-
-      // Essayer d'ouvrir l'app
-      window.location.href = deepLink;
-
-      window.setTimeout(() => window.clearTimeout(timeoutId), 3000);
-    };
-
-    // Attendre un peu avant d'essayer d'ouvrir l'app pour laisser le temps à la page de se charger
-    const timer = setTimeout(tryOpenApp, 500);
-    return () => clearTimeout(timer);
-  }, [salon, salonId, hasTriedDeepLink]);
-
   // Carrousel d'images automatique
   useEffect(() => {
     if (!salon?.photos || salon.photos.length <= 1) return;
@@ -151,22 +157,46 @@ export default function SalonSharePage() {
   }, [salon?.photos]);
 
   const handleOpenApp = () => {
+    console.log("👆 Bouton 'Ouvrir dans l'app' cliqué");
+    console.log("📱 Salon ID:", salonId);
+
     const deepLink = `kori://salon/salon-detail?id=${salonId}`;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
     const storeUrl = isIOS ? IOS_STORE_URL : ANDROID_STORE_URL;
+
+    console.log("🔗 Deep Link:", deepLink);
+    console.log(
+      "📱 Plateforme:",
+      isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web"
+    );
+    console.log("🏪 Store URL:", storeUrl);
+
     const start = Date.now();
+    console.log("⏱️ Démarrage du timer de fallback (1.5s)");
 
     const timeoutId = window.setTimeout(() => {
-      if (Date.now() - start < 2000) {
+      const elapsed = Date.now() - start;
+      console.log(`⏱️ Timer écoulé: ${elapsed}ms`);
+
+      if (elapsed < 2000) {
+        console.log("⚠️ L'app ne s'est pas ouverte, redirection vers le store");
         // Si l'app ne s'est pas ouverte, rediriger vers le store
         window.location.href = storeUrl;
+      } else {
+        console.log("✅ L'app semble s'être ouverte (temps écoulé > 2s)");
       }
     }, 1500);
 
     // Essayer d'ouvrir l'app
+    console.log("⏳ Tentative d'ouverture de l'application...");
     window.location.href = deepLink;
+    console.log("✅ Redirection effectuée");
 
-    window.setTimeout(() => window.clearTimeout(timeoutId), 3000);
+    window.setTimeout(() => {
+      window.clearTimeout(timeoutId);
+      console.log("🧹 Timer nettoyé");
+    }, 3000);
   };
 
   if (loading) {

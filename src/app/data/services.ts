@@ -104,12 +104,12 @@ export const getMeApi = async () => {
         headers: error.config?.headers,
       },
     });
-    
+
     // Si c'est une erreur 401, ne pas logger comme erreur critique
     if (error.response?.status === 401) {
       console.warn("⚠️ Non authentifié - redirection vers login nécessaire");
     }
-    
+
     // Retourner null pour que React Query puisse gérer l'erreur
     return null;
   }
@@ -254,6 +254,7 @@ export const getSalonsApi = async (params?: {
 export const getSalonApi = async (id: string) => {
   try {
     const response = await requestWrapper.get(`/salons/${id}/detail`);
+    console.log("response", response.data);
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la récupération du salon");
@@ -476,7 +477,10 @@ export const createBookingApi = async (data: any) => {
 
 export const updateBookingApi = async (data: { id: string; data: any }) => {
   try {
-    const response = await requestWrapper.put(`/bookings/${data.id}`, data.data);
+    const response = await requestWrapper.put(
+      `/bookings/${data.id}`,
+      data.data
+    );
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la mise à jour de la réservation");
@@ -559,9 +563,7 @@ export const createCheckoutSessionApi = async (data: any) => {
 
 export const getCheckoutSessionApi = async (sessionId: string) => {
   try {
-    const response = await requestWrapper.get(
-      `/payments/session/${sessionId}`
-    );
+    const response = await requestWrapper.get(`/payments/session/${sessionId}`);
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la récupération de la session");
@@ -584,7 +586,10 @@ export const createPaymentIntentApi = async (data: any) => {
 
 export const confirmPaymentApi = async (data: any) => {
   try {
-    const response = await requestWrapper.post("/payments/confirm-payment", data);
+    const response = await requestWrapper.post(
+      "/payments/confirm-payment",
+      data
+    );
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la confirmation du paiement");
@@ -594,7 +599,10 @@ export const confirmPaymentApi = async (data: any) => {
 
 export const calculateTaxesApi = async (data: any) => {
   try {
-    const response = await requestWrapper.post("/payments/calculate-taxes", data);
+    const response = await requestWrapper.post(
+      "/payments/calculate-taxes",
+      data
+    );
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors du calcul des taxes");
@@ -718,7 +726,10 @@ export const createServiceOptionApi = async (data: any) => {
   }
 };
 
-export const updateServiceOptionApi = async (data: { id: string; data: any }) => {
+export const updateServiceOptionApi = async (data: {
+  id: string;
+  data: any;
+}) => {
   try {
     const response = await requestWrapper.put(
       `/service-options/${data.id}`,
@@ -799,7 +810,10 @@ export const getDefaultServicesApi = async (params?: {
     const response = await requestWrapper.get("/default-services", { params });
     return response.data;
   } catch (error) {
-    handleError(error, "Erreur lors de la récupération des services par défaut");
+    handleError(
+      error,
+      "Erreur lors de la récupération des services par défaut"
+    );
     return null;
   }
 };
@@ -959,10 +973,15 @@ export const getSalonRatingsApi = async (salonId: string) => {
 
 export const getSalonRatingStatsApi = async (salonId: string) => {
   try {
-    const response = await requestWrapper.get(`/ratings/salon/${salonId}/stats`);
+    const response = await requestWrapper.get(
+      `/ratings/salon/${salonId}/stats`
+    );
     return response.data;
   } catch (error) {
-    handleError(error, "Erreur lors de la récupération des statistiques de notes");
+    handleError(
+      error,
+      "Erreur lors de la récupération des statistiques de notes"
+    );
     return null;
   }
 };
@@ -1130,7 +1149,10 @@ export const createSalonHolidayApi = async (data: any) => {
   }
 };
 
-export const updateSalonHolidayApi = async (data: { id: string; data: any }) => {
+export const updateSalonHolidayApi = async (data: {
+  id: string;
+  data: any;
+}) => {
   try {
     const response = await requestWrapper.put(
       `/salon-holidays/${data.id}`,
@@ -1186,7 +1208,10 @@ export const getSalonPendingPayoutsApi = async (salonId: string) => {
     );
     return response.data;
   } catch (error) {
-    handleError(error, "Erreur lors de la récupération des paiements en attente");
+    handleError(
+      error,
+      "Erreur lors de la récupération des paiements en attente"
+    );
     return null;
   }
 };
@@ -1205,7 +1230,10 @@ export const getPlatformConfigApi = async () => {
   }
 };
 
-export const updatePlatformConfigApi = async (data: { id: string; data: any }) => {
+export const updatePlatformConfigApi = async (data: {
+  id: string;
+  data: any;
+}) => {
   try {
     const response = await requestWrapper.put(
       `/platform-config/${data.id}`,
@@ -1224,7 +1252,10 @@ export const updatePlatformConfigApi = async (data: { id: string; data: any }) =
 
 export const createStripeConnectAccountApi = async (data: any) => {
   try {
-    const response = await requestWrapper.post("/stripe-connect/accounts", data);
+    const response = await requestWrapper.post(
+      "/stripe-connect/accounts",
+      data
+    );
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la création du compte Stripe Connect");
