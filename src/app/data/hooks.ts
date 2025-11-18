@@ -75,6 +75,7 @@ import {
   getNearestSalonsApi,
   // Platform Config
   getPlatformConfigApi,
+  getRevenueEvolutionApi,
   getReviewApi,
   // Reviews
   getReviewsApi,
@@ -110,6 +111,8 @@ import {
   // Payments
   getStripeConfigApi,
   getStripeConnectAccountStatusApi,
+  getTopSalonsApi,
+  getTopServicesApi,
   getUserApi,
   getUserPreferencesApi,
   // Users
@@ -1172,10 +1175,51 @@ export const useDeleteSalonPhoto = () => {
 // STATS HOOKS
 // ============================================================================
 
-export const useGetAdminStats = () => {
+export const useGetAdminStats = (params?: {
+  startDate?: string;
+  endDate?: string;
+}) => {
   return useQuery({
-    queryKey: ["admin-stats"],
-    queryFn: getAdminStatsApi,
+    queryKey: ["admin-stats", params],
+    queryFn: () => getAdminStatsApi(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
+export const useGetTopServices = (params?: {
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: ["top-services", params],
+    queryFn: () => getTopServicesApi(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
+export const useGetTopSalons = (params?: {
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: ["top-salons", params],
+    queryFn: () => getTopSalonsApi(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
+export const useGetRevenueEvolution = (params?: {
+  startDate?: string;
+  endDate?: string;
+}) => {
+  return useQuery({
+    queryKey: ["revenue-evolution", params],
+    queryFn: () => getRevenueEvolutionApi(params),
     staleTime: 1000 * 60 * 2, // 2 minutes
     refetchOnWindowFocus: true,
   });

@@ -38,6 +38,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "kori-app.s3.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "i.pravatar.cc",
         pathname: "/**",
       },

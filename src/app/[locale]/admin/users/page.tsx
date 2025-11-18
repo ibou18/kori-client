@@ -1,7 +1,13 @@
 "use client";
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
-import { useGetUsers } from "@/app/data/hooks";
+import { UserModal } from "@/app/components/UserModal";
+import {
+  useCreateUser,
+  useDeleteUser,
+  useGetUsers,
+  useUpdateUser,
+} from "@/app/data/hooks";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -11,7 +17,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserStatusBadge } from "@/utils/statusUtils";
-import { message } from "antd";
 import dayjs from "dayjs";
 import { Mail, Phone, User as UserIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -42,8 +47,13 @@ export default function UsersPage() {
   const router = useRouter();
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const { data, isLoading } = useGetUsers();
+  const { mutate: deleteUser } = useDeleteUser();
+  const { mutate: createUser } = useCreateUser();
+  const { mutate: updateUser } = useUpdateUser();
 
   if (!session) {
     return (
@@ -53,8 +63,11 @@ export default function UsersPage() {
     );
   }
 
+  // Normaliser les données - gérer les deux formats possibles
+  const usersData = Array.isArray(data) ? data : data?.data || [];
+
   // Filtrer par rôle et statut
-  const filteredData = data?.data?.filter((user: User) => {
+  const filteredData = usersData.filter((user: User) => {
     if (roleFilter !== "all" && user.role !== roleFilter) return false;
     if (statusFilter !== "all") {
       const userStatus = user.isActive ? "ACTIVE" : "INACTIVE";
@@ -63,9 +76,8 @@ export default function UsersPage() {
     return true;
   });
 
-  const handleDelete = () => {
-    // TODO: Implémenter la suppression d'utilisateur
-    message.warning("La suppression d'utilisateur n'est pas encore disponible");
+  const handleDelete = (user: User) => {
+    deleteUser(user.id);
   };
 
   const handleView = (user: User) => {
@@ -73,7 +85,85 @@ export default function UsersPage() {
   };
 
   const handleEdit = (user: User) => {
-    router.push(`/admin/users/${user.id}/edit`);
+    setEditingUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleAdd = () => {
+    setEditingUser(null);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSubmit = async (values: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    indicatif?: string;
+    role: "ADMIN" | "OWNER" | "CLIENT" | "EMPLOYEE" | "SYSTEM";
+    isActive: boolean;
+    password?: string;
+    id?: string;
+  }) => {
+    if (editingUser) {
+      // Mode édition
+      const updateData: any = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        role: values.role,
+        isActive: values.isActive,
+      };
+
+      // Ajouter les champs optionnels seulement s'ils sont définis
+      if (values.phone !== undefined) {
+        updateData.phone = values.phone || null;
+      }
+      if (values.indicatif !== undefined) {
+        updateData.indicatif = values.indicatif || null;
+      }
+      if (values.password) {
+        updateData.password = values.password;
+      }
+
+      updateUser(
+        {
+          id: editingUser.id,
+          data: updateData,
+        },
+        {
+          onSuccess: () => {
+            setIsModalOpen(false);
+            setEditingUser(null);
+          },
+        }
+      );
+    } else {
+      // Mode création
+      const createData: any = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        role: values.role,
+        isActive: values.isActive,
+        password: values.password || "",
+      };
+
+      // Ajouter les champs optionnels seulement s'ils sont définis
+      if (values.phone) {
+        createData.phone = values.phone;
+      }
+      if (values.indicatif) {
+        createData.indicatif = values.indicatif;
+      }
+
+      createUser(createData, {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          setEditingUser(null);
+        },
+      });
+    }
   };
 
   const columns = [
@@ -226,25 +316,38 @@ export default function UsersPage() {
           <SelectItem value="all">Tous les statuts</SelectItem>
           <SelectItem value="ACTIVE">Actifs</SelectItem>
           <SelectItem value="INACTIVE">Inactifs</SelectItem>
-          <SelectItem value="SUSPENDED">Suspendus</SelectItem>
-          <SelectItem value="DELETED">Supprimés</SelectItem>
         </SelectContent>
       </Select>
     </div>
   );
 
   return (
-    <AdminListLayout
-      title="Utilisateurs"
-      data={filteredData}
-      isLoading={isLoading}
-      columns={columns}
-      searchKeys={["firstName", "lastName", "email", "phone", "role"]}
-      onView={handleView}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      emptyMessage="Aucun utilisateur trouvé"
-      filterComponent={filterComponent}
-    />
+    <>
+      <AdminListLayout
+        title="Utilisateurs"
+        data={filteredData}
+        isLoading={isLoading}
+        columns={columns}
+        searchKeys={["firstName", "lastName", "email", "phone", "role"]}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAdd={handleAdd}
+        addButtonLabel="Ajouter un utilisateur"
+        emptyMessage="Aucun utilisateur trouvé"
+        filterComponent={filterComponent}
+      />
+      <UserModal
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) {
+            setEditingUser(null);
+          }
+        }}
+        user={editingUser}
+        onSubmit={handleModalSubmit}
+      />
+    </>
   );
 }

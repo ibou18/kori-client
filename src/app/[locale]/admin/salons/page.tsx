@@ -79,6 +79,10 @@ export default function SalonsPage() {
     router.push(`/admin/salons/${salon.id}/edit`);
   };
 
+  const handleAdd = () => {
+    router.push("/admin/salons/new");
+  };
+
   const columns = [
     {
       key: "name",
@@ -160,6 +164,7 @@ export default function SalonsPage() {
       isLoading={isLoading}
       columns={columns}
       searchKeys={["name", "email", "phone"]}
+      onAdd={handleAdd}
       onView={handleView}
       onEdit={handleEdit}
       onDelete={handleDelete}

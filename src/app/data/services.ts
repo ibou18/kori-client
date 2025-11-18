@@ -255,7 +255,7 @@ export const getSalonApi = async (id: string) => {
   try {
     const response = await requestWrapper.get(`/salons/${id}/detail`);
     console.log("response", response.data);
-    return response.data;
+    return response.data as any;
   } catch (error) {
     handleError(error, "Erreur lors de la récupération du salon");
     return null;
@@ -1056,12 +1056,68 @@ export const deleteSalonPhotoApi = async (photoId: string) => {
 // STATS
 // ============================================================================
 
-export const getAdminStatsApi = async () => {
+export const getAdminStatsApi = async (params?: {
+  startDate?: string;
+  endDate?: string;
+}) => {
   try {
-    const response = await requestWrapper.get("/stats/admin");
+    const response = await requestWrapper.get("/stats/admin", { params });
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la récupération des statistiques admin");
+    return null;
+  }
+};
+
+export const getTopServicesApi = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/stats/admin/top-services", {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des top services");
+    return null;
+  }
+};
+
+export const getTopSalonsApi = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/stats/admin/top-salons", {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des top salons");
+    return null;
+  }
+};
+
+export const getRevenueEvolutionApi = async (params?: {
+  startDate?: string;
+  endDate?: string;
+}) => {
+  try {
+    const response = await requestWrapper.get(
+      "/stats/admin/revenue-evolution",
+      {
+        params,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de la récupération de l'évolution des revenus"
+    );
     return null;
   }
 };

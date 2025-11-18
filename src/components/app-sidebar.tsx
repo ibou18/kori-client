@@ -1,15 +1,10 @@
 "use client";
 
 import {
-  BadgeCheck,
   Calendar,
   ChartBarIcon,
   DollarSign,
-  Handshake,
-  HelpCircle,
   LayoutDashboard,
-  Settings2Icon,
-  ShieldCheck,
   Store,
   Users,
   Wrench,
@@ -133,31 +128,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ],
     navSecondary: [
-      {
-        title: "Mon Compte",
-        url: "/admin/account",
-        icon: BadgeCheck,
-      },
-      {
-        title: "Aide",
-        url: "/admin/support",
-        icon: HelpCircle,
-      },
-      {
-        title: "Conditions",
-        url: "/admin/cgv",
-        icon: Handshake,
-      },
-      {
-        title: "Confidentialité",
-        url: "/admin/privacy-policy",
-        icon: ShieldCheck,
-      },
-      {
-        title: "Réglages",
-        url: "/admin/settings",
-        icon: Settings2Icon,
-      },
+      // {
+      //   title: "Mon Compte",
+      //   url: "/admin/account",
+      //   icon: BadgeCheck,
+      // },
+      // {
+      //   title: "Confidentialité",
+      //   url: "/admin/privacy-policy",
+      //   icon: ShieldCheck,
+      // },
+      // {
+      //   title: "Réglages",
+      //   url: "/admin/settings",
+      //   icon: Settings2Icon,
+      // },
     ],
   };
 
@@ -183,9 +168,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMainSimple items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <div className="flex-end mx-auto text-xs font-thin text-gray-500 px-4 py-2">
+      {/* <div className="flex-end mx-auto text-xs font-thin text-gray-500 px-4 py-2">
         ✨Version 1.0
-      </div>
+      </div> */}
       <div className="flex justify-center p-1">
         <LanguageToggle />
       </div>

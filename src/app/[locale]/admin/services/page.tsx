@@ -713,7 +713,7 @@ export default function ServicesPage() {
                 </Label>
                 <Select
                   value={formData.categoryId}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     setFormData({ ...formData, categoryId: value })
                   }
                 >
@@ -737,7 +737,7 @@ export default function ServicesPage() {
                 </Label>
                 <Select
                   value={formData.salonType}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     setFormData({ ...formData, salonType: value })
                   }
                 >
@@ -761,7 +761,7 @@ export default function ServicesPage() {
                 </Label>
                 <Select
                   value={formData.group}
-                  onValueChange={(value) =>
+                  onValueChange={(value: string) =>
                     setFormData({ ...formData, group: value })
                   }
                 >
@@ -894,8 +894,8 @@ export default function ServicesPage() {
                     ? "Enregistrement..."
                     : "Création..."
                   : editingService
-                    ? "Enregistrer"
-                    : "Créer"}
+                  ? "Enregistrer"
+                  : "Créer"}
               </Button>
             </DialogFooter>
           </DialogContent>
