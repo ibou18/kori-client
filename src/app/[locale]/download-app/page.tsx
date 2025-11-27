@@ -6,17 +6,9 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const screenshots = [
-  "/assets/screenshot/IMG_7655.PNG",
-  "/assets/screenshot/IMG_7656.PNG",
-  "/assets/screenshot/IMG_7657.PNG",
-  "/assets/screenshot/IMG_7658.PNG",
-  "/assets/screenshot/IMG_7659.PNG",
-  "/assets/screenshot/IMG_7660.PNG",
-  "/assets/screenshot/IMG_7661.PNG",
-  "/assets/screenshot/IMG_7662.PNG",
-  "/assets/screenshot/IMG_7663.PNG",
-  "/assets/screenshot/IMG_7664.PNG",
-  "/assets/screenshot/IMG_7665.PNG",
+  "/assets/screenshot/1.PNG",
+  "/assets/screenshot/2.PNG",
+  "/assets/screenshot/3.PNG",
 ];
 
 export default function DownloadAppPage() {
