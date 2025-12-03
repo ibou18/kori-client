@@ -47,6 +47,7 @@ import {
   createSalonApi,
   createSalonHolidayApi,
   createSalonServiceApi,
+  createServiceCategoryApi,
   createServiceOptionApi,
   // Stripe Connect
   createStripeConnectAccountApi,
@@ -55,7 +56,9 @@ import {
   deleteSalonApi,
   deleteSalonHolidayApi,
   deleteSalonPhotoApi,
+  deleteDefaultServiceApi,
   deleteSalonServiceApi,
+  deleteServiceCategoryApi,
   deleteServiceOptionApi,
   deleteUserApi,
   forgotPasswordApi,
@@ -919,6 +922,21 @@ export const useGetServiceCategories = () => {
   });
 };
 
+export const useCreateServiceCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createServiceCategoryApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_CATEGORIES] });
+      queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
+      message.success("Catégorie créée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la création");
+    },
+  });
+};
+
 export const useUpdateServiceCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -930,6 +948,21 @@ export const useUpdateServiceCategory = () => {
     },
     onError: (error: any) => {
       message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useDeleteServiceCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteServiceCategoryApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_SERVICE_CATEGORIES] });
+      queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
+      message.success("Catégorie supprimée avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -974,6 +1007,20 @@ export const useUpdateDefaultService = () => {
     },
     onError: (error: any) => {
       message.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useDeleteDefaultService = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteDefaultServiceApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
+      message.success("Service supprimé avec succès !");
+    },
+    onError: (error: any) => {
+      message.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };

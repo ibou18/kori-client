@@ -776,6 +776,21 @@ export const getServiceCategoriesApi = async () => {
   }
 };
 
+export const createServiceCategoryApi = async (data: {
+  name: string;
+  description?: string;
+  icon?: string;
+  isActive?: boolean;
+}) => {
+  try {
+    const response = await requestWrapper.post("/service-categories", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de la catégorie");
+    return null;
+  }
+};
+
 export const updateServiceCategoryApi = async (data: {
   id: string;
   updates: {
@@ -793,6 +808,16 @@ export const updateServiceCategoryApi = async (data: {
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la mise à jour de la catégorie");
+    return null;
+  }
+};
+
+export const deleteServiceCategoryApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.delete(`/service-categories/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression de la catégorie");
     return null;
   }
 };
@@ -847,6 +872,16 @@ export const createDefaultServiceApi = async (data: {
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la création du service");
+    return null;
+  }
+};
+
+export const deleteDefaultServiceApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.delete(`/default-services/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la suppression du service");
     return null;
   }
 };

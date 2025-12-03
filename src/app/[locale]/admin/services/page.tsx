@@ -4,6 +4,9 @@ import PageWrapper from "@/app/components/block/PageWrapper";
 import { CategoryIcon, SalonTypeIcon } from "@/app/components/CategoryIcon";
 import {
   useCreateDefaultService,
+  useCreateServiceCategory,
+  useDeleteDefaultService,
+  useDeleteServiceCategory,
   useGetDefaultServices,
   useGetServiceCategories,
   useUpdateDefaultService,
@@ -37,8 +40,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { SALON_TYPES } from "@/utils/constants";
 import { message } from "antd";
-import { Edit2, Plus, Trash2, X } from "lucide-react";
+import { Edit2, Info, Plus, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
@@ -65,7 +69,7 @@ interface DefaultService {
     id: string;
     name: string;
     price: number;
-    duration: number;
+    duration?: number; // Optionnel, utilise la durée du service si non défini
     thickness?: string;
     requiresExtensions: boolean;
   }>;
@@ -78,14 +82,6 @@ interface ServiceCategory {
   icon?: string;
   isActive?: boolean;
 }
-
-const SALON_TYPES = [
-  { value: "HAIRDRESSER", label: "Coiffeur" },
-  { value: "BARBER", label: "Barbier" },
-  { value: "NAIL_SALON", label: "Manucure" },
-  { value: "SPA", label: "Spa" },
-  { value: "BEAUTY", label: "Beauté" },
-];
 
 const SERVICE_GROUPS = [
   { value: "WITH_OPTIONS", label: "Avec options d'épaisseur" },
@@ -104,6 +100,46 @@ export default function ServicesPage() {
     null
   );
   const [creatingService, setCreatingService] = useState<string | null>(null); // salonType pour la création
+  const [creatingCategory, setCreatingCategory] = useState<boolean>(false); // Flag pour la création de catégorie
+  const [editingCategory, setEditingCategory] =
+    useState<ServiceCategory | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: "",
+    description: "",
+    icon: "",
+    isActive: true,
+  });
+  const [isIconModalOpen, setIsIconModalOpen] = useState(false);
+
+  // Liste des icônes disponibles (basée sur CategoryIcon.tsx)
+  const availableIcons = [
+    { name: "scissors", label: "Scissors (Ciseaux)" },
+    { name: "braids", label: "Braids (Tresses)" },
+    { name: "braids-icon", label: "Braids Icon" },
+    { name: "locs", label: "Locs" },
+    { name: "installation", label: "Installation" },
+    { name: "care", label: "Care (Soins)" },
+    { name: "care-icon", label: "Care Icon" },
+    { name: "chemical", label: "Chemical (Chimique)" },
+    { name: "special", label: "Special (Spécial)" },
+    { name: "men-haircut-icon", label: "Men Haircut (Coupe Homme)" },
+    { name: "beard-icon", label: "Beard (Barbe)" },
+    { name: "face-care-icon", label: "Face Care (Soin Visage)" },
+    { name: "manicure-icon", label: "Manicure" },
+    { name: "pedicure-icon", label: "Pedicure" },
+    { name: "nail-art-icon", label: "Nail Art (Art des Ongles)" },
+    { name: "heart", label: "Heart (Cœur)" },
+    { name: "star", label: "Star (Étoile)" },
+    { name: "user", label: "User (Utilisateur)" },
+    { name: "hand", label: "Hand (Main)" },
+    { name: "face", label: "Face (Visage)" },
+    { name: "smile", label: "Smile (Sourire)" },
+    { name: "palette", label: "Palette" },
+    { name: "footprints", label: "Footprints (Empreintes)" },
+    { name: "droplets", label: "Droplets (Gouttes)" },
+    { name: "flask", label: "Flask (Flacon)" },
+    { name: "sparkles", label: "Sparkles (Étincelles)" },
+  ];
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -125,7 +161,11 @@ export default function ServicesPage() {
     useCreateDefaultService();
   const { mutate: updateService, isPending: isUpdating } =
     useUpdateDefaultService();
+  const { mutate: deleteService } = useDeleteDefaultService();
+  const { mutate: createCategory, isPending: isCreatingCategory } =
+    useCreateServiceCategory();
   const { mutate: updateCategory } = useUpdateServiceCategory();
+  const { mutate: deleteCategory } = useDeleteServiceCategory();
 
   // Initialiser le formulaire quand on ouvre le modal
   useEffect(() => {
@@ -158,6 +198,25 @@ export default function ServicesPage() {
       });
     }
   }, [editingService, creatingService]);
+
+  // Initialiser le formulaire de catégorie
+  useEffect(() => {
+    if (editingCategory) {
+      setCategoryFormData({
+        name: editingCategory.name || "",
+        description: editingCategory.description || "",
+        icon: editingCategory.icon || "",
+        isActive: editingCategory.isActive ?? true,
+      });
+    } else if (creatingCategory) {
+      setCategoryFormData({
+        name: "",
+        description: "",
+        icon: "",
+        isActive: true,
+      });
+    }
+  }, [editingCategory, creatingCategory]);
 
   if (!session) {
     return (
@@ -221,7 +280,8 @@ export default function ServicesPage() {
     )
   );
 
-  const formatDuration = (minutes: number) => {
+  const formatDuration = (minutes: number | undefined | null) => {
+    if (!minutes || isNaN(minutes)) return "N/A";
     if (minutes < 60) return `${minutes} min`;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -229,10 +289,11 @@ export default function ServicesPage() {
   };
 
   const formatCurrency = (amount: number) => {
+    // Les prix dans DefaultServiceOption sont stockés en dollars (pas en centimes)
     return new Intl.NumberFormat("fr-CA", {
       style: "currency",
       currency: "CAD",
-    }).format(amount / 100);
+    }).format(amount);
   };
 
   const getSalonTypeLabel = (type: string) => {
@@ -261,6 +322,16 @@ export default function ServicesPage() {
   const handleCloseModal = () => {
     setEditingService(null);
     setCreatingService(null);
+  };
+
+  const handleCloseCategoryModal = () => {
+    setEditingCategory(null);
+    setCreatingCategory(false);
+  };
+
+  const handleEditCategory = (category: ServiceCategory) => {
+    setEditingCategory(category);
+    setCreatingCategory(false);
   };
 
   const handleCreateService = (salonType: string) => {
@@ -331,9 +402,74 @@ export default function ServicesPage() {
     }
   };
 
-  const handleDelete = () => {
-    // TODO: Implémenter la suppression
-    message.info("Fonctionnalité de suppression à venir");
+  const handleDeleteService = (service: DefaultService) => {
+    if (
+      window.confirm(
+        `Êtes-vous sûr de vouloir supprimer le service "${service.name}" ?`
+      )
+    ) {
+      deleteService(service.id, {
+        onSuccess: () => {
+          message.success("Service supprimé avec succès");
+        },
+      });
+    }
+  };
+
+  const handleDeleteCategory = (category: ServiceCategory) => {
+    if (
+      window.confirm(
+        `Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ?\n\nAttention : Cette action est irréversible et ne sera possible que si la catégorie ne contient aucun service.`
+      )
+    ) {
+      deleteCategory(category.id, {
+        onSuccess: () => {
+          message.success("Catégorie supprimée avec succès");
+        },
+      });
+    }
+  };
+
+  const handleSubmitCategory = () => {
+    if (!categoryFormData.name) {
+      message.error("Le nom de la catégorie est obligatoire");
+      return;
+    }
+
+    if (editingCategory) {
+      // Mise à jour
+      updateCategory(
+        {
+          id: editingCategory.id,
+          updates: {
+            name: categoryFormData.name,
+            description: categoryFormData.description || undefined,
+            icon: categoryFormData.icon || undefined,
+            isActive: categoryFormData.isActive,
+          },
+        },
+        {
+          onSuccess: () => {
+            handleCloseCategoryModal();
+          },
+        }
+      );
+    } else if (creatingCategory) {
+      // Création
+      createCategory(
+        {
+          name: categoryFormData.name,
+          description: categoryFormData.description || undefined,
+          icon: categoryFormData.icon || undefined,
+          isActive: categoryFormData.isActive,
+        },
+        {
+          onSuccess: () => {
+            handleCloseCategoryModal();
+          },
+        }
+      );
+    }
   };
 
   if (categoriesLoading || servicesLoading) {
@@ -349,11 +485,20 @@ export default function ServicesPage() {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold">Services par Défaut</h2>
+            {/* <h2 className="text-2xl font-bold">Services par Défaut</h2> */}
             <p className="text-gray-600 mt-1">
               Gérez les services par défaut organisés par catégories
             </p>
           </div>
+          <Button
+            variant="default"
+            onClick={() => setCreatingCategory(true)}
+            className="flex items-center gap-2"
+            disabled={true}
+          >
+            <Plus className="h-4 w-4" />
+            Créer une catégorie
+          </Button>
         </div>
 
         {Object.keys(filteredServicesBySalonType).length === 0 ? (
@@ -401,18 +546,16 @@ export default function ServicesPage() {
                             {totalServices} service
                             {totalServices > 1 ? "s" : ""}
                           </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <div
                             onClick={(e) => {
                               e.stopPropagation();
                               handleCreateService(salonType);
                             }}
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
                             title="Ajouter un service"
                           >
                             <Plus className="h-4 w-4" />
-                          </Button>
+                          </div>
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -481,11 +624,31 @@ export default function ServicesPage() {
                                             : "Activer la catégorie"
                                         }
                                       />
+                                      <div
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditCategory(category);
+                                        }}
+                                        className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                        title="Modifier la catégorie"
+                                      >
+                                        <Edit2 className="h-4 w-4" />
+                                      </div>
+                                      <div
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteCategory(category);
+                                        }}
+                                        className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer text-red-600 hover:text-red-700"
+                                        title="Supprimer la catégorie"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </div>
                                     </div>
                                   </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                  <div className="space-y-4 pt-4">
+                                  <div className="space-y-2 pt-2">
                                     {categoryServices.map((service) => (
                                       <Card
                                         key={service.id}
@@ -495,18 +658,18 @@ export default function ServicesPage() {
                                             : "border-l-red-400 opacity-75"
                                         }`}
                                       >
-                                        <CardHeader>
+                                        <CardHeader className="pb-3 pt-3 px-4">
                                           <div className="flex items-start justify-between">
                                             <div className="flex-1">
-                                              <CardTitle className="text-lg">
+                                              <CardTitle className="text-base">
                                                 {service.name}
                                               </CardTitle>
                                               {service.description && (
-                                                <p className="text-sm text-gray-600 mt-1">
+                                                <p className="text-xs text-gray-600 mt-0.5">
                                                   {service.description}
                                                 </p>
                                               )}
-                                              <div className="flex flex-wrap gap-2 mt-3">
+                                              <div className="flex flex-wrap gap-1.5 mt-2">
                                                 <Badge variant="outline">
                                                   {getSalonTypeLabel(
                                                     service.salonType
@@ -539,11 +702,11 @@ export default function ServicesPage() {
                                                 )}
                                               </div>
                                             </div>
-                                            <div className="flex items-center gap-3 ml-4">
-                                              <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 ml-4">
+                                              <div className="flex items-center gap-1.5">
                                                 <Label
                                                   htmlFor={`service-toggle-${service.id}`}
-                                                  className="text-sm text-gray-600"
+                                                  className="text-xs text-gray-600"
                                                 >
                                                   Actif
                                                 </Label>
@@ -562,7 +725,7 @@ export default function ServicesPage() {
                                                   }}
                                                 />
                                               </div>
-                                              <div className="flex gap-2">
+                                              <div className="flex gap-1">
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
@@ -575,7 +738,9 @@ export default function ServicesPage() {
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
-                                                  onClick={() => handleDelete()}
+                                                  onClick={() =>
+                                                    handleDeleteService(service)
+                                                  }
                                                   className="text-red-600 hover:text-red-700"
                                                 >
                                                   <Trash2 className="h-4 w-4" />
@@ -584,13 +749,13 @@ export default function ServicesPage() {
                                             </div>
                                           </div>
                                         </CardHeader>
-                                        <CardContent>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <CardContent className="py-3 px-4">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <div>
-                                              <p className="text-sm font-medium text-gray-700">
+                                              <p className="text-xs font-medium text-gray-700">
                                                 Durée par défaut
                                               </p>
-                                              <p className="text-sm text-gray-600">
+                                              <p className="text-xs text-gray-600">
                                                 {formatDuration(
                                                   service.duration
                                                 )}
@@ -600,18 +765,18 @@ export default function ServicesPage() {
                                               service.defaultOptions.length >
                                                 0 && (
                                                 <div>
-                                                  <p className="text-sm font-medium text-gray-700 mb-2">
+                                                  <p className="text-xs font-medium text-gray-700 mb-1.5">
                                                     Options disponibles
                                                   </p>
-                                                  <div className="flex flex-col lg:flex-row gap-2 lg:gap-3">
+                                                  <div className="flex flex-col lg:flex-row gap-1.5 lg:gap-2">
                                                     {service.defaultOptions.map(
                                                       (option) => (
                                                         <div
                                                           key={option.id}
-                                                          className="flex items-center justify-between p-2 bg-gray-50 rounded flex-1 lg:flex-initial lg:min-w-[140px]"
+                                                          className="flex items-center justify-between p-1.5 bg-gray-50 rounded flex-1 lg:flex-initial lg:min-w-[120px]"
                                                         >
                                                           <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium truncate">
+                                                            <p className="text-xs font-medium truncate">
                                                               {option.name}
                                                               {option.thickness && (
                                                                 <span className="text-gray-600 ml-1">
@@ -623,13 +788,8 @@ export default function ServicesPage() {
                                                                 </span>
                                                               )}
                                                             </p>
-                                                            <p className="text-xs text-gray-500">
-                                                              {formatDuration(
-                                                                option.duration
-                                                              )}
-                                                            </p>
                                                           </div>
-                                                          <p className="text-sm font-semibold text-[#53745D] ml-2 flex-shrink-0">
+                                                          <p className="text-xs font-semibold text-[#53745D] ml-2 flex-shrink-0">
                                                             {formatCurrency(
                                                               option.price
                                                             )}
@@ -896,6 +1056,191 @@ export default function ServicesPage() {
                   : editingService
                   ? "Enregistrer"
                   : "Créer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de modification/création de catégorie */}
+        <Dialog
+          open={!!editingCategory || creatingCategory}
+          onOpenChange={handleCloseCategoryModal}
+        >
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory
+                  ? "Modifier la catégorie"
+                  : "Créer une catégorie"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingCategory
+                  ? "Modifiez les informations de la catégorie"
+                  : "Remplissez les informations pour créer une nouvelle catégorie"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Nom */}
+              <div className="space-y-2">
+                <Label htmlFor="category-name">
+                  Nom de la catégorie <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="category-name"
+                  value={categoryFormData.name}
+                  onChange={(e) =>
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      name: e.target.value,
+                    })
+                  }
+                  placeholder="Nom de la catégorie"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="category-description">Description</Label>
+                <Textarea
+                  id="category-description"
+                  value={categoryFormData.description}
+                  onChange={(e) =>
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Description de la catégorie"
+                  rows={3}
+                />
+              </div>
+
+              {/* Icône */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="category-icon">Icône</Label>
+                  <button
+                    type="button"
+                    onClick={() => setIsIconModalOpen(true)}
+                    className="inline-flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 p-1 transition-colors"
+                    title="Voir les icônes disponibles"
+                  >
+                    <Info className="h-3 w-3 text-gray-600" />
+                  </button>
+                </div>
+                <Input
+                  id="category-icon"
+                  value={categoryFormData.icon}
+                  onChange={(e) =>
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      icon: e.target.value,
+                    })
+                  }
+                  disabled={true}
+                  placeholder="Nom de l'icône (ex: scissors, hand)"
+                  className="bg-gray-50"
+                />
+                <p className="text-xs text-gray-500">
+                  Cliquez sur l'icône d'information pour voir les icônes
+                  disponibles
+                </p>
+              </div>
+
+              {/* Actif */}
+              <div className="flex items-center justify-between border-t pt-4">
+                <div className="space-y-0.5">
+                  <Label>Catégorie active</Label>
+                  <p className="text-sm text-gray-500">
+                    La catégorie est disponible et visible
+                  </p>
+                </div>
+                <Switch
+                  checked={categoryFormData.isActive}
+                  onChange={(checked: boolean) =>
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      isActive: checked,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={handleCloseCategoryModal}
+                disabled={isCreatingCategory}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleSubmitCategory}
+                disabled={isCreatingCategory}
+              >
+                {isCreatingCategory
+                  ? editingCategory
+                    ? "Enregistrement..."
+                    : "Création..."
+                  : editingCategory
+                  ? "Enregistrer"
+                  : "Créer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de sélection d'icône */}
+        <Dialog open={isIconModalOpen} onOpenChange={setIsIconModalOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Icônes disponibles</DialogTitle>
+              <DialogDescription>
+                Sélectionnez une icône pour la catégorie. Cliquez sur une icône
+                pour la sélectionner.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 py-4">
+              {availableIcons.map((icon) => (
+                <div
+                  key={icon.name}
+                  onClick={() => {
+                    setCategoryFormData({
+                      ...categoryFormData,
+                      icon: icon.name,
+                    });
+                    setIsIconModalOpen(false);
+                  }}
+                  className={`flex flex-col items-center justify-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                    categoryFormData.icon === icon.name
+                      ? "border-[#53745D] bg-[#F0F4F1]"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <CategoryIcon
+                    iconName={icon.name}
+                    className="text-[#53745D] mb-2"
+                    size={32}
+                  />
+                  <span className="text-xs text-center font-medium text-gray-700">
+                    {icon.label}
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1">
+                    {icon.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsIconModalOpen(false)}
+              >
+                Fermer
               </Button>
             </DialogFooter>
           </DialogContent>

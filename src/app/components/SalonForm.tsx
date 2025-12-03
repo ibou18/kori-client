@@ -26,32 +26,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const SALON_TYPES = [
-  { value: "HAIRDRESSER", label: "Coiffeur" },
-  { value: "BARBER", label: "Barbier" },
-  { value: "NAIL_SALON", label: "Manucure" },
-  { value: "SPA", label: "Spa" },
-  { value: "BEAUTY", label: "Beauté" },
-];
-
-const TIMEZONES = [
-  { value: "America/Toronto", label: "America/Toronto (EST)" },
-  { value: "America/Montreal", label: "America/Montreal (EST)" },
-  { value: "America/Vancouver", label: "America/Vancouver (PST)" },
-  { value: "America/Edmonton", label: "America/Edmonton (MST)" },
-  { value: "America/Winnipeg", label: "America/Winnipeg (CST)" },
-  { value: "America/Halifax", label: "America/Halifax (AST)" },
-];
-
-const DAYS = [
-  { key: "monday", label: "Lundi" },
-  { key: "tuesday", label: "Mardi" },
-  { key: "wednesday", label: "Mercredi" },
-  { key: "thursday", label: "Jeudi" },
-  { key: "friday", label: "Vendredi" },
-  { key: "saturday", label: "Samedi" },
-  { key: "sunday", label: "Dimanche" },
-];
+import { DAYS, SALON_TYPES, TIMEZONES } from "@/utils/constants";
 
 const salonFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -69,7 +44,7 @@ const salonFormSchema = z.object({
   address: z.object({
     street: z.string().min(1, "La rue est requise"),
     city: z.string().min(1, "La ville est requise"),
-    postalCode: z.string().min(1, "Le code postal est requis"),
+    postalCode: z.string().optional(),
     province: z.string().optional(),
     country: z.string().min(1, "Le pays est requis"),
   }),
@@ -418,7 +393,7 @@ export function SalonForm({
                 name="address.postalCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Code postal *</FormLabel>
+                    <FormLabel>Code postal</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="H1A 1A1" />
                     </FormControl>
@@ -427,6 +402,32 @@ export function SalonForm({
                 )}
               />
             </div>
+
+            {/* Coordonnées géographiques (lecture seule) */}
+            {salon?.address?.latitude && salon?.address?.longitude && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormItem>
+                  <FormLabel>Latitude</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={salon.address.latitude}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                  </FormControl>
+                </FormItem>
+                <FormItem>
+                  <FormLabel>Longitude</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={salon.address.longitude}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                  </FormControl>
+                </FormItem>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
