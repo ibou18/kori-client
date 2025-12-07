@@ -182,9 +182,34 @@ export const deleteUserApi = async (id: string) => {
 export const getUserSalonApi = async (userId: string) => {
   try {
     const response = await requestWrapper.get(`/user/${userId}/salon`);
+    
+    // Vérifier si la réponse contient des données valides
+    if (!response.data || (typeof response.data === 'object' && Object.keys(response.data).length === 0)) {
+      console.warn("⚠️ Réponse vide ou invalide pour getUserSalonApi:", {
+        userId,
+        responseData: response.data,
+      });
+      return null;
+    }
+    
     return response.data;
-  } catch (error) {
-    handleError(error, "Erreur lors de la récupération du salon");
+  } catch (error: any) {
+    // ✅ Ne pas appeler handleError ici car il lance une exception
+    // On veut juste logger et retourner null pour que le hook puisse gérer l'erreur
+    console.error("❌ Erreur getUserSalonApi:", {
+      userId,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        baseURL: error.config?.baseURL,
+      },
+    });
+
+    // Retourner null pour que React Query puisse gérer l'erreur
     return null;
   }
 };
