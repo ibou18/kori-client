@@ -1,14 +1,17 @@
 "use client";
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
+import { OwnerInvitationModal } from "@/app/components/OwnerInvitationModal";
 import { UserModal } from "@/app/components/UserModal";
 import {
   useCreateUser,
   useDeleteUser,
   useGetUsers,
+  useInviteOwner,
   useUpdateUser,
 } from "@/app/data/hooks";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -48,12 +51,14 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const { data, isLoading } = useGetUsers();
   const { mutate: deleteUser } = useDeleteUser();
   const { mutate: createUser } = useCreateUser();
   const { mutate: updateUser } = useUpdateUser();
+  const { mutate: inviteOwner } = useInviteOwner();
 
   if (!session) {
     return (
@@ -92,6 +97,24 @@ export default function UsersPage() {
   const handleAdd = () => {
     setEditingUser(null);
     setIsModalOpen(true);
+  };
+
+  const handleInviteOwner = () => {
+    setIsInvitationModalOpen(true);
+  };
+
+  const handleInvitationSubmit = async (values: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    indicatif?: string;
+  }) => {
+    inviteOwner(values, {
+      onSuccess: () => {
+        setIsInvitationModalOpen(false);
+      },
+    });
   };
 
   const handleModalSubmit = async (values: {
@@ -335,7 +358,14 @@ export default function UsersPage() {
         onAdd={handleAdd}
         addButtonLabel="Ajouter un utilisateur"
         emptyMessage="Aucun utilisateur trouvé"
-        filterComponent={filterComponent}
+        filterComponent={
+          <div className="flex flex-wrap gap-4 items-center">
+            {filterComponent}
+            <Button onClick={handleInviteOwner} variant="outline">
+              Inviter un propriétaire
+            </Button>
+          </div>
+        }
       />
       <UserModal
         open={isModalOpen}
@@ -347,6 +377,13 @@ export default function UsersPage() {
         }}
         user={editingUser}
         onSubmit={handleModalSubmit}
+      />
+      <OwnerInvitationModal
+        open={isInvitationModalOpen}
+        onOpenChange={(open) => {
+          setIsInvitationModalOpen(open);
+        }}
+        onSubmit={handleInvitationSubmit}
       />
     </>
   );

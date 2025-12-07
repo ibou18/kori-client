@@ -90,8 +90,8 @@ export const handleError = (
     finalMessage = errorMessage;
   }
 
-  // Logger l'erreur pour débogage (seulement si responseData n'est pas vide)
-  if (responseData && Object.keys(responseData).length > 0) {
+  // Logger l'erreur pour débogage
+  if (responseData && typeof responseData === "object" && Object.keys(responseData).length > 0) {
     console.error("API Error:", {
       status,
       url: err.config?.url,
@@ -100,14 +100,15 @@ export const handleError = (
       responseData,
     });
   } else {
-    // Si responseData est vide, logger plus d'informations
-    console.error("API Error (empty response):", {
+    // Si responseData est vide ou invalide, logger plus d'informations
+    console.error("API Error (empty or invalid response):", {
       status,
       url: err.config?.url,
       method: err.config?.method,
       message: finalMessage,
       errorMessage: err.message,
       response: err.response,
+      responseData: responseData,
       request: {
         url: err.config?.url,
         baseURL: err.config?.baseURL,

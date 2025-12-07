@@ -27,7 +27,7 @@ import {
   GET_USERS,
 } from "@/shared/constantes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { message } from "antd";
+import { toast } from "sonner";
 import {
   applyDefaultServicesApi,
   bulkCreateServiceOptionsApi,
@@ -52,11 +52,11 @@ import {
   // Stripe Connect
   createStripeConnectAccountApi,
   createUserApi,
+  deleteDefaultServiceApi,
   deleteReviewApi,
   deleteSalonApi,
   deleteSalonHolidayApi,
   deleteSalonPhotoApi,
-  deleteDefaultServiceApi,
   deleteSalonServiceApi,
   deleteServiceCategoryApi,
   deleteServiceOptionApi,
@@ -76,6 +76,7 @@ import {
   getMeApi,
   getMySalonApi,
   getNearestSalonsApi,
+  getOwnerInvitationByTokenApi,
   // Platform Config
   getPlatformConfigApi,
   getRevenueEvolutionApi,
@@ -122,6 +123,8 @@ import {
   getUsersApi,
   getUsersbyTokenApi,
   getUserStatsApi,
+  // Owner Invitations
+  inviteOwnerApi,
   // Auth
   loginApi,
   markBookingAsNoShowApi,
@@ -158,10 +161,10 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: loginApi,
     onSuccess: () => {
-      message.success("Connexion réussie !");
+      toast.success("Connexion réussie !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la connexion");
+      toast.error(error?.message || "Erreur lors de la connexion");
     },
   });
 };
@@ -172,10 +175,10 @@ export const useRegister = () => {
     mutationFn: registerApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-      message.success("Inscription réussie !");
+      toast.success("Inscription réussie !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'inscription");
+      toast.error(error?.message || "Erreur lors de l'inscription");
     },
   });
 };
@@ -186,10 +189,10 @@ export const useRegisterSalon = () => {
     mutationFn: registerSalonApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
-      message.success("Inscription du salon réussie !");
+      toast.success("Inscription du salon réussie !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'inscription du salon");
+      toast.error(error?.message || "Erreur lors de l'inscription du salon");
     },
   });
 };
@@ -198,10 +201,10 @@ export const useForgotPassword = () => {
   return useMutation({
     mutationFn: forgotPasswordApi,
     onSuccess: () => {
-      message.success("Email de réinitialisation envoyé !");
+      toast.success("Email de réinitialisation envoyé !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'envoi de l'email");
+      toast.error(error?.message || "Erreur lors de l'envoi de l'email");
     },
   });
 };
@@ -210,10 +213,10 @@ export const useResetPassword = () => {
   return useMutation({
     mutationFn: resetPasswordApi,
     onSuccess: () => {
-      message.success("Mot de passe réinitialisé avec succès !");
+      toast.success("Mot de passe réinitialisé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la réinitialisation");
+      toast.error(error?.message || "Erreur lors de la réinitialisation");
     },
   });
 };
@@ -284,10 +287,10 @@ export const useCreateUser = () => {
     mutationFn: createUserApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-      message.success("Utilisateur créé avec succès !");
+      toast.success("Utilisateur créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -299,10 +302,10 @@ export const useUpdateUser = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
       queryClient.invalidateQueries({ queryKey: [GET_USERS, variables.id] });
-      message.success("Utilisateur mis à jour avec succès !");
+      toast.success("Utilisateur mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -313,10 +316,10 @@ export const useUpdateUserProfile = () => {
     mutationFn: updateUserProfileApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["me"] });
-      message.success("Profil mis à jour avec succès !");
+      toast.success("Profil mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -327,10 +330,10 @@ export const useDeleteUser = () => {
     mutationFn: deleteUserApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-      message.success("Utilisateur supprimé avec succès !");
+      toast.success("Utilisateur supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -341,10 +344,10 @@ export const useBulkDeleteUsers = () => {
     mutationFn: bulkDeleteUsersApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
-      message.success("Utilisateurs supprimés avec succès !");
+      toast.success("Utilisateurs supprimés avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression en masse");
+      toast.error(error?.message || "Erreur lors de la suppression en masse");
     },
   });
 };
@@ -354,6 +357,39 @@ export const useGetUserStats = () => {
     queryKey: ["user-stats"],
     queryFn: getUserStatsApi,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// ============================================================================
+// OWNER INVITATIONS HOOKS
+// ============================================================================
+
+export const useInviteOwner = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: inviteOwnerApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      toast.success("Invitation envoyée avec succès !");
+    },
+    onError: (error: any) => {
+      console.error("❌ Erreur useInviteOwner:", error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.formattedMessage ||
+        error?.message ||
+        "Erreur lors de l'envoi de l'invitation";
+      toast.error(errorMessage);
+    },
+  });
+};
+
+export const useGetOwnerInvitationByToken = (token: string | null) => {
+  return useQuery({
+    queryKey: ["owner-invitation", token],
+    queryFn: () => getOwnerInvitationByTokenApi(token!),
+    enabled: !!token,
+    retry: false,
   });
 };
 
@@ -371,10 +407,10 @@ export const useUpdateUserPreferences = () => {
     mutationFn: updateUserPreferencesApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-preferences"] });
-      message.success("Préférences mises à jour avec succès !");
+      toast.success("Préférences mises à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -383,10 +419,10 @@ export const useContact = () => {
   return useMutation({
     mutationFn: contactApi,
     onSuccess: () => {
-      message.success("Message envoyé avec succès !");
+      toast.success("Message envoyé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'envoi");
+      toast.error(error?.message || "Erreur lors de l'envoi");
     },
   });
 };
@@ -395,10 +431,10 @@ export const useSendMail = () => {
   return useMutation({
     mutationFn: contactApi,
     onSuccess: () => {
-      message.success("Message envoyé avec succès !");
+      toast.success("Message envoyé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'envoi");
+      toast.error(error?.message || "Erreur lors de l'envoi");
     },
   });
 };
@@ -439,10 +475,10 @@ export const useCreateSalon = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
       queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
-      message.success("Salon créé avec succès !");
+      toast.success("Salon créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -455,10 +491,10 @@ export const useUpdateSalon = () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
       queryClient.invalidateQueries({ queryKey: [GET_SALON, variables.id] });
       queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
-      message.success("Salon mis à jour avec succès !");
+      toast.success("Salon mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -470,10 +506,10 @@ export const useDeleteSalon = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
       queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
-      message.success("Salon supprimé avec succès !");
+      toast.success("Salon supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -622,10 +658,10 @@ export const useCreateBooking = () => {
     mutationFn: createBookingApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
-      message.success("Réservation créée avec succès !");
+      toast.success("Réservation créée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -637,10 +673,10 @@ export const useUpdateBooking = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
       queryClient.invalidateQueries({ queryKey: [GET_BOOKING, variables.id] });
-      message.success("Réservation mise à jour avec succès !");
+      toast.success("Réservation mise à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -695,10 +731,10 @@ export const useCreateCheckoutSession = () => {
   return useMutation({
     mutationFn: createCheckoutSessionApi,
     onSuccess: () => {
-      message.success("Session de paiement créée !");
+      toast.success("Session de paiement créée !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -715,7 +751,7 @@ export const useCreatePaymentIntent = () => {
   return useMutation({
     mutationFn: createPaymentIntentApi,
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -726,10 +762,10 @@ export const useConfirmPayment = () => {
     mutationFn: confirmPaymentApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
-      message.success("Paiement confirmé avec succès !");
+      toast.success("Paiement confirmé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la confirmation");
+      toast.error(error?.message || "Erreur lors de la confirmation");
     },
   });
 };
@@ -738,7 +774,7 @@ export const useCalculateTaxes = () => {
   return useMutation({
     mutationFn: calculateTaxesApi,
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors du calcul");
+      toast.error(error?.message || "Erreur lors du calcul");
     },
   });
 };
@@ -774,10 +810,10 @@ export const useCreateSalonService = () => {
     mutationFn: createSalonServiceApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
-      message.success("Service créé avec succès !");
+      toast.success("Service créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -791,10 +827,10 @@ export const useUpdateSalonService = () => {
       queryClient.invalidateQueries({
         queryKey: [GET_SALON_SERVICE, variables.serviceId],
       });
-      message.success("Service mis à jour avec succès !");
+      toast.success("Service mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -805,10 +841,10 @@ export const useReactivateSalonService = () => {
     mutationFn: reactivateSalonServiceApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
-      message.success("Service réactivé avec succès !");
+      toast.success("Service réactivé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la réactivation");
+      toast.error(error?.message || "Erreur lors de la réactivation");
     },
   });
 };
@@ -819,10 +855,10 @@ export const useDeleteSalonService = () => {
     mutationFn: deleteSalonServiceApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
-      message.success("Service supprimé avec succès !");
+      toast.success("Service supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -857,10 +893,10 @@ export const useCreateServiceOption = () => {
     mutationFn: createServiceOptionApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
-      message.success("Option créée avec succès !");
+      toast.success("Option créée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -874,10 +910,10 @@ export const useUpdateServiceOption = () => {
       queryClient.invalidateQueries({
         queryKey: [GET_SERVICE_OPTIONS, variables.id],
       });
-      message.success("Option mise à jour avec succès !");
+      toast.success("Option mise à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -888,10 +924,10 @@ export const useDeleteServiceOption = () => {
     mutationFn: deleteServiceOptionApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
-      message.success("Option supprimée avec succès !");
+      toast.success("Option supprimée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -902,10 +938,10 @@ export const useBulkCreateServiceOptions = () => {
     mutationFn: bulkCreateServiceOptionsApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SERVICE_OPTIONS] });
-      message.success("Options créées avec succès !");
+      toast.success("Options créées avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -929,10 +965,10 @@ export const useCreateServiceCategory = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SERVICE_CATEGORIES] });
       queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
-      message.success("Catégorie créée avec succès !");
+      toast.success("Catégorie créée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -944,10 +980,10 @@ export const useUpdateServiceCategory = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SERVICE_CATEGORIES] });
       queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
-      message.success("Catégorie mise à jour avec succès !");
+      toast.success("Catégorie mise à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -959,10 +995,10 @@ export const useDeleteServiceCategory = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SERVICE_CATEGORIES] });
       queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
-      message.success("Catégorie supprimée avec succès !");
+      toast.success("Catégorie supprimée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -989,10 +1025,10 @@ export const useCreateDefaultService = () => {
     mutationFn: createDefaultServiceApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
-      message.success("Service créé avec succès !");
+      toast.success("Service créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -1003,10 +1039,10 @@ export const useUpdateDefaultService = () => {
     mutationFn: updateDefaultServiceApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
-      message.success("Service mis à jour avec succès !");
+      toast.success("Service mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -1017,10 +1053,10 @@ export const useDeleteDefaultService = () => {
     mutationFn: deleteDefaultServiceApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_DEFAULT_SERVICES] });
-      message.success("Service supprimé avec succès !");
+      toast.success("Service supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -1031,10 +1067,10 @@ export const useApplyDefaultServices = () => {
     mutationFn: applyDefaultServicesApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
-      message.success("Services par défaut appliqués avec succès !");
+      toast.success("Services par défaut appliqués avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'application");
+      toast.error(error?.message || "Erreur lors de l'application");
     },
   });
 };
@@ -1070,10 +1106,10 @@ export const useCreateReview = () => {
     mutationFn: createReviewApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_REVIEWS] });
-      message.success("Avis créé avec succès !");
+      toast.success("Avis créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -1085,10 +1121,10 @@ export const useUpdateReview = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_REVIEWS] });
       queryClient.invalidateQueries({ queryKey: [GET_REVIEW, variables.id] });
-      message.success("Avis mis à jour avec succès !");
+      toast.success("Avis mis à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -1099,10 +1135,10 @@ export const useDeleteReview = () => {
     mutationFn: deleteReviewApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_REVIEWS] });
-      message.success("Avis supprimé avec succès !");
+      toast.success("Avis supprimé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -1112,10 +1148,10 @@ export const useReportReview = () => {
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       reportReviewApi(id, data),
     onSuccess: () => {
-      message.success("Avis signalé avec succès !");
+      toast.success("Avis signalé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors du signalement");
+      toast.error(error?.message || "Erreur lors du signalement");
     },
   });
 };
@@ -1130,10 +1166,10 @@ export const useCreateRating = () => {
     mutationFn: createRatingApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_RATINGS] });
-      message.success("Note créée avec succès !");
+      toast.success("Note créée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -1172,10 +1208,10 @@ export const useUploadSalonPhoto = () => {
       queryClient.invalidateQueries({
         queryKey: [GET_SALON, variables.salonId],
       });
-      message.success("Photo uploadée avec succès !");
+      toast.success("Photo uploadée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'upload");
+      toast.error(error?.message || "Erreur lors de l'upload");
     },
   });
 };
@@ -1187,10 +1223,10 @@ export const useUploadServicePhoto = () => {
       uploadServicePhotoApi(serviceId, file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_SERVICES] });
-      message.success("Photo uploadée avec succès !");
+      toast.success("Photo uploadée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'upload");
+      toast.error(error?.message || "Erreur lors de l'upload");
     },
   });
 };
@@ -1210,10 +1246,10 @@ export const useDeleteSalonPhoto = () => {
     mutationFn: deleteSalonPhotoApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_PHOTOS] });
-      message.success("Photo supprimée avec succès !");
+      toast.success("Photo supprimée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -1307,10 +1343,10 @@ export const useCancelBooking = () => {
       queryClient.invalidateQueries({
         queryKey: [GET_BOOKING, variables.bookingId],
       });
-      message.success("Réservation annulée avec succès !");
+      toast.success("Réservation annulée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de l'annulation");
+      toast.error(error?.message || "Erreur lors de l'annulation");
     },
   });
 };
@@ -1321,10 +1357,10 @@ export const useMarkBookingAsNoShow = () => {
     mutationFn: markBookingAsNoShowApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
-      message.success("Réservation marquée comme no-show !");
+      toast.success("Réservation marquée comme no-show !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors du marquage");
+      toast.error(error?.message || "Erreur lors du marquage");
     },
   });
 };
@@ -1348,10 +1384,10 @@ export const useCreateSalonHoliday = () => {
     mutationFn: createSalonHolidayApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_HOLIDAYS] });
-      message.success("Vacance créée avec succès !");
+      toast.success("Vacance créée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };
@@ -1365,10 +1401,10 @@ export const useUpdateSalonHoliday = () => {
       queryClient.invalidateQueries({
         queryKey: [GET_SALON_HOLIDAYS, variables.id],
       });
-      message.success("Vacance mise à jour avec succès !");
+      toast.success("Vacance mise à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -1379,10 +1415,10 @@ export const useDeleteSalonHoliday = () => {
     mutationFn: deleteSalonHolidayApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALON_HOLIDAYS] });
-      message.success("Vacance supprimée avec succès !");
+      toast.success("Vacance supprimée avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la suppression");
+      toast.error(error?.message || "Erreur lors de la suppression");
     },
   });
 };
@@ -1405,10 +1441,10 @@ export const useProcessBookingPayout = () => {
     mutationFn: processBookingPayoutApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_PAYOUTS] });
-      message.success("Paiement traité avec succès !");
+      toast.success("Paiement traité avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors du traitement");
+      toast.error(error?.message || "Erreur lors du traitement");
     },
   });
 };
@@ -1440,10 +1476,10 @@ export const useUpdatePlatformConfig = () => {
     mutationFn: updatePlatformConfigApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_PLATFORM_CONFIG] });
-      message.success("Configuration mise à jour avec succès !");
+      toast.success("Configuration mise à jour avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la mise à jour");
+      toast.error(error?.message || "Erreur lors de la mise à jour");
     },
   });
 };
@@ -1458,10 +1494,10 @@ export const useCreateStripeConnectAccount = () => {
     mutationFn: createStripeConnectAccountApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
-      message.success("Compte Stripe Connect créé avec succès !");
+      toast.success("Compte Stripe Connect créé avec succès !");
     },
     onError: (error: any) => {
-      message.error(error?.message || "Erreur lors de la création");
+      toast.error(error?.message || "Erreur lors de la création");
     },
   });
 };

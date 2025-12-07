@@ -232,6 +232,48 @@ export const contactApi = async (data: any) => {
 };
 
 // ============================================================================
+// OWNER INVITATIONS
+// ============================================================================
+
+export const inviteOwnerApi = async (data: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  indicatif?: string;
+}) => {
+  try {
+    // Utiliser le même format que les autres endpoints (sans /api car baseURL devrait l'inclure ou le serveur l'ajoute)
+    const response = await requestWrapper.post("/user/invite-owner", data);
+    return response.data;
+  } catch (error: any) {
+    // Ne pas appeler handleError ici car il lance une exception
+    // On veut juste logger et laisser le hook gérer l'erreur
+    console.error("❌ Erreur inviteOwnerApi:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      fullURL: `${error.config?.baseURL}${error.config?.url}`,
+    });
+    throw error;
+  }
+};
+
+export const getOwnerInvitationByTokenApi = async (token: string) => {
+  try {
+    // Utiliser le même format que les autres endpoints
+    const response = await requestWrapper.get(`/user/invite-owner/${token}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de l'invitation");
+    throw error;
+  }
+};
+
+// ============================================================================
 // SALONS
 // ============================================================================
 
