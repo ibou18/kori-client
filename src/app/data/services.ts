@@ -179,6 +179,26 @@ export const deleteUserApi = async (id: string) => {
   }
 };
 
+export const getUserSalonApi = async (userId: string) => {
+  try {
+    const response = await requestWrapper.get(`/user/${userId}/salon`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du salon");
+    return null;
+  }
+};
+
+export const softDeleteUserApi = async (userId: string) => {
+  try {
+    const response = await requestWrapper.delete(`/user/${userId}/soft-delete`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la désactivation de l'utilisateur");
+    return null;
+  }
+};
+
 export const bulkDeleteUsersApi = async (userIds: string[]) => {
   try {
     const response = await requestWrapper.post("/user/bulk-delete", {

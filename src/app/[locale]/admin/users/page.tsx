@@ -2,16 +2,26 @@
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
 import { OwnerInvitationModal } from "@/app/components/OwnerInvitationModal";
+import { SalonForm, SalonFormValues } from "@/app/components/SalonForm";
 import { UserModal } from "@/app/components/UserModal";
 import {
   useCreateUser,
   useDeleteUser,
   useGetUsers,
+  useGetUserSalon,
   useInviteOwner,
+  useSoftDeleteUser,
+  useUpdateSalon,
   useUpdateUser,
 } from "@/app/data/hooks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -21,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { UserStatusBadge } from "@/utils/statusUtils";
 import dayjs from "dayjs";
-import { Mail, Phone, User as UserIcon } from "lucide-react";
+import { Building2, Mail, Phone, Trash2, User as UserIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -52,13 +62,18 @@ export default function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
+  const [isSalonModalOpen, setIsSalonModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const { data, isLoading } = useGetUsers();
   const { mutate: deleteUser } = useDeleteUser();
   const { mutate: createUser } = useCreateUser();
   const { mutate: updateUser } = useUpdateUser();
   const { mutate: inviteOwner } = useInviteOwner();
+  const { mutate: softDeleteUser } = useSoftDeleteUser();
+  const { mutate: updateSalon } = useUpdateSalon();
+  const { data: userSalonData } = useGetUserSalon(selectedUserId);
 
   if (!session) {
     return (
@@ -83,6 +98,23 @@ export default function UsersPage() {
 
   const handleDelete = (user: User) => {
     deleteUser(user.id);
+  };
+
+  const handleEditSalon = (user: User) => {
+    if (user.role === "OWNER") {
+      setSelectedUserId(user.id);
+      setIsSalonModalOpen(true);
+    }
+  };
+
+  const handleSoftDelete = (user: User) => {
+    if (
+      confirm(
+        `Êtes-vous sûr de vouloir désactiver l'utilisateur ${user.firstName} ${user.lastName} et son salon ? Cette action peut être annulée en réactivant l'utilisateur.`
+      )
+    ) {
+      softDeleteUser(user.id);
+    }
   };
 
   const handleView = (user: User) => {
@@ -315,6 +347,35 @@ export default function UsersPage() {
         </div>
       ),
     },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (user: User) => (
+        <div className="flex items-center gap-2">
+          {user.role === "OWNER" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditSalon(user)}
+              className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
+              title="Modifier le salon"
+            >
+              <Building2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleSoftDelete(user)}
+            className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600"
+            title="Désactiver l'utilisateur et son salon"
+            disabled={!user.isActive}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   const filterComponent = (
@@ -385,6 +446,40 @@ export default function UsersPage() {
         }}
         onSubmit={handleInvitationSubmit}
       />
+      {isSalonModalOpen && userSalonData?.data && (
+        <Dialog
+          open={isSalonModalOpen}
+          onOpenChange={(open) => {
+            setIsSalonModalOpen(open);
+            if (!open) {
+              setSelectedUserId(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Modifier le salon</DialogTitle>
+            </DialogHeader>
+            <SalonForm
+              salon={userSalonData.data}
+              onSubmit={(values: SalonFormValues) => {
+                updateSalon(
+                  {
+                    id: userSalonData.data.id,
+                    data: values,
+                  },
+                  {
+                    onSuccess: () => {
+                      setIsSalonModalOpen(false);
+                      setSelectedUserId(null);
+                    },
+                  }
+                );
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

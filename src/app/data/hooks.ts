@@ -119,6 +119,7 @@ import {
   getTopServicesApi,
   getUserApi,
   getUserPreferencesApi,
+  getUserSalonApi,
   // Users
   getUsersApi,
   getUsersbyTokenApi,
@@ -135,6 +136,7 @@ import {
   reportReviewApi,
   resetPasswordApi,
   searchSalonsApi,
+  softDeleteUserApi,
   updateBookingApi,
   updateDefaultServiceApi,
   updatePlatformConfigApi,
@@ -302,6 +304,8 @@ export const useUpdateUser = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_USERS] });
       queryClient.invalidateQueries({ queryKey: [GET_USERS, variables.id] });
+      // Invalider aussi les queries user-salon au cas où l'utilisateur est un OWNER
+      queryClient.invalidateQueries({ queryKey: ["user-salon"] });
       toast.success("Utilisateur mis à jour avec succès !");
     },
     onError: (error: any) => {
@@ -348,6 +352,32 @@ export const useBulkDeleteUsers = () => {
     },
     onError: (error: any) => {
       toast.error(error?.message || "Erreur lors de la suppression en masse");
+    },
+  });
+};
+
+export const useGetUserSalon = (userId: string | null) => {
+  return useQuery({
+    queryKey: ["user-salon", userId],
+    queryFn: () => getUserSalonApi(userId!),
+    enabled: !!userId,
+    retry: false,
+  });
+};
+
+export const useSoftDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: softDeleteUserApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+      // Invalider aussi les queries salon pour mettre à jour les données
+      queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
+      queryClient.invalidateQueries({ queryKey: ["user-salon"] });
+      toast.success("Utilisateur et salon désactivés avec succès !");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erreur lors de la désactivation");
     },
   });
 };
@@ -491,6 +521,10 @@ export const useUpdateSalon = () => {
       queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
       queryClient.invalidateQueries({ queryKey: [GET_SALON, variables.id] });
       queryClient.invalidateQueries({ queryKey: [GET_MY_SALON] });
+      // Invalider aussi les queries user-salon pour mettre à jour le tableau admin
+      queryClient.invalidateQueries({ queryKey: ["user-salon"] });
+      // Invalider GET_USERS pour mettre à jour le tableau des utilisateurs
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
       toast.success("Salon mis à jour avec succès !");
     },
     onError: (error: any) => {
