@@ -47,10 +47,10 @@ export function OwnerInvitationModal({
   const form = useForm<InvitationFormValues>({
     resolver: zodResolver(invitationFormSchema),
     defaultValues: {
-      email: "ibdiallo.ca@gmail.com",
-      firstName: "userTest",
-      lastName: "userTest",
-      phone: "1234567890",
+      email: "",
+      firstName: "",
+      lastName: "",
+      phone: "",
       indicatif: "+1",
     },
   });
