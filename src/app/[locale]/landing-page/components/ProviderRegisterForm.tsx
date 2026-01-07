@@ -479,8 +479,16 @@ export function ProviderRegisterForm() {
         </div>
       </footer>
 
-      {/* Modal de succès - Non fermable */}
-      {showSuccessModal && <SuccessModal email={formData.email} />}
+      {/* Modal de succès - Bloquée 10 secondes puis fermable */}
+      {showSuccessModal && (
+        <SuccessModal
+          email={formData.email}
+          onClose={() => {
+            setShowSuccessModal(false);
+            router.push("/");
+          }}
+        />
+      )}
     </div>
   );
 }

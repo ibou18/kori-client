@@ -1,15 +1,47 @@
 "use client";
 
-import { Check, Download, Smartphone } from "lucide-react";
+import { Check, Download, Smartphone, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface SuccessModalProps {
   email: string;
+  onClose: () => void;
 }
 
-export function SuccessModal({ email }: SuccessModalProps) {
+export function SuccessModal({ email, onClose }: SuccessModalProps) {
+  const [canClose, setCanClose] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(10);
+
+  useEffect(() => {
+    // Timer de 10 secondes
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          setCanClose(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 text-center relative animate-in fade-in zoom-in duration-300">
+        {/* Bouton de fermeture - Affiché après 10 secondes */}
+        {canClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Fermer"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        )}
+
         <div className="mb-6">
           <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Check className="w-12 h-12 text-white" strokeWidth={3} />
@@ -20,6 +52,12 @@ export function SuccessModal({ email }: SuccessModalProps) {
           <p className="text-gray-600 text-lg">
             Votre salon a été créé avec succès !
           </p>
+          {!canClose && (
+            <p className="text-sm text-gray-500 mt-2">
+              Vous pourrez fermer cette fenêtre dans {timeRemaining} seconde
+              {timeRemaining > 1 ? "s" : ""}
+            </p>
+          )}
         </div>
 
         <div className="mb-8">
@@ -71,4 +109,3 @@ export function SuccessModal({ email }: SuccessModalProps) {
     </div>
   );
 }
-
