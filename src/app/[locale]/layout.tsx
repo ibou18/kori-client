@@ -11,6 +11,7 @@ import { getServerSession } from "next-auth";
 
 import WelcomeComponent from "../components/WelcomeComponent";
 import Navbar from "./Navbar";
+import LayoutWrapper from "./LayoutWrapper";
 
 export default async function LocaleLayout({
   children,
@@ -52,7 +53,7 @@ export default async function LocaleLayout({
           </SidebarInset>
         </SidebarProvider>
       ) : (
-        <Navbar>{children}</Navbar>
+        <LayoutWrapper>{children}</LayoutWrapper>
       )}
     </div>
   );

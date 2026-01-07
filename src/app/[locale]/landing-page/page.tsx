@@ -1,3 +1,7 @@
+"use client";
+
+import { ProviderRegisterForm } from "./components/ProviderRegisterForm";
+
 export default function LandingPage() {
-  return <div>LandingPage</div>;
+  return <ProviderRegisterForm />;
 }
