@@ -132,10 +132,24 @@ export function SalonResumeStep({
 
         {formData.salonImages.length > 0 && (
           <div className="pt-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Photos</h3>
-            <p className="text-sm text-gray-600">
-              {formData.salonImages.length} photo(s) ajoutée(s)
-            </p>
+            <h3 className="font-semibold text-gray-900 mb-3">
+              Photos ({formData.salonImages.length})
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-3">
+              {formData.salonImages.map((image, index) => (
+                <div
+                  key={index}
+                  className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt={`Salon photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -171,4 +185,3 @@ export function SalonResumeStep({
     </div>
   );
 }
-

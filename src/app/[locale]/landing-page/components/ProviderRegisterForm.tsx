@@ -1,12 +1,14 @@
 "use client";
 
 import { useGetSalonTypes, useRegisterSalon } from "@/app/data/hooks";
+import icon from "@/assets/icon.png";
 import logo from "@/assets/logo-black.png";
+import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExtraOfferStep } from "./steps/ExtraOfferStep";
 import { PersonalInfoStep } from "./steps/PersonalInfoStep";
 import { SalonAddressStep } from "./steps/SalonAddressStep";
@@ -17,6 +19,7 @@ import { SalonNameStep } from "./steps/SalonNameStep";
 import { SalonResumeStep } from "./steps/SalonResumeStep";
 import { ServicesStep } from "./steps/ServicesStep";
 import { SuccessModal } from "./SuccessModal";
+import { TestimonialsCarousel } from "./TestimonialsCarousel";
 
 // Types pour les données du formulaire
 interface FormData {
@@ -89,6 +92,8 @@ export function ProviderRegisterForm() {
   const { mutate: registerSalon, isPending } = useRegisterSalon();
   const { data: salonTypesResponse, isLoading: isLoadingSalonTypes } =
     useGetSalonTypes();
+  const formRef = useRef<HTMLElement>(null);
+  const hasScrolledRef = useRef(false);
 
   const salonTypes = salonTypesResponse?.data?.salonTypes || [];
   const isDevMode = process.env.NODE_ENV === "development";
@@ -97,7 +102,7 @@ export function ProviderRegisterForm() {
     email: isDevMode ? "test@test.com" : "",
     lastName: isDevMode ? "Test" : "",
     firstName: isDevMode ? "Test" : "",
-    phone: isDevMode ? "+1234567890" : "",
+    phone: isDevMode ? "2345678901" : "",
     countryCode: "+1",
     selectedCountryCode: "CA",
     password: isDevMode ? "Test1234!" : "",
@@ -174,6 +179,21 @@ export function ProviderRegisterForm() {
   const updateFormData = useCallback((updates: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
+
+  // Défilement automatique vers le formulaire après 5 secondes (une seule fois au chargement)
+  useEffect(() => {
+    if (currentStep === 0 && !hasScrolledRef.current) {
+      const timer = setTimeout(() => {
+        formRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        hasScrolledRef.current = true;
+      }, 6000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
 
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
@@ -428,29 +448,159 @@ export function ProviderRegisterForm() {
       {/* Hero Section - Only on first step */}
       {currentStep === 0 && (
         <div className="">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-            <div className="text-center">
-              <h1 className="text-balance text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-                Développez votre activité,
-                <span className="relative inline-block ml-2">
-                  <span className="relative">
-                    rejoignez la communauté korí
-                    <span className="absolute bottom-0 left-0 w-full h-2 bg-primary/30 -z-10" />
-                  </span>
-                </span>
-              </h1>
-              <p className="mt-6 text-pretty mx-auto max-w-2xl text-lg font-medium text-gray-600 sm:text-xl">
-                Créez votre profil professionnel en quelques minutes et
-                commencez à recevoir des réservations. Gérez votre salon, vos
-                services et vos clients en toute simplicité.
-              </p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+            {/* Icône Kori animée - Mobile (en haut) */}
+            {/* <motion.div
+              className="flex justify-center mb-6 lg:hidden"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <motion.div
+                animate={{
+                  rotate: [-0.5, 0.5, -0.5, 0.5, -0.3, 0.3, 0],
+                  x: [-0.3, 0.3, -0.3, 0.3, 0],
+                  y: [-0.3, 0.3, -0.3, 0.3, 0],
+                  scale: [1, 1.03, 1],
+                }}
+                transition={{
+                  rotate: {
+                    duration: 0.8,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                  x: {
+                    duration: 0.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                  y: {
+                    duration: 0.65,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                  scale: {
+                    duration: 2.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                }}
+                className="relative"
+              >
+                <Image
+                  src={icon}
+                  alt="Kori"
+                  width={80}
+                  height={80}
+                  className="w-16 h-16"
+                />
+              </motion.div>
+            </motion.div> */}
+
+            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-12">
+              {/* Icône Kori animée - Desktop (à gauche) */}
+              <motion.div
+                className="flex-shrink-0 hidden lg:block"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              >
+                <motion.div
+                  animate={{
+                    rotate: [-0.5, 0.5, -0.5, 0.5, -0.3, 0.3, 0],
+                    x: [-0.3, 0.3, -0.3, 0.3, 0],
+                    y: [-0.3, 0.3, -0.3, 0.3, 0],
+                    scale: [1, 1.03, 1],
+                  }}
+                  transition={{
+                    rotate: {
+                      duration: 0.8,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    },
+                    x: {
+                      duration: 0.6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    },
+                    y: {
+                      duration: 0.65,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    },
+                    scale: {
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    },
+                  }}
+                  className="relative"
+                >
+                  <Image
+                    src={icon}
+                    alt="Kori"
+                    width={120}
+                    height={120}
+                    className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40"
+                  />
+                </motion.div>
+              </motion.div>
+
+              {/* Contenu texte */}
+              <div className="flex-1 text-center lg:text-left">
+                <motion.h1
+                  className="text-balance text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  Développez votre activité,
+                  <motion.span
+                    className="relative inline-block ml-2"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                  >
+                    <span className="relative">
+                      rejoignez la communauté korí
+                      <motion.span
+                        className="absolute bottom-0 left-0 w-full h-2 bg-primary/30 -z-10"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{
+                          duration: 0.8,
+                          delay: 0.6,
+                          ease: "easeOut",
+                        }}
+                        style={{ transformOrigin: "left" }}
+                      />
+                    </span>
+                  </motion.span>
+                </motion.h1>
+                <motion.p
+                  className="mt-6 text-pretty mx-auto lg:mx-0 max-w-2xl text-lg font-medium text-gray-600 sm:text-xl"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+                >
+                  Créez votre profil professionnel et commencez à recevoir des
+                  réservations. Gérez votre salon, vos services et vos clients
+                  en toute simplicité.
+                </motion.p>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Commentaire client */}
+      {currentStep === 0 && <TestimonialsCarousel />}
+
       {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main
+        ref={formRef}
+        className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
+      >
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 lg:p-10">
           {renderCurrentStep()}
         </div>
