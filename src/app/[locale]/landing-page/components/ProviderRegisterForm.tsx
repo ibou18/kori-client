@@ -593,9 +593,6 @@ export function ProviderRegisterForm() {
         </div>
       )}
 
-      {/* Commentaire client */}
-      {currentStep === 0 && <TestimonialsCarousel />}
-
       {/* Main Content */}
       <main
         ref={formRef}
@@ -605,6 +602,9 @@ export function ProviderRegisterForm() {
           {renderCurrentStep()}
         </div>
       </main>
+
+      {/* Commentaire client */}
+      {currentStep === 0 && <TestimonialsCarousel />}
 
       {/* Footer */}
       <footer className="bg-white/60 backdrop-blur-sm border-t border-gray-200 mt-auto">
