@@ -35,6 +35,27 @@ export const registerSalonApi = async (data: any) => {
   }
 };
 
+export const uploadSalonImagesApi = async (data: {
+  salonId: string;
+  images: {
+    base64: string;
+    fileName: string;
+    mimeType: string;
+    alt?: string;
+    caption?: string;
+    order: number;
+    isMain: boolean;
+  }[];
+}) => {
+  try {
+    const response = await requestWrapper.post("/auth/upload-salon-images", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'upload des images");
+    return null;
+  }
+};
+
 export const forgotPasswordApi = async (email: string) => {
   try {
     const response = await requestWrapper.post("/auth/forgot-password", {

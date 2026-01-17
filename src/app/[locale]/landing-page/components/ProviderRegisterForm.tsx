@@ -1,6 +1,7 @@
 "use client";
 
 import { useGetSalonTypes, useRegisterSalon } from "@/app/data/hooks";
+import { uploadSalonImagesApi } from "@/app/data/services";
 import icon from "@/assets/icon.png";
 import logo from "@/assets/logo-black.png";
 import { motion } from "framer-motion";
@@ -269,6 +270,19 @@ export function ProviderRegisterForm() {
     };
   };
 
+  // Fonction utilitaire pour convertir File en base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = (reader.result as string).split(",")[1]; // Retirer le préfixe data:image/...
+        resolve(base64String);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     setSubmissionStep("Création du salon...");
@@ -278,8 +292,45 @@ export function ProviderRegisterForm() {
       console.log("📤 Payload salon:", salonPayload);
 
       registerSalon(salonPayload, {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           console.log("✅ Salon créé avec succès:", data);
+          
+          // Upload des images si elles existent
+          if (formData.salonImages.length > 0 && data?.data?.salon?.id) {
+            try {
+              setSubmissionStep("Upload des images...");
+              
+              // Convertir les fichiers en base64
+              const imagesPromises = formData.salonImages.map(async (file, index) => {
+                const base64 = await fileToBase64(file);
+                return {
+                  base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                  order: index,
+                  isMain: index === 0, // La première image est la principale
+                };
+              });
+
+              const images = await Promise.all(imagesPromises);
+
+              // Upload des images
+              const uploadResponse = await uploadSalonImagesApi({
+                salonId: data.data.salon.id,
+                images,
+              });
+
+              if (uploadResponse) {
+                console.log("✅ Images uploadées avec succès:", uploadResponse);
+              } else {
+                console.warn("⚠️ Aucune réponse lors de l'upload des images");
+              }
+            } catch (uploadError: any) {
+              console.error("❌ Erreur lors de l'upload des images:", uploadError);
+              // On continue quand même, l'upload des images n'est pas bloquant
+            }
+          }
+
           setIsSubmitting(false);
           setShowSuccessModal(true);
         },

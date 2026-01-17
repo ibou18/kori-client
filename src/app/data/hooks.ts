@@ -148,6 +148,7 @@ import {
   updateServiceOptionApi,
   updateUserApi,
   updateUserPreferencesApi,
+  uploadSalonImagesApi,
   updateUserProfileApi,
   // Photos
   uploadSalonPhotoApi,
