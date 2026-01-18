@@ -695,7 +695,12 @@ export function ProviderRegisterForm() {
         ref={formRef}
         className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
       >
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 lg:p-10">
+        <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-0 py-2">
+          <h1 className="text-xl font-bold text-primary">
+            Formulaire d&apos;inscription
+          </h1>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 lg:p-10 mx-auto">
           {renderCurrentStep()}
         </div>
       </main>

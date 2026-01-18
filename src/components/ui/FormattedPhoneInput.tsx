@@ -27,16 +27,12 @@ interface FormattedPhoneInputProps {
 const COUNTRY_CODES = [
   { dialCode: "+1", isoCode: "CA", name: "Canada/US" },
   { dialCode: "+33", isoCode: "FR", name: "France" },
-  { dialCode: "+221", isoCode: "SN", name: "Sénégal" },
-  { dialCode: "+32", isoCode: "BE", name: "Belgique" },
-  { dialCode: "+216", isoCode: "TN", name: "Tunisie" },
-  { dialCode: "+213", isoCode: "DZ", name: "Algérie" },
+
 ];
 
 export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   value,
   countryCode,
-  selectedCountryCode = "CA",
   onPhoneChange,
   onCountryCodeChange,
   error,
@@ -87,7 +83,8 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
         >
           {COUNTRY_CODES.map((cc) => (
             <option key={cc.dialCode} value={cc.dialCode}>
-              {cc.dialCode} ({cc.name})
+              {cc.dialCode} 
+              {/* ({cc.name}) */}
             </option>
           ))}
         </select>

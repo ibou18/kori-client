@@ -23,7 +23,7 @@ const PHONE_FORMATS: Record<string, PhoneFormat> = {
         10
       )}`;
     },
-    placeholder: "(514) 709-7626",
+    placeholder: "(514) XXX-XXXX",
     maxLength: 10,
   },
   "+33": {

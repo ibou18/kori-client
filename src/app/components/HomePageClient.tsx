@@ -238,7 +238,7 @@ export default function HomePageClient(): JSX.Element {
             className="hover:opacity-90"
           >
             {/* <Link href="#">Télécharger l'app</Link> */}
-            <Link href="/landing-page">S'inscrire comme prestataire</Link>
+            <Link href="/inscription">S'inscrire comme prestataire</Link>
           </Button>
           <Button asChild variant="ghost" size="lg">
             <Link href="/auth/signin">Se connecter →</Link>

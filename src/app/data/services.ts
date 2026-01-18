@@ -56,6 +56,28 @@ export const uploadSalonImagesApi = async (data: {
   }
 };
 
+// ============================================================================
+// PROSPECTS (Inscription rapide)
+// ============================================================================
+
+export const createProspectApi = async (data: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  indicatif?: string;
+  services: string[];
+  source?: string;
+}) => {
+  try {
+    const response = await requestWrapper.post("/prospects", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'inscription");
+    return null;
+  }
+};
+
 export const forgotPasswordApi = async (email: string) => {
   try {
     const response = await requestWrapper.post("/auth/forgot-password", {

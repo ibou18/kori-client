@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormattedPhoneInput, usePhoneValidation } from "@/components/ui/FormattedPhoneInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -105,6 +105,16 @@ export function PersonalInfoStep({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+            <Label htmlFor="firstName">Prénom *</Label>
+            <Input
+              id="firstName"
+              placeholder="Votre prénom"
+              value={formData.firstName}
+              onChange={(e) => updateFormData({ firstName: e.target.value })}
+              className="mt-1"
+            />
+          </div>
           <div>
             <Label htmlFor="lastName">Nom *</Label>
             <Input
@@ -115,16 +125,7 @@ export function PersonalInfoStep({
               className="mt-1"
             />
           </div>
-          <div>
-            <Label htmlFor="firstName">Prénom *</Label>
-            <Input
-              id="firstName"
-              placeholder="Votre prénom"
-              value={formData.firstName}
-              onChange={(e) => updateFormData({ firstName: e.target.value })}
-              className="mt-1"
-            />
-          </div>
+      
         </div>
 
         <FormattedPhoneInput
