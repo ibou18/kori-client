@@ -10,6 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ExtraOfferStep } from "./steps/ExtraOfferStep";
 import { PersonalInfoStep } from "./steps/PersonalInfoStep";
 import { SalonAddressStep } from "./steps/SalonAddressStep";
@@ -322,12 +323,19 @@ export function ProviderRegisterForm() {
 
               if (uploadResponse) {
                 console.log("✅ Images uploadées avec succès:", uploadResponse);
+                toast.success("Images uploadées avec succès");
               } else {
                 console.warn("⚠️ Aucune réponse lors de l'upload des images");
+                toast.warning("Les images n'ont pas pu être uploadées", {
+                  description: "Vous pourrez les ajouter plus tard depuis votre espace.",
+                });
               }
             } catch (uploadError: any) {
               console.error("❌ Erreur lors de l'upload des images:", uploadError);
               // On continue quand même, l'upload des images n'est pas bloquant
+              toast.warning("Erreur lors de l'upload des images", {
+                description: "Vous pourrez les ajouter plus tard depuis votre espace.",
+              });
             }
           }
 
@@ -337,18 +345,56 @@ export function ProviderRegisterForm() {
         onError: (error: any) => {
           console.error("❌ Erreur lors de l'inscription:", error);
           setIsSubmitting(false);
-          alert(
-            error?.response?.data?.message ||
-              error?.message ||
-              "Erreur lors de la création du salon"
-          );
+          
+          // Extraire le message d'erreur de manière intelligente
+          const errorMessage = getErrorMessage(error);
+          
+          toast.error("Erreur lors de l'inscription", {
+            description: errorMessage,
+            duration: 6000,
+          });
         },
       });
     } catch (error: any) {
       console.error("❌ Erreur:", error);
       setIsSubmitting(false);
-      alert(error?.message || "Erreur lors de la création du salon");
+      
+      const errorMessage = getErrorMessage(error);
+      toast.error("Erreur inattendue", {
+        description: errorMessage,
+        duration: 6000,
+      });
     }
+  };
+
+  // Fonction pour extraire un message d'erreur lisible
+  const getErrorMessage = (error: any): string => {
+    // Messages d'erreur personnalisés selon le code d'erreur
+    const errorCode = error?.response?.data?.errorCode || error?.errorCode;
+    
+    const errorMessages: Record<string, string> = {
+      EMAIL_ALREADY_EXISTS: "Cette adresse email est déjà utilisée. Essayez de vous connecter.",
+      PHONE_ALREADY_EXISTS: "Ce numéro de téléphone est déjà utilisé.",
+      SALON_EMAIL_ALREADY_EXISTS: "L'email du salon est déjà utilisé par un autre établissement.",
+      INVALID_PASSWORD: "Le mot de passe ne respecte pas les critères de sécurité.",
+      VALIDATION_ERROR: "Veuillez vérifier les informations saisies.",
+      USER_NOT_FOUND: "Utilisateur non trouvé.",
+      NETWORK_ERROR: "Problème de connexion. Vérifiez votre connexion internet.",
+    };
+
+    if (errorCode && errorMessages[errorCode]) {
+      return errorMessages[errorCode];
+    }
+
+    // Essayer d'extraire le message de différentes sources
+    const message = 
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      error?.errorDetails?.message ||
+      "Une erreur est survenue. Veuillez réessayer.";
+
+    return message;
   };
 
   const renderCurrentStep = () => {
