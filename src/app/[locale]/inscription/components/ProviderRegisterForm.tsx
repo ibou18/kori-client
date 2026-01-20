@@ -659,7 +659,7 @@ export function ProviderRegisterForm() {
                     transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
                   >
                     <span className="relative">
-                      rejoignez la communauté korí
+                      rejoignez la communauté <span className="font-semibold text-primary">korí.</span>
                       <motion.span
                         className="absolute bottom-0 left-0 w-full h-2 bg-primary/30 -z-10"
                         initial={{ scaleX: 0 }}

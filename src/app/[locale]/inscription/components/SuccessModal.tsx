@@ -66,7 +66,7 @@ export function SuccessModal({ email, onClose }: SuccessModalProps) {
         <div className="mb-8">
           <p className="text-gray-700 text-base leading-relaxed">
             Pour commencer à gérer votre salon et recevoir des réservations,
-            téléchargez l&apos;application mobile korí.
+            téléchargez l&apos;application mobile<span className="font-semibold text-primary"> korí.</span>
           </p>
         </div>
 

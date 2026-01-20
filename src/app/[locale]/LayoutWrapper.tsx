@@ -10,10 +10,11 @@ export default function LayoutWrapper({
 }) {
   const pathname = usePathname();
   
-  // Masquer la navbar pour la page landing-page
+  // Masquer la navbar pour la page landing-page et inscription
   const isLandingPage = pathname?.includes("/landing-page");
+  const isInscriptionPage = pathname?.includes("/inscription");
 
-  if (isLandingPage) {
+  if (isLandingPage || isInscriptionPage) {
     return <>{children}</>;
   }
 
