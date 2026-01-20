@@ -6,6 +6,7 @@ import {
   DollarSign,
   LayoutDashboard,
   Store,
+  UserPlus,
   Users,
   Wrench,
 } from "lucide-react";
@@ -62,6 +63,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         //   url: "/admin/users?role=OWNER",
         // },
         // ],
+      },
+      {
+        title: "Prospects",
+        url: "/admin/prospect",
+        icon: UserPlus,
       },
       {
         title: "Salons",

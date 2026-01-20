@@ -1,7 +1,7 @@
 "use client";
 
-import { ProviderRegisterForm } from "./components/ProviderRegisterForm";
+import { QuickRegisterForm } from "./components/QuickRegisterForm";
 
 export default function LandingPage() {
-  return <ProviderRegisterForm />;
+  return <QuickRegisterForm />;
 }

@@ -35,6 +35,91 @@ export const registerSalonApi = async (data: any) => {
   }
 };
 
+export const uploadSalonImagesApi = async (data: {
+  salonId: string;
+  images: {
+    base64: string;
+    fileName: string;
+    mimeType: string;
+    alt?: string;
+    caption?: string;
+    order: number;
+    isMain: boolean;
+  }[];
+}) => {
+  try {
+    const response = await requestWrapper.post("/auth/upload-salon-images", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'upload des images");
+    return null;
+  }
+};
+
+// ============================================================================
+// PROSPECTS (Inscription rapide)
+// ============================================================================
+
+export const createProspectApi = async (data: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  indicatif?: string;
+  services: string[];
+  source?: string;
+}) => {
+  try {
+    const response = await requestWrapper.post("/prospects", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'inscription");
+    return null;
+  }
+};
+
+export const getProspectsApi = async (params?: {
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  try {
+    const response = await requestWrapper.get("/prospects", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des prospects");
+    return null;
+  }
+};
+
+export const getProspectByIdApi = async (id: string) => {
+  try {
+    const response = await requestWrapper.get(`/prospects/${id}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du prospect");
+    return null;
+  }
+};
+
+export const updateProspectStatusApi = async (data: {
+  id: string;
+  status: string;
+  notes?: string;
+}) => {
+  try {
+    const response = await requestWrapper.patch(`/prospects/${data.id}/status`, {
+      status: data.status,
+      notes: data.notes,
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour du statut");
+    return null;
+  }
+};
+
 export const forgotPasswordApi = async (email: string) => {
   try {
     const response = await requestWrapper.post("/auth/forgot-password", {

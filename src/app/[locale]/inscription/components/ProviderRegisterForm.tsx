@@ -1,6 +1,7 @@
 "use client";
 
 import { useGetSalonTypes, useRegisterSalon } from "@/app/data/hooks";
+import { uploadSalonImagesApi } from "@/app/data/services";
 import icon from "@/assets/icon.png";
 import logo from "@/assets/logo-black.png";
 import { motion } from "framer-motion";
@@ -9,6 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { ExtraOfferStep } from "./steps/ExtraOfferStep";
 import { PersonalInfoStep } from "./steps/PersonalInfoStep";
 import { SalonAddressStep } from "./steps/SalonAddressStep";
@@ -269,6 +271,19 @@ export function ProviderRegisterForm() {
     };
   };
 
+  // Fonction utilitaire pour convertir File en base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64String = (reader.result as string).split(",")[1]; // Retirer le préfixe data:image/...
+        resolve(base64String);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     setSubmissionStep("Création du salon...");
@@ -278,26 +293,108 @@ export function ProviderRegisterForm() {
       console.log("📤 Payload salon:", salonPayload);
 
       registerSalon(salonPayload, {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           console.log("✅ Salon créé avec succès:", data);
+          
+          // Upload des images si elles existent
+          if (formData.salonImages.length > 0 && data?.data?.salon?.id) {
+            try {
+              setSubmissionStep("Upload des images...");
+              
+              // Convertir les fichiers en base64
+              const imagesPromises = formData.salonImages.map(async (file, index) => {
+                const base64 = await fileToBase64(file);
+                return {
+                  base64,
+                  fileName: file.name,
+                  mimeType: file.type,
+                  order: index,
+                  isMain: index === 0, // La première image est la principale
+                };
+              });
+
+              const images = await Promise.all(imagesPromises);
+
+              // Upload des images
+              const uploadResponse = await uploadSalonImagesApi({
+                salonId: data.data.salon.id,
+                images,
+              });
+
+              if (uploadResponse) {
+                console.log("✅ Images uploadées avec succès:", uploadResponse);
+                toast.success("Images uploadées avec succès");
+              } else {
+                console.warn("⚠️ Aucune réponse lors de l'upload des images");
+                toast.warning("Les images n'ont pas pu être uploadées", {
+                  description: "Vous pourrez les ajouter plus tard depuis votre espace.",
+                });
+              }
+            } catch (uploadError: any) {
+              console.error("❌ Erreur lors de l'upload des images:", uploadError);
+              // On continue quand même, l'upload des images n'est pas bloquant
+              toast.warning("Erreur lors de l'upload des images", {
+                description: "Vous pourrez les ajouter plus tard depuis votre espace.",
+              });
+            }
+          }
+
           setIsSubmitting(false);
           setShowSuccessModal(true);
         },
         onError: (error: any) => {
           console.error("❌ Erreur lors de l'inscription:", error);
           setIsSubmitting(false);
-          alert(
-            error?.response?.data?.message ||
-              error?.message ||
-              "Erreur lors de la création du salon"
-          );
+          
+          // Extraire le message d'erreur de manière intelligente
+          const errorMessage = getErrorMessage(error);
+          
+          toast.error("Erreur lors de l'inscription", {
+            description: errorMessage,
+            duration: 6000,
+          });
         },
       });
     } catch (error: any) {
       console.error("❌ Erreur:", error);
       setIsSubmitting(false);
-      alert(error?.message || "Erreur lors de la création du salon");
+      
+      const errorMessage = getErrorMessage(error);
+      toast.error("Erreur inattendue", {
+        description: errorMessage,
+        duration: 6000,
+      });
     }
+  };
+
+  // Fonction pour extraire un message d'erreur lisible
+  const getErrorMessage = (error: any): string => {
+    // Messages d'erreur personnalisés selon le code d'erreur
+    const errorCode = error?.response?.data?.errorCode || error?.errorCode;
+    
+    const errorMessages: Record<string, string> = {
+      EMAIL_ALREADY_EXISTS: "Cette adresse email est déjà utilisée. Essayez de vous connecter.",
+      PHONE_ALREADY_EXISTS: "Ce numéro de téléphone est déjà utilisé.",
+      SALON_EMAIL_ALREADY_EXISTS: "L'email du salon est déjà utilisé par un autre établissement.",
+      INVALID_PASSWORD: "Le mot de passe ne respecte pas les critères de sécurité.",
+      VALIDATION_ERROR: "Veuillez vérifier les informations saisies.",
+      USER_NOT_FOUND: "Utilisateur non trouvé.",
+      NETWORK_ERROR: "Problème de connexion. Vérifiez votre connexion internet.",
+    };
+
+    if (errorCode && errorMessages[errorCode]) {
+      return errorMessages[errorCode];
+    }
+
+    // Essayer d'extraire le message de différentes sources
+    const message = 
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      error?.errorDetails?.message ||
+      "Une erreur est survenue. Veuillez réessayer.";
+
+    return message;
   };
 
   const renderCurrentStep = () => {
@@ -598,7 +695,12 @@ export function ProviderRegisterForm() {
         ref={formRef}
         className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
       >
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 lg:p-10">
+        <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-0 py-2">
+          <h1 className="text-xl font-bold text-primary">
+            Formulaire d&apos;inscription
+          </h1>
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 lg:p-10 mx-auto">
           {renderCurrentStep()}
         </div>
       </main>

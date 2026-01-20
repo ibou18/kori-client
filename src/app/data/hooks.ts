@@ -6,6 +6,7 @@ import {
   GET_MY_SALON,
   GET_PAYOUTS,
   GET_PLATFORM_CONFIG,
+  GET_PROSPECTS,
   GET_RATINGS,
   GET_REVIEW,
   GET_REVIEWS,
@@ -79,6 +80,9 @@ import {
   getOwnerInvitationByTokenApi,
   // Platform Config
   getPlatformConfigApi,
+  // Prospects
+  getProspectByIdApi,
+  getProspectsApi,
   getRevenueEvolutionApi,
   getReviewApi,
   // Reviews
@@ -140,6 +144,8 @@ import {
   updateBookingApi,
   updateDefaultServiceApi,
   updatePlatformConfigApi,
+  // Prospects
+  updateProspectStatusApi,
   updateReviewApi,
   updateSalonApi,
   updateSalonHolidayApi,
@@ -148,6 +154,7 @@ import {
   updateServiceOptionApi,
   updateUserApi,
   updateUserPreferencesApi,
+  uploadSalonImagesApi,
   updateUserProfileApi,
   // Photos
   uploadSalonPhotoApi,
@@ -1553,5 +1560,46 @@ export const useGetSalonTypes = () => {
     queryKey: [GET_SALON_TYPES],
     queryFn: getSalonTypesApi,
     staleTime: 1000 * 60 * 60 * 24, // 24 hours (rarely changes)
+  });
+};
+
+// ============================================================================
+// PROSPECTS HOOKS
+// ============================================================================
+
+export const useGetProspects = (params?: {
+  status?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) => {
+  return useQuery({
+    queryKey: [GET_PROSPECTS, params],
+    queryFn: () => getProspectsApi(params),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: true,
+  });
+};
+
+export const useGetProspectById = (id: string) => {
+  return useQuery({
+    queryKey: [GET_PROSPECTS, id],
+    queryFn: () => getProspectByIdApi(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useUpdateProspectStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateProspectStatusApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [GET_PROSPECTS] });
+      toast.success("Statut du prospect mis à jour !");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erreur lors de la mise à jour du statut");
+    },
   });
 };
