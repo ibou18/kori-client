@@ -104,11 +104,11 @@ function ProspectDetailsModal({
             {prospect.email}
           </a>
           <a
-            href={`tel:${prospect.indicatif}${prospect.phone}`}
+            href={`tel:${prospect.phone}`}
             className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
           >
             <Phone className="w-4 h-4" />
-            {prospect.indicatif} {prospect.phone}
+           {prospect.phone}
           </a>
         </div>
       </div>
