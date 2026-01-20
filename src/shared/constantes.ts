@@ -219,6 +219,7 @@ export const GET_PLATFORM_CONFIG = "GET_PLATFORM_CONFIG";
 export const GET_STRIPE_CONFIG = "GET_STRIPE_CONFIG";
 export const GET_SALON_TYPES = "GET_SALON_TYPES";
 export const GET_ADMIN_STATS = "GET_ADMIN_STATS";
+export const GET_PROSPECTS = "GET_PROSPECTS";
 
 export const OPTIONS_CATEGORIES = [
   { value: "TRANSPORT", label: "🚖 Transport" },
