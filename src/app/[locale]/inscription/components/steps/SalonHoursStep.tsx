@@ -36,10 +36,10 @@ export function SalonHoursStep({
 }: SalonHoursStepProps) {
   const updateDayHours = (
     dayId: string,
-    updates: Partial<FormData["salonHours"][0]>
+    updates: Partial<FormData["salonHours"][0]>,
   ) => {
     const updatedHours = formData.salonHours.map((day) =>
-      day.id === dayId ? { ...day, ...updates } : day
+      day.id === dayId ? { ...day, ...updates } : day,
     );
     updateFormData({ salonHours: updatedHours });
   };
@@ -64,7 +64,7 @@ export function SalonHoursStep({
         {formData.salonHours.map((day) => (
           <div
             key={day.id}
-            className="border border-gray-200 rounded-lg p-4 space-y-3"
+            className="border border-gray-200 rounded-lg py-4 px-10 space-y-3"
           >
             <div className="flex items-center justify-between">
               <Label className="text-base font-medium">{day.name}</Label>
@@ -76,9 +76,9 @@ export function SalonHoursStep({
               />
             </div>
             {day.enabled && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm">Ouverture</Label>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+                <div className="flex-1">
+                  <Label className="text-sm text-gray-500">Ouverture</Label>
                   <Input
                     type="time"
                     value={day.openingTime}
@@ -86,10 +86,11 @@ export function SalonHoursStep({
                       updateDayHours(day.id, { openingTime: e.target.value })
                     }
                     className="mt-1"
+                    style={{ colorScheme: "light" }}
                   />
                 </div>
-                <div>
-                  <Label className="text-sm">Fermeture</Label>
+                <div className="flex-1">
+                  <Label className="text-sm text-gray-500">Fermeture</Label>
                   <Input
                     type="time"
                     value={day.closingTime}
@@ -97,6 +98,7 @@ export function SalonHoursStep({
                       updateDayHours(day.id, { closingTime: e.target.value })
                     }
                     className="mt-1"
+                    style={{ colorScheme: "light" }}
                   />
                 </div>
               </div>
@@ -118,4 +120,3 @@ export function SalonHoursStep({
     </div>
   );
 }
-
