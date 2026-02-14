@@ -553,7 +553,7 @@ export default function SalonSharePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mb-8 max-w-2xl mx-auto"
+            className="mb-8  mx-auto"
           >
             <div className="bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl p-6 shadow-lg">
               <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -588,7 +588,7 @@ export default function SalonSharePage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="text-center max-w-2xl mx-auto"
+          className="text-center  mx-auto"
         >
           <div className="bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl p-8 shadow-lg mb-6">
             <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4">
