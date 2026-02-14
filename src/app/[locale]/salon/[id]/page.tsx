@@ -1,14 +1,39 @@
 "use client";
 
-import { getSalonApi } from "@/app/data/services";
+import {
+  getSalonApi,
+  getSalonServicesApi,
+} from "@/app/data/services";
 import { motion } from "framer-motion";
-import { Clock, MapPin, Smartphone, Star } from "lucide-react";
+import { ChevronRight, Clock, MapPin, Smartphone, Star } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ServiceDetailModal } from "./components/ServiceDetailModal";
 
+// idsalon=cmipf1upw000j6fo8nni0kaes
 const IOS_STORE_URL = "https://apple.co/4lPhmNde";
 const ANDROID_STORE_URL = "https://bit.ly/korí-android";
+
+interface ServiceCategory {
+  id: string;
+  name: string;
+}
+
+interface SalonService {
+  id: string;
+  name: string;
+  description?: string;
+  duration?: number;
+  categoryId?: string;
+  category?: ServiceCategory;
+  photos?: Array<{ url: string; alt?: string }>;
+  options?: Array<{
+    id: string;
+    price: number;
+    discountPrice?: number;
+  }>;
+}
 
 interface Salon {
   id: string;
@@ -27,6 +52,7 @@ interface Salon {
     isMain?: boolean;
   }>;
   salonTypes?: string[];
+  services?: SalonService[];
   openingHours?: {
     monday?: { open: string; close: string } | null;
     tuesday?: { open: string; close: string } | null;
@@ -80,11 +106,19 @@ export default function SalonSharePage() {
   const params = useParams();
   const router = useRouter();
   const salonId = params.id as string;
+  const locale = (params.locale as string) || "fr";
   const [salon, setSalon] = useState<Salon | null>(null);
+  const [services, setServices] = useState<SalonService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasTriedDeepLink, setHasTriedDeepLink] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
+    null
+  );
 
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
   useEffect(() => {
@@ -121,16 +155,24 @@ export default function SalonSharePage() {
     tryOpenApp();
   }, [salonId, hasTriedDeepLink]);
 
-  // Récupérer les données du salon (en parallèle de la tentative d'ouverture de l'app)
+  // Récupérer les données du salon et des services
   useEffect(() => {
-    const fetchSalon = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await getSalonApi(salonId);
-        if (response?.success && response?.data) {
-          setSalon(response.data);
+        const [salonRes, servicesRes] = await Promise.all([
+          getSalonApi(salonId),
+          getSalonServicesApi(salonId),
+        ]);
+        if (salonRes?.success && salonRes?.data) {
+          setSalon(salonRes.data);
         } else {
           setError("Salon non trouvé");
+        }
+        if (servicesRes?.success && servicesRes?.data) {
+          setServices(servicesRes.data);
+        } else if (salonRes?.success && salonRes?.data?.services) {
+          setServices(salonRes.data.services);
         }
       } catch (err: any) {
         console.error("Erreur récupération salon:", err);
@@ -141,7 +183,7 @@ export default function SalonSharePage() {
     };
 
     if (salonId) {
-      fetchSalon();
+      fetchData();
     }
   }, [salonId]);
 
@@ -349,7 +391,161 @@ export default function SalonSharePage() {
           </motion.div>
         )}
 
-        {/* Description */}
+        {/* Services */}
+        {services.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="mb-8"
+          >
+            <h2 className="text-2xl font-bold text-slate-800 mb-4 text-center">
+              Nos services
+            </h2>
+
+            {/* Chips de filtrage par catégorie */}
+            <div className="mb-4 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+              <div className="flex gap-2 min-w-max">
+                <button
+                  onClick={() => setSelectedCategoryId(null)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    selectedCategoryId === null
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-white/80 text-slate-600 hover:bg-white border border-slate-200"
+                  }`}
+                >
+                  Tous
+                </button>
+                {Array.from(
+                  new Map(
+                    services
+                      .filter((s) => s.category)
+                      .map((s) => [s.category!.id, s.category!])
+                  ).values()
+                ).map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategoryId(category.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                      selectedCategoryId === category.id
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "bg-white/80 text-slate-600 hover:bg-white border border-slate-200"
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cards en scroll horizontal - 2 par colonne */}
+            <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+              <div className="flex gap-4 min-w-max">
+                {services
+                  .filter(
+                    (s) =>
+                      !selectedCategoryId || s.categoryId === selectedCategoryId
+                  )
+                  .reduce<SalonService[][]>((cols, service, i) => {
+                    const colIndex = Math.floor(i / 2);
+                    if (!cols[colIndex]) cols[colIndex] = [];
+                    cols[colIndex].push(service);
+                    return cols;
+                  }, [])
+                  .map((column, colIdx) => (
+                    <div
+                      key={colIdx}
+                      className="flex flex-col gap-4 w-[180px] flex-shrink-0"
+                    >
+                      {column.map((service) => {
+                        const minPrice =
+                          service.options?.length
+                            ? Math.min(
+                                ...service.options.map(
+                                  (o) => o.discountPrice ?? o.price
+                                )
+                              )
+                            : null;
+                        return (
+                          <motion.button
+                            key={service.id}
+                            onClick={() => setSelectedServiceId(service.id)}
+                            className="text-left bg-white/90 backdrop-blur border border-slate-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.02] transition-all"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            {service.photos?.[0]?.url ? (
+                              <div className="relative h-28 w-full">
+                                <Image
+                                  src={service.photos[0].url}
+                                  alt={service.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="180px"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                                <div className="absolute bottom-2 left-2 right-2">
+                                  <p className="font-semibold text-white text-sm line-clamp-2 drop-shadow">
+                                    {service.name}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {minPrice !== null && (
+                                      <span className="text-white font-bold text-sm drop-shadow">
+                                        {minPrice} $
+                                      </span>
+                                    )}
+                                    {service.duration && (
+                                      <span className="text-white/90 text-xs drop-shadow">
+                                        {Math.round(service.duration / 60)}h
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="p-4">
+                                <p className="font-semibold text-slate-800 text-sm line-clamp-2">
+                                  {service.name}
+                                </p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  {minPrice !== null && (
+                                    <span className="text-blue-600 font-bold text-sm">
+                                      {minPrice} $
+                                    </span>
+                                  )}
+                                  {service.duration && (
+                                    <span className="text-slate-500 text-xs">
+                                      {Math.round(service.duration / 60)}h
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            <div className="p-2 flex items-center justify-end">
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            </div>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Modal détail service */}
+        {selectedServiceId && (
+          <ServiceDetailModal
+            salonId={salonId}
+            serviceId={selectedServiceId}
+            salonName={salon?.name}
+            locale={locale}
+            onClose={() => setSelectedServiceId(null)}
+          />
+        )}
+
+        {/* A propos */}
         {salon.description && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
