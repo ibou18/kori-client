@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  getSalonApi,
-  getSalonServicesApi,
-} from "@/app/data/services";
+import { getSalonApi, getSalonServicesApi } from "@/app/data/services";
 import { motion } from "framer-motion";
 import { ChevronRight, Clock, MapPin, Smartphone, Star } from "lucide-react";
 import Image from "next/image";
@@ -243,7 +240,7 @@ export default function SalonSharePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center max-w-3xl mx-auto">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Chargement du salon...</p>
@@ -254,7 +251,7 @@ export default function SalonSharePage() {
 
   if (error || !salon) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center max-w-3xl mx-auto">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-slate-800 mb-4">
             Salon non trouvé
@@ -285,7 +282,7 @@ export default function SalonSharePage() {
   const openingHours = formatOpeningHours(salon.openingHours);
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen relative overflow-hidden max-w-3xl mx-auto">
       {/* Subtle Floating Elements */}
       {[...Array(10)].map((_, i) => (
         <motion.div
@@ -347,7 +344,7 @@ export default function SalonSharePage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-8 max-w-4xl mx-auto"
+            className="mb-8 max-w-3xl mx-auto"
           >
             <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden bg-white shadow-xl">
               {salonPhotos.map((photo, index) => (
@@ -438,7 +435,7 @@ export default function SalonSharePage() {
               </div>
             </div>
 
-            {/* Cards en scroll horizontal - 2 par colonne */}
+            {/* Cards en scroll horizontal - 1 par colonne */}
             <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
               <div className="flex gap-4 min-w-max">
                 {services
@@ -446,89 +443,75 @@ export default function SalonSharePage() {
                     (s) =>
                       !selectedCategoryId || s.categoryId === selectedCategoryId
                   )
-                  .reduce<SalonService[][]>((cols, service, i) => {
-                    const colIndex = Math.floor(i / 2);
-                    if (!cols[colIndex]) cols[colIndex] = [];
-                    cols[colIndex].push(service);
-                    return cols;
-                  }, [])
-                  .map((column, colIdx) => (
-                    <div
-                      key={colIdx}
-                      className="flex flex-col gap-4 w-[180px] flex-shrink-0"
-                    >
-                      {column.map((service) => {
-                        const minPrice =
-                          service.options?.length
-                            ? Math.min(
-                                ...service.options.map(
-                                  (o) => o.discountPrice ?? o.price
-                                )
-                              )
-                            : null;
-                        return (
-                          <motion.button
-                            key={service.id}
-                            onClick={() => setSelectedServiceId(service.id)}
-                            className="text-left bg-white/90 backdrop-blur border border-slate-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:scale-[1.02] transition-all"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            {service.photos?.[0]?.url ? (
-                              <div className="relative h-28 w-full">
-                                <Image
-                                  src={service.photos[0].url}
-                                  alt={service.name}
-                                  fill
-                                  className="object-cover"
-                                  sizes="180px"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                                <div className="absolute bottom-2 left-2 right-2">
-                                  <p className="font-semibold text-white text-sm line-clamp-2 drop-shadow">
-                                    {service.name}
-                                  </p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    {minPrice !== null && (
-                                      <span className="text-white font-bold text-sm drop-shadow">
-                                        {minPrice} $
-                                      </span>
-                                    )}
-                                    {service.duration && (
-                                      <span className="text-white/90 text-xs drop-shadow">
-                                        {Math.round(service.duration / 60)}h
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                  .map((service) => {
+                    const minPrice = service.options?.length
+                      ? Math.min(
+                          ...service.options.map(
+                            (o) => o.discountPrice ?? o.price
+                          )
+                        )
+                      : null;
+                    return (
+                      <motion.button
+                        key={service.id}
+                        onClick={() => setSelectedServiceId(service.id)}
+                        className="text-left bg-white/90 backdrop-blur border border-slate-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all w-[200px] flex-shrink-0"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {service.photos?.[0]?.url ? (
+                          <div className="relative h-28 w-full">
+                            <Image
+                              src={service.photos[0].url}
+                              alt={service.name}
+                              fill
+                              className="object-cover"
+                              sizes="200px"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                            <div className="absolute bottom-2 left-2 right-2">
+                              <p className="font-semibold text-white text-sm line-clamp-2 drop-shadow">
+                                {service.name}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {minPrice !== null && (
+                                  <span className="text-white font-bold text-sm drop-shadow">
+                                    {minPrice} $
+                                  </span>
+                                )}
+                                {service.duration && (
+                                  <span className="text-white/90 text-xs drop-shadow">
+                                    {Math.round(service.duration / 60)}h
+                                  </span>
+                                )}
                               </div>
-                            ) : (
-                              <div className="p-4">
-                                <p className="font-semibold text-slate-800 text-sm line-clamp-2">
-                                  {service.name}
-                                </p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  {minPrice !== null && (
-                                    <span className="text-blue-600 font-bold text-sm">
-                                      {minPrice} $
-                                    </span>
-                                  )}
-                                  {service.duration && (
-                                    <span className="text-slate-500 text-xs">
-                                      {Math.round(service.duration / 60)}h
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            <div className="p-2 flex items-center justify-end">
-                              <ChevronRight className="w-4 h-4 text-slate-400" />
                             </div>
-                          </motion.button>
-                        );
-                      })}
-                    </div>
-                  ))}
+                          </div>
+                        ) : (
+                          <div className="p-4">
+                            <p className="font-semibold text-slate-800 text-sm line-clamp-2">
+                              {service.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2">
+                              {minPrice !== null && (
+                                <span className="text-blue-600 font-bold text-sm">
+                                  {minPrice} $
+                                </span>
+                              )}
+                              {service.duration && (
+                                <span className="text-slate-500 text-xs">
+                                  {Math.round(service.duration / 60)}h
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        <div className="p-2 flex items-center justify-end">
+                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </motion.button>
+                    );
+                  })}
               </div>
             </div>
           </motion.div>
