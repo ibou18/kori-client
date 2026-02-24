@@ -130,6 +130,15 @@ iframe {
   text-transform: capitalize;
 }
 
+/* Masquer la scrollbar tout en gardant le défilement */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

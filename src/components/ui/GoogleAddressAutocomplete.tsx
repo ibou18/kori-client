@@ -75,6 +75,20 @@ export function GoogleAddressAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Synchroniser query avec value quand value change depuis l'extérieur
+  useEffect(() => {
+    if (value !== undefined && value !== query) {
+      setQuery(value || "");
+      // Réinitialiser la sélection si la valeur change depuis l'extérieur
+      if (!value) {
+        setSelectedAddress(null);
+        setPredictions([]);
+        setShowPredictions(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
   // Fermer les suggestions quand on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,30 +110,48 @@ export function GoogleAddressAutocomplete({
   const searchAddresses = async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setPredictions([]);
+      setShowPredictions(false);
       return;
     }
 
+    console.log("🔍 Recherche d'adresses pour:", searchQuery);
     setIsLoading(true);
     try {
       // Utiliser l'endpoint API proxy pour éviter les problèmes CORS
-      const response = await fetch(
-        `/api/google-places/autocomplete?input=${encodeURIComponent(
-          searchQuery.trim()
-        )}`
-      );
+      const url = `/api/google-places/autocomplete?input=${encodeURIComponent(
+        searchQuery.trim()
+      )}`;
+      console.log("📡 Appel API:", url);
+      
+      const response = await fetch(url);
       const data = await response.json();
 
+      console.log("📥 Réponse API:", data);
+
       if (data.success && data.predictions) {
+        console.log(`✅ ${data.predictions.length} prédictions trouvées`);
         setPredictions(data.predictions);
+        setShowPredictions(true);
       } else {
+        console.warn("⚠️ Aucune prédiction ou erreur:", data.error || data);
         setPredictions([]);
+        setShowPredictions(false);
+        
+        // Afficher un message d'erreur spécifique pour les erreurs de configuration
         if (data.error) {
           console.warn("⚠️ Erreur recherche adresses:", data.error);
+          
+          // Si c'est une erreur de facturation Google, afficher un message plus clair
+          if (data.error.includes("Billing") || data.error.includes("REQUEST_DENIED")) {
+            console.error("❌ Google Places API nécessite la facturation activée sur Google Cloud Console");
+            console.error("❌ Veuillez activer la facturation sur: https://console.cloud.google.com/project/_/billing/enable");
+          }
         }
       }
     } catch (error) {
       console.error("❌ Erreur recherche adresses:", error);
       setPredictions([]);
+      setShowPredictions(false);
     } finally {
       setIsLoading(false);
     }
@@ -276,8 +308,11 @@ export function GoogleAddressAutocomplete({
           value={query}
           onChange={(e) => handleTextChange(e.target.value)}
           onFocus={() => {
-            if (predictions.length > 0) {
+            if (query.length >= 2 && predictions.length > 0) {
               setShowPredictions(true);
+            } else if (query.length >= 2 && !isLoading) {
+              // Déclencher une recherche si on a déjà du texte
+              searchAddresses(query);
             }
           }}
           disabled={disabled}

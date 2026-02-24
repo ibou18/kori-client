@@ -484,6 +484,21 @@ export const getSalonServicesApi = async (salonId: string) => {
   }
 };
 
+export const getSalonServiceByIdApi = async (
+  salonId: string,
+  serviceId: string
+) => {
+  try {
+    const response = await requestWrapper.get(
+      `/salons/${salonId}/services/${serviceId}`
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du service");
+    return null;
+  }
+};
+
 export const getSalonReviewsApi = async (salonId: string) => {
   try {
     const response = await requestWrapper.get(`/salons/${salonId}/reviews`);
