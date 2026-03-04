@@ -78,6 +78,12 @@ import {
   getMySalonApi,
   getNearestSalonsApi,
   getOwnerInvitationByTokenApi,
+  // App Config (versions, maintenance, support)
+  clearConfigCacheApi,
+  getAppConfigApi,
+  getConfigsByCategoryApi,
+  initializeConfigsApi,
+  updateConfigApi,
   // Platform Config
   getPlatformConfigApi,
   // Prospects
@@ -1496,6 +1502,76 @@ export const useGetSalonPendingPayouts = (salonId: string) => {
     queryFn: () => getSalonPendingPayoutsApi(salonId),
     enabled: !!salonId,
     staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+// ============================================================================
+// APP CONFIG HOOKS (versions, maintenance, support)
+// ============================================================================
+
+export const useGetAppConfig = () => {
+  return useQuery({
+    queryKey: ["config", "app"],
+    queryFn: async () => {
+      const res = await getAppConfigApi();
+      return res?.data ?? res;
+    },
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+};
+
+export const useGetConfigsByCategory = (category: string) => {
+  return useQuery({
+    queryKey: ["config", "category", category],
+    queryFn: async () => {
+      const res = await getConfigsByCategoryApi(category);
+      return res?.data ?? res ?? [];
+    },
+    enabled: !!category,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
+export const useUpdateConfig = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) =>
+      updateConfigApi(key, value),
+    onSuccess: (_, { key }) => {
+      queryClient.invalidateQueries({ queryKey: ["config"] });
+      toast.success(`Configuration "${key}" mise à jour`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useInitializeConfigs = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: initializeConfigsApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["config"] });
+      toast.success("Configurations par défaut initialisées");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erreur lors de l'initialisation");
+    },
+  });
+};
+
+export const useClearConfigCache = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: clearConfigCacheApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["config"] });
+      toast.success("Cache des configurations vidé");
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Erreur lors du vidage du cache");
+    },
   });
 };
 

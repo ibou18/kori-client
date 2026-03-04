@@ -1495,6 +1495,66 @@ export const getSalonPendingPayoutsApi = async (salonId: string) => {
 };
 
 // ============================================================================
+// APP CONFIG (versions, maintenance, support)
+// ============================================================================
+
+export const getAppConfigApi = async () => {
+  try {
+    const response = await requestWrapper.get("/config");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la configuration");
+    return null;
+  }
+};
+
+export const getConfigsByCategoryApi = async (category: string) => {
+  try {
+    const response = await requestWrapper.get(`/config/category/${category}`);
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de la récupération des configurations par catégorie"
+    );
+    return null;
+  }
+};
+
+export const updateConfigApi = async (key: string, value: string) => {
+  try {
+    const response = await requestWrapper.put(`/config/${key}`, { value });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la mise à jour de la configuration");
+    throw error;
+  }
+};
+
+export const initializeConfigsApi = async () => {
+  try {
+    const response = await requestWrapper.post("/config/initialize");
+    return response.data;
+  } catch (error) {
+    handleError(
+      error,
+      "Erreur lors de l'initialisation des configurations par défaut"
+    );
+    throw error;
+  }
+};
+
+export const clearConfigCacheApi = async () => {
+  try {
+    const response = await requestWrapper.post("/config/clear-cache");
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors du vidage du cache");
+    throw error;
+  }
+};
+
+// ============================================================================
 // PLATFORM CONFIG
 // ============================================================================
 
