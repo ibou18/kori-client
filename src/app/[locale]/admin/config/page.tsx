@@ -33,6 +33,11 @@ import { useState } from "react";
 
 const CATEGORIES = [
   {
+    id: "support",
+    label: "Support",
+    description: "Téléphone WhatsApp et email du support Kori",
+  },
+  {
     id: "app_version",
     label: "Versions app",
     description: "Versions Android / iOS et minimales supportées",
@@ -41,11 +46,6 @@ const CATEGORIES = [
     id: "maintenance",
     label: "Maintenance",
     description: "Mode maintenance et message",
-  },
-  {
-    id: "support",
-    label: "Support",
-    description: "Téléphone WhatsApp et email du support Kori",
   },
 ] as const;
 
