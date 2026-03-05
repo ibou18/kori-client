@@ -673,6 +673,25 @@ export default function SalonDetailPage() {
                 </div>
               </div>
 
+              <div>
+                <p className="text-sm text-gray-500">Verification</p>
+                <Badge
+                  variant="outline"
+                  className={`mt-1 flex items-center gap-1.5 font-medium w-fit ${
+                    salon.isVerified
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  }`}
+                >
+                  {salon.isVerified ? (
+                    <Shield className="h-3.5 w-3.5" />
+                  ) : (
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  )}
+                  {salon.isVerified ? "Verifie" : "Non verifie"}
+                </Badge>
+              </div>
+
               {salon.accountSuspended && (
                 <div>
                   <p className="text-sm text-gray-500">Compte suspendu</p>

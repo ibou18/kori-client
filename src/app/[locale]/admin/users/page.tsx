@@ -37,6 +37,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+interface Session {
+  id: string;
+  userId: string;
+  sessionToken: string;
+  expires: string;
+  isActive: boolean;
+}
+
 interface User {
   id: string;
   firstName: string;
@@ -53,6 +61,7 @@ interface User {
   stripeAccountId?: string | null;
   createdAt: string;
   updatedAt?: string;
+  sessions: Session[];
 }
 
 export default function UsersPage() {
@@ -110,7 +119,7 @@ export default function UsersPage() {
   const handleSoftDelete = (user: User) => {
     if (
       confirm(
-        `Êtes-vous sûr de vouloir désactiver l'utilisateur ${user.firstName} ${user.lastName} et son salon ? Cette action peut être annulée en réactivant l'utilisateur.`
+        `Êtes-vous sûr de vouloir désactiver l'utilisateur ${user.firstName} ${user.lastName} et son salon ? Cette action peut être annulée en réactivant l'utilisateur.`,
       )
     ) {
       softDeleteUser(user.id);
@@ -191,7 +200,7 @@ export default function UsersPage() {
             setIsModalOpen(false);
             setEditingUser(null);
           },
-        }
+        },
       );
     } else {
       // Mode création
@@ -248,11 +257,11 @@ export default function UsersPage() {
               <Mail className="h-3 w-3" />
               {user.email}
             </div>
-            {user.isEmailVerified === false && (
+            {/* {user.isEmailVerified === false && (
               <div className="text-xs text-yellow-600 mt-1">
                 Email non vérifié
               </div>
-            )}
+            )} */}
           </div>
         </div>
       ),
@@ -314,30 +323,30 @@ export default function UsersPage() {
       render: (user: User) => (
         <div className="space-y-1">
           <UserStatusBadge isActive={user.isActive} />
-          {user.isEmailVerified === false && (
+          {/* {user.isEmailVerified === false && (
             <div className="text-xs text-yellow-600">Email non vérifié</div>
-          )}
+          )} */}
         </div>
       ),
     },
-    {
-      key: "lastLogin",
-      header: "Dernière connexion",
-      render: (user: User) => (
-        <div className="text-sm text-gray-600">
-          {user.lastLogin ? (
-            <>
-              <div>{dayjs(user.lastLogin).format("DD MMM YYYY")}</div>
-              <div className="text-xs text-gray-500">
-                {dayjs(user.lastLogin).format("HH:mm")}
-              </div>
-            </>
-          ) : (
-            <span className="text-gray-400">Jamais</span>
-          )}
-        </div>
-      ),
-    },
+    // {
+    //   key: "lastLogin",
+    //   header: "Dernière connexion",
+    //   render: (user: User) => (
+    //     <div className="text-sm text-gray-600">
+    //       {user.sessions.length > 0 ? (
+    //         <>
+    //           <div>{dayjs(user.sessions[0].expires).format("DD MMM YYYY")}</div>
+    //           <div className="text-xs text-gray-500">
+    //             {dayjs(user.lastLogin).format("HH:mm")}
+    //           </div>
+    //         </>
+    //       ) : (
+    //         <span className="text-gray-400">Jamais</span>
+    //       )}
+    //     </div>
+    //   ),
+    // },
     {
       key: "createdAt",
       header: "Créé le",
@@ -360,7 +369,7 @@ export default function UsersPage() {
               className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"
               title="Modifier le salon"
             >
-              <Building2 className="h-4 w-4" />
+              <Building2 className="h-4 w-4 text-blue-500" />
             </Button>
           )}
           <Button
@@ -371,7 +380,7 @@ export default function UsersPage() {
             title="Désactiver l'utilisateur et son salon"
             disabled={!user.isActive}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
         </div>
       ),
@@ -473,7 +482,7 @@ export default function UsersPage() {
                       setIsSalonModalOpen(false);
                       setSelectedUserId(null);
                     },
-                  }
+                  },
                 );
               }}
             />

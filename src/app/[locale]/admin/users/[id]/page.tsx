@@ -15,8 +15,10 @@ import {
   Bell,
   Calendar,
   CheckCircle,
+  Clock,
   CreditCard,
   Edit,
+  ExternalLink,
   Globe,
   Heart,
   Languages,
@@ -25,6 +27,7 @@ import {
   Settings,
   Shield,
   Star,
+  Store,
   User as UserIcon,
   XCircle,
 } from "lucide-react";
@@ -67,6 +70,33 @@ interface Account {
   providerAccountId: string;
 }
 
+interface Salon {
+  id: string;
+  name: string;
+  description?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  rating: number;
+  reviewCount: number;
+  timezone: string;
+  salonTypes: string[];
+  openingHours?: Record<string, { open: string; close: string } | null>;
+  stripeAccountId?: string | null;
+  stripeConnectEnabled: boolean;
+  commissionRate: number;
+  dashboardUrl?: string | null;
+  isActive: boolean;
+  isVerified: boolean;
+  offersHomeService: boolean;
+  providerCancellationCount: number;
+  visibilityReduced: boolean;
+  accountSuspended: boolean;
+  suspensionReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface User {
   id: string;
   firstName: string;
@@ -100,6 +130,7 @@ interface User {
   ratings?: any[];
   accounts?: Account[];
   favorites?: any[];
+  owner?: Salon | null;
 }
 
 export default function UserDetailPage() {
@@ -406,6 +437,234 @@ export default function UserDetailPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Salon possédé */}
+            {user.owner && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Store className="h-5 w-5" />
+                    Salon : {user.owner.name}
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/admin/salons/${user.owner!.id}`)}
+                  >
+                    Voir le salon
+                    <ExternalLink className="h-4 w-4 ml-2" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={
+                          user.owner.isActive
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-red-50 text-red-700 border-red-200"
+                        }
+                      >
+                        {user.owner.isActive ? "Actif" : "Inactif"}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={
+                          user.owner.isVerified
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                        }
+                      >
+                        {user.owner.isVerified ? "Verifie" : "Non verifie"}
+                      </Badge>
+                      {user.owner.accountSuspended && (
+                        <Badge
+                          variant="outline"
+                          className="bg-red-50 text-red-700 border-red-200"
+                        >
+                          Suspendu
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {user.owner.description && (
+                    <p className="text-sm text-gray-600 line-clamp-3">
+                      {user.owner.description}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-start gap-3">
+                      <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-gray-500">Email</p>
+                        <p className="font-medium">{user.owner.email || "N/A"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-gray-500">Telephone</p>
+                        <p className="font-medium">{user.owner.phone || "N/A"}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Globe className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-gray-500">Fuseau horaire</p>
+                        <p className="font-medium">{user.owner.timezone}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Star className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-gray-500">Note</p>
+                        <p className="font-medium flex items-center gap-1">
+                          {user.owner.rating.toFixed(1)}
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                          <span className="text-gray-400 text-sm">
+                            ({user.owner.reviewCount} avis)
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Store className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-gray-500">Types</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {user.owner.salonTypes.map((type) => (
+                            <Badge key={type} variant="outline" className="text-xs">
+                              {type}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {user.owner.offersHomeService && (
+                      <div className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-500">Service a domicile</p>
+                          <p className="font-medium text-green-700">Disponible</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Horaires d'ouverture */}
+                  {user.owner.openingHours && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-2">
+                        <Clock className="h-4 w-4" />
+                        Horaires d&apos;ouverture
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {(
+                          [
+                            ["monday", "Lundi"],
+                            ["tuesday", "Mardi"],
+                            ["wednesday", "Mercredi"],
+                            ["thursday", "Jeudi"],
+                            ["friday", "Vendredi"],
+                            ["saturday", "Samedi"],
+                            ["sunday", "Dimanche"],
+                          ] as const
+                        ).map(([key, label]) => {
+                          const hours = user.owner?.openingHours?.[key];
+                          return (
+                            <div
+                              key={key}
+                              className={`text-xs p-2 rounded-md ${
+                                hours
+                                  ? "bg-green-50 text-green-800"
+                                  : "bg-gray-50 text-gray-400"
+                              }`}
+                            >
+                              <span className="font-medium">{label}</span>
+                              <br />
+                              {hours
+                                ? `${hours.open} - ${hours.close}`
+                                : "Ferme"}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stripe Connect */}
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-medium text-gray-700 flex items-center gap-2 mb-3">
+                      <CreditCard className="h-4 w-4" />
+                      Stripe Connect
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-sm text-gray-500">Statut</p>
+                        <Badge
+                          variant="outline"
+                          className={
+                            user.owner.stripeConnectEnabled
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                          }
+                        >
+                          {user.owner.stripeConnectEnabled
+                            ? "Active"
+                            : "En attente"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Commission</p>
+                        <p className="font-medium">
+                          {(user.owner.commissionRate * 100).toFixed(0)}%
+                        </p>
+                      </div>
+                      {user.owner.stripeAccountId && (
+                        <div>
+                          <p className="text-sm text-gray-500">Account ID</p>
+                          <p className="font-mono text-xs break-all">
+                            {user.owner.stripeAccountId}
+                          </p>
+                        </div>
+                      )}
+                      {user.owner.dashboardUrl && (
+                        <div>
+                          <p className="text-sm text-gray-500">Dashboard</p>
+                          <a
+                            href={user.owner.dashboardUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                          >
+                            Ouvrir
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-3 flex items-center justify-between text-xs text-gray-400">
+                    <span>
+                      Cree le {dayjs(user.owner.createdAt).format("DD MMM YYYY")}
+                    </span>
+                    <span>
+                      Mis a jour le{" "}
+                      {dayjs(user.owner.updatedAt).format("DD MMM YYYY")}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Informations système */}
             <Card>
