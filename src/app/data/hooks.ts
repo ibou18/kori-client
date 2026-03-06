@@ -207,7 +207,13 @@ export const useRegisterSalon = () => {
       toast.success("Inscription du salon réussie !");
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Erreur lors de l'inscription du salon");
+      // Utiliser le message formaté si disponible, sinon le message d'erreur standard
+      const errorMessage =
+        error?.formattedMessage ||
+        error?.errorDetails?.message ||
+        error?.message ||
+        "Erreur lors de l'inscription du salon";
+      toast.error(errorMessage);
     },
   });
 };
@@ -645,7 +651,7 @@ export const useGetSalonAvailability = (salonId: string, date: string) => {
 export const useGetSalonBookingAvailability = (
   salonId: string,
   date: string,
-  duration: number
+  duration: number,
 ) => {
   return useQuery({
     queryKey: [GET_SALON_BOOKING_AVAILABILITY, salonId, date, duration],
@@ -658,7 +664,7 @@ export const useGetSalonBookingAvailability = (
 export const useGetSalonAvailabilityRange = (
   salonId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
 ) => {
   return useQuery({
     queryKey: [GET_SALON_AVAILABILITY, salonId, "range", startDate, endDate],
@@ -734,7 +740,7 @@ export const useGetClientBookings = (
     status?: string;
     limit?: number;
     offset?: number;
-  }
+  },
 ) => {
   return useQuery({
     queryKey: [GET_BOOKINGS, "client", clientId, params],
@@ -752,7 +758,7 @@ export const useGetSalonBookings = (
     endDate?: string;
     limit?: number;
     offset?: number;
-  }
+  },
 ) => {
   return useQuery({
     queryKey: [GET_BOOKINGS, "salon", salonId, params],
@@ -1366,7 +1372,7 @@ export const useGetSalonDashboardStats = (salonId: string) => {
 
 export const useGetSalonMonthlyRevenue = (
   salonId: string,
-  params?: { year?: number; month?: number }
+  params?: { year?: number; month?: number },
 ) => {
   return useQuery({
     queryKey: [GET_SALON_DASHBOARD_STATS, salonId, "revenue", params],
