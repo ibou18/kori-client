@@ -11,15 +11,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ExtraOfferStep } from "./steps/ExtraOfferStep";
 import { PersonalInfoStep } from "./steps/PersonalInfoStep";
-import { SalonAddressStep } from "./steps/SalonAddressStep";
-import { SalonDescriptionStep } from "./steps/SalonDescriptionStep";
-import { SalonHoursStep } from "./steps/SalonHoursStep";
-import { SalonImagesStep } from "./steps/SalonImagesStep";
-import { SalonNameStep } from "./steps/SalonNameStep";
+// import { SalonDetailsStep } from "./steps/SalonDetailsStep";
+// import { SalonImagesStep } from "./steps/SalonImagesStep";
+import { SalonInfoStep } from "./steps/SalonInfoStep";
 import { SalonResumeStep } from "./steps/SalonResumeStep";
-import { ServicesStep } from "./steps/ServicesStep";
 import { SuccessModal } from "./SuccessModal";
 import { TestimonialsCarousel } from "./TestimonialsCarousel";
 
@@ -75,13 +71,9 @@ interface FormData {
 
 const STEPS = [
   { id: "personal", title: "Informations personnelles" },
-  { id: "services", title: "Services" },
-  { id: "extra-offer", title: "Offre supplémentaire" },
-  { id: "salon-address", title: "Adresse" },
-  { id: "salon-name", title: "Nom du salon" },
-  { id: "salon-description", title: "Description" },
-  { id: "salon-hours", title: "Horaires" },
-  { id: "salon-images", title: "Images" },
+  { id: "salon-info", title: "Informations du salon" },
+  // { id: "salon-details", title: "Détails du salon" },
+  // { id: "salon-images", title: "Images" },
   { id: "salon-resume", title: "Résumé" },
 ];
 
@@ -104,12 +96,12 @@ export function ProviderRegisterForm() {
     email: isDevMode ? "test@test.com" : "",
     lastName: isDevMode ? "Test" : "",
     firstName: isDevMode ? "Test" : "",
-    phone: isDevMode ? "2345678901" : "",
+    phone: isDevMode ? "2345678922" : "",
     countryCode: "+1",
     selectedCountryCode: "CA",
     password: isDevMode ? "Test1234!" : "",
     confirmPassword: isDevMode ? "Test1234!" : "",
-    acceptTerms: false,
+    acceptTerms: isDevMode ? true : false,
     services: isDevMode
       ? [
           "HAIRDRESSER",
@@ -134,37 +126,37 @@ export function ProviderRegisterForm() {
       {
         id: "tuesday",
         name: "Mardi",
-        enabled: true,
-        openingTime: "09:00",
-        closingTime: "18:00",
+        enabled: false,
+        openingTime: "",
+        closingTime: "",
       },
       {
         id: "wednesday",
         name: "Mercredi",
-        enabled: true,
-        openingTime: "09:00",
-        closingTime: "18:00",
+        enabled: false,
+        openingTime: "",
+        closingTime: "",
       },
       {
         id: "thursday",
         name: "Jeudi",
-        enabled: true,
-        openingTime: "09:00",
-        closingTime: "18:00",
+        enabled: false,
+        openingTime: "",
+        closingTime: "",
       },
       {
         id: "friday",
         name: "Vendredi",
-        enabled: true,
-        openingTime: "09:00",
-        closingTime: "18:00",
+        enabled: false,
+        openingTime: "",
+        closingTime: "",
       },
       {
         id: "saturday",
         name: "Samedi",
-        enabled: true,
-        openingTime: "09:00",
-        closingTime: "18:00",
+        enabled: false,
+        openingTime: "",
+        closingTime: "",
       },
       {
         id: "sunday",
@@ -239,7 +231,7 @@ export function ProviderRegisterForm() {
           "MAQUILLAGE",
           "CILS",
           "BODY_CARE",
-        ].includes(serviceId)
+        ].includes(serviceId),
       );
     };
 
@@ -295,23 +287,25 @@ export function ProviderRegisterForm() {
       registerSalon(salonPayload, {
         onSuccess: async (data) => {
           console.log("✅ Salon créé avec succès:", data);
-          
+
           // Upload des images si elles existent
           if (formData.salonImages.length > 0 && data?.data?.salon?.id) {
             try {
               setSubmissionStep("Upload des images...");
-              
+
               // Convertir les fichiers en base64
-              const imagesPromises = formData.salonImages.map(async (file, index) => {
-                const base64 = await fileToBase64(file);
-                return {
-                  base64,
-                  fileName: file.name,
-                  mimeType: file.type,
-                  order: index,
-                  isMain: index === 0, // La première image est la principale
-                };
-              });
+              const imagesPromises = formData.salonImages.map(
+                async (file, index) => {
+                  const base64 = await fileToBase64(file);
+                  return {
+                    base64,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    order: index,
+                    isMain: index === 0, // La première image est la principale
+                  };
+                },
+              );
 
               const images = await Promise.all(imagesPromises);
 
@@ -327,14 +321,19 @@ export function ProviderRegisterForm() {
               } else {
                 console.warn("⚠️ Aucune réponse lors de l'upload des images");
                 toast.warning("Les images n'ont pas pu être uploadées", {
-                  description: "Vous pourrez les ajouter plus tard depuis votre espace.",
+                  description:
+                    "Vous pourrez les ajouter plus tard depuis votre espace.",
                 });
               }
             } catch (uploadError: any) {
-              console.error("❌ Erreur lors de l'upload des images:", uploadError);
+              console.error(
+                "❌ Erreur lors de l'upload des images:",
+                uploadError,
+              );
               // On continue quand même, l'upload des images n'est pas bloquant
               toast.warning("Erreur lors de l'upload des images", {
-                description: "Vous pourrez les ajouter plus tard depuis votre espace.",
+                description:
+                  "Vous pourrez les ajouter plus tard depuis votre espace.",
               });
             }
           }
@@ -345,10 +344,10 @@ export function ProviderRegisterForm() {
         onError: (error: any) => {
           console.error("❌ Erreur lors de l'inscription:", error);
           setIsSubmitting(false);
-          
+
           // Extraire le message d'erreur de manière intelligente
           const errorMessage = getErrorMessage(error);
-          
+
           toast.error("Erreur lors de l'inscription", {
             description: errorMessage,
             duration: 6000,
@@ -358,7 +357,7 @@ export function ProviderRegisterForm() {
     } catch (error: any) {
       console.error("❌ Erreur:", error);
       setIsSubmitting(false);
-      
+
       const errorMessage = getErrorMessage(error);
       toast.error("Erreur inattendue", {
         description: errorMessage,
@@ -369,32 +368,81 @@ export function ProviderRegisterForm() {
 
   // Fonction pour extraire un message d'erreur lisible
   const getErrorMessage = (error: any): string => {
+    // Vérifier les erreurs Prisma (contrainte unique)
+    // Vérifier dans plusieurs emplacements possibles
+    const prismaError =
+      error?.response?.data?.prismaError ||
+      error?.prismaError ||
+      (error?.code === "P2002" ? error : null);
+
+    if (prismaError?.code === "P2002") {
+      const target = prismaError?.meta?.target || [];
+      if (Array.isArray(target)) {
+        if (target.includes("phone")) {
+          return "Ce numéro de téléphone est déjà utilisé. Veuillez utiliser un autre numéro ou vous connecter si vous avez déjà un compte.";
+        }
+        if (target.includes("email")) {
+          return "Cette adresse email est déjà utilisée. Essayez de vous connecter si vous avez déjà un compte.";
+        }
+      }
+      // Erreur de contrainte unique générique
+      return "Ces informations sont déjà utilisées par un autre compte. Veuillez vérifier vos données ou vous connecter.";
+    }
+
     // Messages d'erreur personnalisés selon le code d'erreur
     const errorCode = error?.response?.data?.errorCode || error?.errorCode;
-    
+
     const errorMessages: Record<string, string> = {
-      EMAIL_ALREADY_EXISTS: "Cette adresse email est déjà utilisée. Essayez de vous connecter.",
-      PHONE_ALREADY_EXISTS: "Ce numéro de téléphone est déjà utilisé.",
-      SALON_EMAIL_ALREADY_EXISTS: "L'email du salon est déjà utilisé par un autre établissement.",
-      INVALID_PASSWORD: "Le mot de passe ne respecte pas les critères de sécurité.",
+      EMAIL_ALREADY_EXISTS:
+        "Cette adresse email est déjà utilisée. Essayez de vous connecter.",
+      PHONE_ALREADY_EXISTS:
+        "Ce numéro de téléphone est déjà utilisé. Veuillez utiliser un autre numéro ou vous connecter si vous avez déjà un compte.",
+      SALON_EMAIL_ALREADY_EXISTS:
+        "L'email du salon est déjà utilisé par un autre établissement.",
+      INVALID_PASSWORD:
+        "Le mot de passe ne respecte pas les critères de sécurité.",
       VALIDATION_ERROR: "Veuillez vérifier les informations saisies.",
       USER_NOT_FOUND: "Utilisateur non trouvé.",
-      NETWORK_ERROR: "Problème de connexion. Vérifiez votre connexion internet.",
+      NETWORK_ERROR:
+        "Problème de connexion. Vérifiez votre connexion internet.",
     };
 
     if (errorCode && errorMessages[errorCode]) {
       return errorMessages[errorCode];
     }
 
-    // Essayer d'extraire le message de différentes sources
-    const message = 
+    // Vérifier si le message d'erreur contient des indices sur la contrainte unique
+    const errorMessage =
       error?.response?.data?.message ||
       error?.response?.data?.error ||
       error?.message ||
       error?.errorDetails?.message ||
-      "Une erreur est survenue. Veuillez réessayer.";
+      "";
 
-    return message;
+    if (errorMessage) {
+      // Détecter les erreurs de contrainte unique dans le message
+      if (
+        errorMessage.toLowerCase().includes("unique constraint") ||
+        errorMessage.toLowerCase().includes("already exists") ||
+        errorMessage.toLowerCase().includes("déjà utilisé")
+      ) {
+        if (
+          errorMessage.toLowerCase().includes("phone") ||
+          errorMessage.toLowerCase().includes("téléphone")
+        ) {
+          return "Ce numéro de téléphone est déjà utilisé. Veuillez utiliser un autre numéro ou vous connecter si vous avez déjà un compte.";
+        }
+        if (
+          errorMessage.toLowerCase().includes("email") ||
+          errorMessage.toLowerCase().includes("courriel")
+        ) {
+          return "Cette adresse email est déjà utilisée. Essayez de vous connecter si vous avez déjà un compte.";
+        }
+      }
+      return errorMessage;
+    }
+
+    return "Une erreur est survenue. Veuillez réessayer.";
   };
 
   const renderCurrentStep = () => {
@@ -409,9 +457,9 @@ export function ProviderRegisterForm() {
             totalSteps={STEPS.length}
           />
         );
-      case "services":
+      case "salon-info":
         return (
-          <ServicesStep
+          <SalonInfoStep
             formData={formData}
             updateFormData={updateFormData}
             onNext={nextStep}
@@ -422,72 +470,28 @@ export function ProviderRegisterForm() {
             totalSteps={STEPS.length}
           />
         );
-      case "extra-offer":
-        return (
-          <ExtraOfferStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-          />
-        );
-      case "salon-address":
-        return (
-          <SalonAddressStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-          />
-        );
-      case "salon-name":
-        return (
-          <SalonNameStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-          />
-        );
-      case "salon-description":
-        return (
-          <SalonDescriptionStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-          />
-        );
-      case "salon-hours":
-        return (
-          <SalonHoursStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-          />
-        );
-      case "salon-images":
-        return (
-          <SalonImagesStep
-            formData={formData}
-            updateFormData={updateFormData}
-            onNext={nextStep}
-            onPrev={prevStep}
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-          />
-        );
+      // case "salon-details":
+      //   return (
+      //     <SalonDetailsStep
+      //       formData={formData}
+      //       updateFormData={updateFormData}
+      //       onNext={nextStep}
+      //       onPrev={prevStep}
+      //       currentStep={currentStep}
+      //       totalSteps={STEPS.length}
+      //     />
+      //   );
+      // case "salon-images":
+      //   return (
+      //     <SalonImagesStep
+      //       formData={formData}
+      //       updateFormData={updateFormData}
+      //       onNext={nextStep}
+      //       onPrev={prevStep}
+      //       currentStep={currentStep}
+      //       totalSteps={STEPS.length}
+      //     />
+      //   );
       case "salon-resume":
         return (
           <SalonResumeStep
@@ -659,7 +663,8 @@ export function ProviderRegisterForm() {
                     transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
                   >
                     <span className="relative">
-                      rejoignez la communauté <span className="font-semibold text-primary">korí.</span>
+                      rejoignez la communauté{" "}
+                      <span className="font-semibold text-primary">korí.</span>
                       <motion.span
                         className="absolute bottom-0 left-0 w-full h-2 bg-primary/30 -z-10"
                         initial={{ scaleX: 0 }}

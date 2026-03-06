@@ -90,32 +90,60 @@ export const handleError = (
     finalMessage = errorMessage;
   }
 
-  // Logger l'erreur pour débogage
-  if (responseData && typeof responseData === "object" && Object.keys(responseData).length > 0) {
-    console.error("API Error:", {
-      status,
-      url: err.config?.url,
-      method: err.config?.method,
-      message: finalMessage,
-      responseData,
-    });
+  // Logger l'erreur pour débogage avec toutes les informations disponibles
+  const errorLog: any = {
+    status: status || "unknown",
+    url: err.config?.url || err.request?.url || err.config?.baseURL || "unknown",
+    method: (err.config?.method || err.request?.method || "unknown").toUpperCase(),
+    message: finalMessage || errorMessage || "Erreur inconnue",
+  };
+
+  // Ajouter responseData seulement s'il contient des informations
+  if (responseData) {
+    if (typeof responseData === "object") {
+      const keys = Object.keys(responseData);
+      if (keys.length > 0) {
+        errorLog.responseData = responseData;
+      } else {
+        errorLog.responseData = "(empty object)";
+      }
+    } else {
+      errorLog.responseData = responseData;
+    }
   } else {
-    // Si responseData est vide ou invalide, logger plus d'informations
-    console.error("API Error (empty or invalid response):", {
-      status,
-      url: err.config?.url,
-      method: err.config?.method,
-      message: finalMessage,
-      errorMessage: err.message,
-      response: err.response,
-      responseData: responseData,
-      request: {
-        url: err.config?.url,
-        baseURL: err.config?.baseURL,
-        headers: err.config?.headers,
-      },
-    });
+    errorLog.responseData = "(no response data)";
   }
+
+  // Ajouter des informations supplémentaires pour le débogage
+  if (err.response) {
+    errorLog.response = {
+      status: err.response.status || "unknown",
+      statusText: err.response.statusText || "unknown",
+      data: err.response.data || "(no data)",
+    };
+  }
+
+  if (err.message) {
+    errorLog.errorMessage = err.message;
+  }
+
+  // Ajouter les informations de la requête si disponibles
+  if (err.config) {
+    errorLog.request = {
+      url: err.config.url || "unknown",
+      baseURL: err.config.baseURL || "unknown",
+      method: (err.config.method || "unknown").toUpperCase(),
+    };
+  }
+
+  // Ajouter l'erreur brute pour le débogage complet
+  errorLog.rawError = {
+    name: err.name || "unknown",
+    code: err.code || "unknown",
+    stack: err.stack ? err.stack.split("\n").slice(0, 3).join("\n") : "no stack",
+  };
+
+  console.error("API Error:", JSON.stringify(errorLog, null, 2));
 
   // Enrichir l'erreur originale avec des informations structurées
   err.formattedMessage = finalMessage;

@@ -30,8 +30,8 @@ export const registerSalonApi = async (data: any) => {
     const response = await requestWrapper.post("/auth/register-salon", data);
     return response.data;
   } catch (error) {
+    // handleError lance toujours une erreur, donc on ne retourne jamais null
     handleError(error, "Erreur lors de l'inscription du salon");
-    return null;
   }
 };
 
