@@ -4,7 +4,7 @@ import { GoogleAddressAutocomplete } from "@/components/ui/GoogleAddressAutocomp
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ProgressIndicator } from "../ProgressIndicator";
 
 interface FormData {
@@ -12,6 +12,7 @@ interface FormData {
   salonDescription?: string;
   services: string[];
   extraOffer: "yes" | "no";
+  salonImages: File[];
   salonAddress: {
     street: string;
     city: string;
@@ -65,6 +66,16 @@ export function SalonInfoStep({
     } else {
       updateFormData({ services: [...formData.services, serviceId] });
     }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    updateFormData({ salonImages: [...formData.salonImages, ...files] });
+  };
+
+  const removeImage = (index: number) => {
+    const updatedImages = formData.salonImages.filter((_, i) => i !== index);
+    updateFormData({ salonImages: updatedImages });
   };
 
   const handleValidate = () => {
@@ -152,6 +163,7 @@ export function SalonInfoStep({
             <button
               key={service.id}
               onClick={() => handleServiceSelect(service.id)}
+              type="button"
               className={`p-4 rounded-lg border-2 transition-all text-left ${
                 formData.services.includes(service.id)
                   ? "border-primary bg-primary/5"
@@ -325,6 +337,7 @@ export function SalonInfoStep({
 
         <div className="space-y-4">
           <button
+            type="button"
             onClick={() => updateFormData({ extraOffer: "yes" })}
             className={`w-full p-6 rounded-lg border-2 text-left transition-all ${
               formData.extraOffer === "yes"
@@ -346,6 +359,7 @@ export function SalonInfoStep({
           </button>
 
           <button
+            type="button"
             onClick={() => updateFormData({ extraOffer: "no" })}
             className={`w-full p-6 rounded-lg border-2 text-left transition-all ${
               formData.extraOffer === "no"
@@ -365,6 +379,70 @@ export function SalonInfoStep({
               )}
             </div>
           </button>
+        </div>
+      </div>
+
+      {/* Upload des images - juste après offre supplémentaire */}
+      <div className="space-y-4 border-t pt-6">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Photos de votre salon
+          </h2>
+          <p className="text-gray-600">
+            Ajoutez des photos pour présenter votre salon (optionnel)
+          </p>
+        </div>
+
+        <div>
+          <Label>Photos</Label>
+          <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageSelect}
+              className="hidden"
+              id="image-upload"
+            />
+            <label
+              htmlFor="image-upload"
+              className="cursor-pointer flex flex-col items-center"
+            >
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                <span className="text-2xl">📷</span>
+              </div>
+              <span className="text-sm text-gray-600">
+                Cliquez pour ajouter des photos
+              </span>
+              <span className="text-xs text-gray-500 mt-1">
+                PNG, JPG jusqu&apos;à 10MB
+              </span>
+            </label>
+          </div>
+
+          {formData.salonImages.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+              {formData.salonImages.map((image, index) => (
+                <div key={index} className="relative group">
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(image)}
+                      alt={`Photo du salon ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
