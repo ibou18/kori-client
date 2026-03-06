@@ -277,6 +277,14 @@ export function ProviderRegisterForm() {
   };
 
   const handleFinalSubmit = async () => {
+    if (!formData.salonName?.trim()) {
+      toast.error("Veuillez indiquer le nom de votre salon", {
+        description: "Le nom du salon est obligatoire pour créer votre compte.",
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmissionStep("Création du salon...");
 
