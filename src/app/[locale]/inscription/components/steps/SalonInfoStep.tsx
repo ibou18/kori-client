@@ -8,6 +8,8 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { ProgressIndicator } from "../ProgressIndicator";
 
 interface FormData {
+  salonName: string;
+  salonDescription?: string;
   services: string[];
   extraOffer: "yes" | "no";
   salonAddress: {
@@ -66,6 +68,10 @@ export function SalonInfoStep({
   };
 
   const handleValidate = () => {
+    if (!formData.salonName?.trim()) {
+      alert("Veuillez indiquer le nom de votre salon");
+      return;
+    }
     if (formData.services.length === 0) {
       alert("Veuillez sélectionner au moins un service");
       return;
@@ -105,6 +111,30 @@ export function SalonInfoStep({
         totalSteps={totalSteps}
         stepTitle="Informations du salon"
       />
+
+      {/* Nom du salon - requis */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Nom de votre salon
+          </h2>
+          <p className="text-gray-600">
+            Comment souhaitez-vous que votre établissement soit affiché ?
+          </p>
+        </div>
+        <div>
+          <Label htmlFor="salonName">Nom du salon *</Label>
+          <Input
+            id="salonName"
+            type="text"
+            placeholder="Ex. Salon Élégance, Coiffure Marie..."
+            value={formData.salonName ?? ""}
+            onChange={(e) => updateFormData({ salonName: e.target.value })}
+            className="mt-1"
+            required
+          />
+        </div>
+      </div>
 
       {/* Section Services */}
       <div className="space-y-4">
@@ -348,6 +378,7 @@ export function SalonInfoStep({
           onClick={handleValidate}
           className="flex-1"
           disabled={
+            !formData.salonName?.trim() ||
             formData.services.length === 0 ||
             !formData.salonAddress ||
             !formData.extraOffer

@@ -108,7 +108,7 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogoutButton />
+              <LogoutButton /> Déconnexion
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
