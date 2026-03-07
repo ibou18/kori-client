@@ -12,8 +12,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PersonalInfoStep } from "./steps/PersonalInfoStep";
-// import { SalonDetailsStep } from "./steps/SalonDetailsStep";
-// import { SalonImagesStep } from "./steps/SalonImagesStep";
 import { SalonInfoStep } from "./steps/SalonInfoStep";
 import { SalonResumeStep } from "./steps/SalonResumeStep";
 import { SuccessModal } from "./SuccessModal";
@@ -72,8 +70,6 @@ interface FormData {
 const STEPS = [
   { id: "personal", title: "Informations personnelles" },
   { id: "salon-info", title: "Informations du salon" },
-  // { id: "salon-details", title: "Détails du salon" },
-  // { id: "salon-images", title: "Images" },
   { id: "salon-resume", title: "Résumé" },
 ];
 
@@ -478,28 +474,6 @@ export function ProviderRegisterForm() {
             totalSteps={STEPS.length}
           />
         );
-      // case "salon-details":
-      //   return (
-      //     <SalonDetailsStep
-      //       formData={formData}
-      //       updateFormData={updateFormData}
-      //       onNext={nextStep}
-      //       onPrev={prevStep}
-      //       currentStep={currentStep}
-      //       totalSteps={STEPS.length}
-      //     />
-      //   );
-      // case "salon-images":
-      //   return (
-      //     <SalonImagesStep
-      //       formData={formData}
-      //       updateFormData={updateFormData}
-      //       onNext={nextStep}
-      //       onPrev={prevStep}
-      //       currentStep={currentStep}
-      //       totalSteps={STEPS.length}
-      //     />
-      //   );
       case "salon-resume":
         return (
           <SalonResumeStep
@@ -709,9 +683,7 @@ export function ProviderRegisterForm() {
         className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8"
       >
         <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-0 py-2">
-          <h1 className="text-xl font-bold text-primary">
-            Formulaire d&apos;inscription
-          </h1>
+          <h1 className="text-xl font-bold text-primary">Inscription rapide</h1>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8 lg:p-10 mx-auto">
           {renderCurrentStep()}
