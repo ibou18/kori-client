@@ -170,7 +170,7 @@ export function ProviderRegisterForm() {
     setFormData((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  // Défilement automatique vers le formulaire après 5 secondes (une seule fois au chargement)
+  // Défilement automatique vers le formulaire après 5 secondes (une seule fois au chargement, étape 0)
   useEffect(() => {
     if (currentStep === 0 && !hasScrolledRef.current) {
       const timer = setTimeout(() => {
@@ -182,6 +182,16 @@ export function ProviderRegisterForm() {
       }, 6000);
 
       return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // À chaque changement d'étape (1, 2...), remonter en haut du formulaire pour voir le début de l'étape
+  useEffect(() => {
+    if (currentStep > 0) {
+      formRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }
   }, [currentStep]);
 
