@@ -2,6 +2,8 @@
 
 import { useGetSalonTypes, useRegisterSalon } from "@/app/data/hooks";
 import { uploadSalonImagesApi } from "@/app/data/services";
+import { trackMetaConversion } from "@/components/MetaPixel";
+import { trackTikTokConversion } from "@/components/TikTokPixel";
 import icon from "@/assets/icon.png";
 import logo from "@/assets/logo-black.png";
 import { motion } from "framer-motion";
@@ -353,6 +355,12 @@ export function ProviderRegisterForm() {
           }
 
           setIsSubmitting(false);
+          
+          // Tracker la conversion TikTok et Meta Pixel
+          const phoneNumber = formData.countryCode + formData.phone;
+          trackTikTokConversion(formData.email, phoneNumber);
+          trackMetaConversion(formData.email, phoneNumber);
+          
           setShowSuccessModal(true);
         },
         onError: (error: any) => {
