@@ -103,6 +103,10 @@ export function SalonInfoStep({
       alert("Veuillez indiquer si vous proposez des services à domicile");
       return;
     }
+    if (formData.salonImages.length === 0) {
+      alert("Veuillez ajouter au moins une photo de votre salon");
+      return;
+    }
     onNext();
   };
 
@@ -389,12 +393,12 @@ export function SalonInfoStep({
             Photos de votre salon
           </h2>
           <p className="text-gray-600">
-            Ajoutez des photos pour présenter votre salon (optionnel)
+            Ajoutez au moins une photo pour présenter votre salon
           </p>
         </div>
 
         <div>
-          <Label>Photos</Label>
+          <Label>Photos *</Label>
           <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
             <input
               type="file"
@@ -459,7 +463,8 @@ export function SalonInfoStep({
             !formData.salonName?.trim() ||
             formData.services.length === 0 ||
             !formData.salonAddress ||
-            !formData.extraOffer
+            !formData.extraOffer ||
+            formData.salonImages.length === 0
           }
         >
           Continuer
