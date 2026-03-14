@@ -51,6 +51,10 @@ interface AdminListLayoutProps<T> {
   emptyMessage?: string;
   itemsPerPage?: number;
   filterComponent?: React.ReactNode;
+  // Pagination côté serveur
+  totalItems?: number;
+  onPageChange?: (page: number) => void;
+  serverSidePagination?: boolean;
 }
 
 export function AdminListLayout<T extends { id: string }>({
@@ -67,6 +71,9 @@ export function AdminListLayout<T extends { id: string }>({
   emptyMessage = "Aucun élément trouvé",
   itemsPerPage = 10,
   filterComponent,
+  totalItems,
+  onPageChange,
+  serverSidePagination = false,
 }: AdminListLayoutProps<T>) {
   const [deleteItem, setDeleteItem] = useState<T | null>(null);
 
@@ -76,12 +83,26 @@ export function AdminListLayout<T extends { id: string }>({
     searchKeys: searchKeys as string[],
   });
 
-  // Pagination
-  const { currentItems, currentPage, totalPages, setCurrentPage } =
-    usePagination({
-      data: filteredData,
-      itemsPerPage,
-    });
+  // Pagination côté client ou serveur
+  const clientPagination = usePagination({
+    data: filteredData,
+    itemsPerPage,
+  });
+
+  // Calculer la pagination selon le mode
+  const currentItems = serverSidePagination ? filteredData : clientPagination.currentItems;
+  const currentPage = serverSidePagination ? 1 : clientPagination.currentPage;
+  const totalPages = serverSidePagination 
+    ? Math.ceil((totalItems || 0) / itemsPerPage)
+    : clientPagination.totalPages;
+  
+  const handlePageChange = (page: number) => {
+    if (serverSidePagination && onPageChange) {
+      onPageChange(page);
+    } else {
+      clientPagination.setCurrentPage(page);
+    }
+  };
 
   const handleDelete = (item: T) => {
     setDeleteItem(item);
@@ -115,7 +136,7 @@ export function AdminListLayout<T extends { id: string }>({
             />
           </div>
           <div className="text-sm text-gray-600">
-            {filteredData.length} {title.toLowerCase()}
+            {serverSidePagination ? (totalItems || 0) : filteredData.length} {title.toLowerCase()}
           </div>
         </div>
       </div>
@@ -330,7 +351,7 @@ export function AdminListLayout<T extends { id: string }>({
                 <CustomPagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+                  onPageChange={handlePageChange}
                 />
               </div>
             )}

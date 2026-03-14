@@ -39,8 +39,35 @@ export default function SalonsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
-  const { data, isLoading } = useGetSalons();
+  // Calculer limit et offset pour la pagination côté serveur
+  const limit = itemsPerPage;
+  const offset = (currentPage - 1) * itemsPerPage;
+
+  // Préparer les paramètres pour l'API selon le filtre
+  const apiParams: {
+    limit: number;
+    offset: number;
+    isActive?: boolean;
+    isVerified?: boolean;
+  } = {
+    limit,
+    offset,
+  };
+
+  // Appliquer les filtres côté serveur
+  if (statusFilter === "active") {
+    apiParams.isActive = true;
+    apiParams.isVerified = true;
+  } else if (statusFilter === "inactive") {
+    apiParams.isActive = false;
+  } else if (statusFilter === "unverified") {
+    apiParams.isVerified = false;
+  }
+
+  const { data, isLoading } = useGetSalons(apiParams);
   const { mutate: deleteSalon } = useDeleteSalon();
 
   if (!session) {
@@ -51,13 +78,11 @@ export default function SalonsPage() {
     );
   }
 
-  // Filtrer par statut
-  const filteredData = data?.data?.filter((salon: Salon) => {
-    if (statusFilter === "active") return salon.isActive && salon.isVerified;
-    if (statusFilter === "inactive") return !salon.isActive;
-    if (statusFilter === "unverified") return !salon.isVerified;
-    return true;
-  });
+  // Les données sont déjà filtrées côté serveur
+  const filteredData = data?.data || [];
+
+  // Total depuis la réponse de l'API
+  const totalItems = data?.pagination?.total || 0;
 
   const handleDelete = (salon: Salon) => {
     deleteSalon(salon.id, {
@@ -144,7 +169,13 @@ export default function SalonsPage() {
   ];
 
   const filterComponent = (
-    <Select value={statusFilter} onValueChange={setStatusFilter}>
+    <Select 
+      value={statusFilter} 
+      onValueChange={(value) => {
+        setStatusFilter(value);
+        setCurrentPage(1); // Réinitialiser à la page 1 lors du changement de filtre
+      }}
+    >
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Filtrer par statut" />
       </SelectTrigger>
@@ -171,6 +202,14 @@ export default function SalonsPage() {
       addButtonLabel="Ajouter un salon"
       emptyMessage="Aucun salon trouvé"
       filterComponent={filterComponent}
+      itemsPerPage={itemsPerPage}
+      totalItems={totalItems}
+      serverSidePagination={true}
+      onPageChange={(page) => {
+        setCurrentPage(page);
+        // Scroll vers le haut lors du changement de page
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }}
     />
   );
 }
