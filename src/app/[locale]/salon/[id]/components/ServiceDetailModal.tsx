@@ -1,6 +1,7 @@
 "use client";
 
 import { getSalonServiceByIdApi } from "@/app/data/services";
+import { useGetPlatformConfig } from "@/app/data/hooks";
 import { Download, Smartphone, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -43,6 +44,11 @@ export function ServiceDetailModal({
   const [service, setService] = useState<ServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { data: platformConfigData } = useGetPlatformConfig();
+  const bookingFeeRate =
+    platformConfigData?.data?.defaultCommissionRate ??
+    platformConfigData?.defaultCommissionRate ??
+    0.06;
 
   useEffect(() => {
     const fetchService = async () => {
@@ -118,6 +124,10 @@ export function ServiceDetailModal({
   };
 
   const minPrice = getMinPrice();
+  const minPriceWithFee =
+    minPrice !== null
+      ? minPrice + Number((Math.ceil(minPrice * bookingFeeRate * 100) / 100).toFixed(2))
+      : null;
 
   if (loading) {
     return (
@@ -192,9 +202,14 @@ export function ServiceDetailModal({
             )}
             <div className="flex items-center justify-center gap-4 text-sm text-slate-600">
               {minPrice !== null && (
-                <span className="font-semibold text-blue-600 text-lg">
-                  {minPrice} $
-                </span>
+                <div className="text-center">
+                  <span className="font-semibold text-blue-600 text-lg">
+                    {minPriceWithFee} $
+                  </span>
+                  <p className="text-[11px] text-slate-500">
+                    incluant frais de reservation (6%)
+                  </p>
+                </div>
               )}
               {service.duration && (
                 <span className="text-slate-500">

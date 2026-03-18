@@ -1,6 +1,7 @@
 "use client";
 
 import { getSalonApi, getSalonServicesApi } from "@/app/data/services";
+import { useGetPlatformConfig } from "@/app/data/hooks";
 import { motion } from "framer-motion";
 import { ChevronRight, Clock, MapPin, Smartphone, Star } from "lucide-react";
 import Image from "next/image";
@@ -116,6 +117,11 @@ export default function SalonSharePage() {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
     null
   );
+  const { data: platformConfigData } = useGetPlatformConfig();
+  const bookingFeeRate =
+    platformConfigData?.data?.defaultCommissionRate ??
+    platformConfigData?.defaultCommissionRate ??
+    0.06;
 
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
   useEffect(() => {
@@ -451,6 +457,15 @@ export default function SalonSharePage() {
                           )
                         )
                       : null;
+                    const minPriceWithFee =
+                      minPrice !== null
+                        ? minPrice +
+                          Number(
+                            (
+                              Math.ceil(minPrice * bookingFeeRate * 100) / 100
+                            ).toFixed(2)
+                          )
+                        : null;
                     return (
                       <motion.button
                         key={service.id}
@@ -476,7 +491,7 @@ export default function SalonSharePage() {
                               <div className="flex items-center gap-2 mt-1">
                                 {minPrice !== null && (
                                   <span className="text-white font-bold text-sm drop-shadow">
-                                    {minPrice} $
+                                    {minPriceWithFee} $
                                   </span>
                                 )}
                                 {service.duration && (
@@ -495,7 +510,7 @@ export default function SalonSharePage() {
                             <div className="flex items-center gap-2 mt-2">
                               {minPrice !== null && (
                                 <span className="text-blue-600 font-bold text-sm">
-                                  {minPrice} $
+                                  {minPriceWithFee} $
                                 </span>
                               )}
                               {service.duration && (
