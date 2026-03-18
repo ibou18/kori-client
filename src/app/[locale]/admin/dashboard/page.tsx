@@ -19,6 +19,23 @@ import { useEffect, useState } from "react";
 
 import PageWrapper from "@/app/components/block/PageWrapper";
 import { useGetAdminStats } from "@/app/data/hooks";
+import { useGetSalons, useGetUsers } from "@/app/data/hooks";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export interface IStats {
   name: string;
@@ -27,6 +44,8 @@ export interface IStats {
   icon?: any;
   color?: string;
 }
+
+type EvolutionRange = "7" | "15" | "30" | "90" | "180" | "365";
 
 const StatCard = ({ item }: { item: IStats }) => (
   <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6 transition-all hover:shadow-lg">
@@ -78,7 +97,128 @@ const formatCurrency = (amount: number) => {
 export default function Dashboard() {
   useSession();
   const [stats, setStats] = useState<IStats[]>([]);
+  const [evolutionRange, setEvolutionRange] = useState<EvolutionRange>("30");
   const { data: adminStats, isLoading: statsLoading } = useGetAdminStats();
+  const { data: usersResponse, isLoading: usersLoading } = useGetUsers();
+  const { data: salonsResponse, isLoading: salonsLoading } = useGetSalons({
+    limit: 10000,
+    offset: 0,
+  });
+
+  const usersData = Array.isArray(usersResponse)
+    ? usersResponse
+    : usersResponse?.data || [];
+  const salonsData = Array.isArray(salonsResponse?.data)
+    ? salonsResponse.data
+    : [];
+
+  const getRangeLabel = (range: EvolutionRange) => {
+    return `${range} derniers jours`;
+  };
+
+  const buildRegistrationEvolution = (
+    source: any[],
+    rangeInDays: number,
+    options?: { filter?: (item: any) => boolean },
+  ) => {
+    const now = new Date();
+    const periodStart = new Date(now);
+    periodStart.setHours(0, 0, 0, 0);
+    periodStart.setDate(periodStart.getDate() - (rangeInDays - 1));
+
+    const grouping: "day" | "week" | "month" =
+      rangeInDays <= 30 ? "day" : rangeInDays <= 120 ? "week" : "month";
+
+    const monthlyMap = new Map<string, number>();
+    let initialCount = 0;
+
+    source.forEach((item) => {
+      if (options?.filter && !options.filter(item)) return;
+      if (!item?.createdAt) return;
+
+      const createdAt = new Date(item.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return;
+
+      if (createdAt < periodStart) {
+        initialCount += 1;
+        return;
+      }
+
+      let bucketDate: Date;
+      if (grouping === "month") {
+        bucketDate = new Date(createdAt.getFullYear(), createdAt.getMonth(), 1);
+      } else if (grouping === "week") {
+        bucketDate = new Date(createdAt);
+        const day = bucketDate.getDay();
+        const mondayOffset = day === 0 ? -6 : 1 - day;
+        bucketDate.setDate(bucketDate.getDate() + mondayOffset);
+        bucketDate.setHours(0, 0, 0, 0);
+      } else {
+        bucketDate = new Date(
+          createdAt.getFullYear(),
+          createdAt.getMonth(),
+          createdAt.getDate(),
+        );
+      }
+
+      const bucketKey = bucketDate.toISOString().split("T")[0];
+      monthlyMap.set(bucketKey, (monthlyMap.get(bucketKey) || 0) + 1);
+    });
+
+    const labelFormatter =
+      grouping === "month"
+        ? new Intl.DateTimeFormat("fr-CA", { month: "short", year: "2-digit" })
+        : new Intl.DateTimeFormat("fr-CA", { day: "2-digit", month: "short" });
+
+    const incrementDate = (date: Date): Date => {
+      const next = new Date(date);
+      if (grouping === "month") {
+        next.setMonth(next.getMonth() + 1);
+      } else if (grouping === "week") {
+        next.setDate(next.getDate() + 7);
+      } else {
+        next.setDate(next.getDate() + 1);
+      }
+      return next;
+    };
+
+    let cumulative = initialCount;
+    const evolution = [];
+    let cursor = new Date(periodStart);
+    if (grouping === "month") {
+      cursor = new Date(periodStart.getFullYear(), periodStart.getMonth(), 1);
+    } else if (grouping === "week") {
+      const day = cursor.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      cursor.setDate(cursor.getDate() + mondayOffset);
+    }
+
+    while (cursor <= now) {
+      const bucketKey = cursor.toISOString().split("T")[0];
+      const newCount = monthlyMap.get(bucketKey) || 0;
+      cumulative += newCount;
+
+      evolution.push({
+        month: labelFormatter.format(cursor),
+        newCount,
+        total: cumulative,
+      });
+
+      cursor = incrementDate(cursor);
+    }
+
+    return evolution;
+  };
+
+  const rangeInDays = Number(evolutionRange);
+  const clientEvolutionData = buildRegistrationEvolution(usersData, rangeInDays, {
+    filter: (user: any) => user?.role === "CLIENT",
+  });
+  const salonEvolutionData = buildRegistrationEvolution(
+    salonsData,
+    rangeInDays,
+  );
+  const isChartsLoading = usersLoading || salonsLoading;
 
   useEffect(() => {
     if (adminStats?.data) {
@@ -318,6 +458,120 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {!statsLoading && (
+        <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="xl:col-span-2 rounded-lg bg-white p-4 shadow">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">
+                  Période des graphiques d'inscriptions
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Filtre appliqué aux évolutions salons et clients
+                </p>
+              </div>
+              <div className="w-full md:w-[240px]">
+                <Select
+                  value={evolutionRange}
+                  onValueChange={(value) =>
+                    setEvolutionRange(value as EvolutionRange)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir une période" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 derniers jours</SelectItem>
+                    <SelectItem value="15">15 derniers jours</SelectItem>
+                    <SelectItem value="30">30 derniers jours</SelectItem>
+                    <SelectItem value="90">90 derniers jours</SelectItem>
+                    <SelectItem value="180">180 derniers jours</SelectItem>
+                    <SelectItem value="365">365 derniers jours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              Évolution des salons inscrits
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Nombre cumulé de salons sur les {getRangeLabel(evolutionRange)}
+            </p>
+            {isChartsLoading ? (
+              <Skeleton className="h-72 w-full" />
+            ) : (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={salonEvolutionData}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ECECEC" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number) => [`${value}`, "Salons"]}
+                      labelFormatter={(label: string) => `Mois: ${label}`}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#4A6854"
+                      fill="#D6E3D8"
+                      fillOpacity={0.45}
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              Évolution des clients inscrits
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Nombre cumulé de clients sur les {getRangeLabel(evolutionRange)}
+            </p>
+            {isChartsLoading ? (
+              <Skeleton className="h-72 w-full" />
+            ) : (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={clientEvolutionData}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ECECEC" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number) => [`${value}`, "Clients"]}
+                      labelFormatter={(label: string) => `Mois: ${label}`}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#53745D"
+                      fill="#B8CFBC"
+                      fillOpacity={0.45}
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
       )}

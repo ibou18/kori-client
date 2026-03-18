@@ -37,8 +37,6 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -111,6 +109,16 @@ export default function StatsPage() {
   const topServices = topServicesData?.data || topServicesData || [];
   const topSalons = topSalonsData?.data || topSalonsData || [];
   const evolution = evolutionData?.data || evolutionData || [];
+  const hasEvolutionData = evolution.length > 0;
+  const evolutionSeries = hasEvolutionData
+    ? evolution
+    : [
+        {
+          date: dayjs().format("YYYY-MM-DD"),
+          revenue: 0,
+          bookings: 0,
+        },
+      ];
   console.log("topSalons", topSalons);
   const StatCard = ({
     title,
@@ -253,12 +261,16 @@ export default function StatsPage() {
             </div>
 
             {/* Graphique d'évolution du chiffre d'affaires */}
-            {evolution.length > 0 && (
-              <div>
+            <div>
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
                   Évolution du chiffre d'affaires
                 </h2>
+                {!hasEvolutionData && (
+                  <p className="text-sm text-gray-500 mb-4">
+                    Aucune donnée d'évolution sur la période sélectionnée.
+                  </p>
+                )}
                 <div className="grid gap-4 lg:grid-cols-2">
                   {/* Graphique en aires pour le CA */}
                   <Card>
@@ -270,7 +282,7 @@ export default function StatsPage() {
                     <CardContent className="pt-6">
                       <div className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={evolution}>
+                          <AreaChart data={evolutionSeries}>
                             <defs>
                               <linearGradient
                                 id="colorRevenue"
@@ -339,7 +351,7 @@ export default function StatsPage() {
                         <div>
                           <p className="text-xs text-gray-500">Total CA</p>
                           <p className="text-lg font-semibold text-[#53745D]">
-                            {evolution
+                            {evolutionSeries
                               .reduce(
                                 (sum: number, item: any) =>
                                   sum + (item.revenue || 0),
@@ -354,13 +366,13 @@ export default function StatsPage() {
                         <div>
                           <p className="text-xs text-gray-500">Moyenne/jour</p>
                           <p className="text-lg font-semibold">
-                            {evolution.length > 0
+                            {evolutionSeries.length > 0
                               ? (
-                                  evolution.reduce(
+                                  evolutionSeries.reduce(
                                     (sum: number, item: any) =>
                                       sum + (item.revenue || 0),
                                     0
-                                  ) / evolution.length
+                                  ) / evolutionSeries.length
                                 ).toLocaleString("fr-CA", {
                                   style: "currency",
                                   currency: "CAD",
@@ -372,7 +384,9 @@ export default function StatsPage() {
                           <p className="text-xs text-gray-500">Pic</p>
                           <p className="text-lg font-semibold">
                             {Math.max(
-                              ...evolution.map((item: any) => item.revenue || 0)
+                              ...evolutionSeries.map(
+                                (item: any) => item.revenue || 0
+                              )
                             ).toLocaleString("fr-CA", {
                               style: "currency",
                               currency: "CAD",
@@ -393,7 +407,27 @@ export default function StatsPage() {
                     <CardContent className="pt-6">
                       <div className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={evolution}>
+                          <AreaChart data={evolutionSeries}>
+                            <defs>
+                              <linearGradient
+                                id="colorBookings"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="5%"
+                                  stopColor="#8884d8"
+                                  stopOpacity={0.7}
+                                />
+                                <stop
+                                  offset="95%"
+                                  stopColor="#8884d8"
+                                  stopOpacity={0.12}
+                                />
+                              </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis
                               dataKey="date"
@@ -419,16 +453,17 @@ export default function StatsPage() {
                                 borderRadius: "8px",
                               }}
                             />
-                            <Line
+                            <Area
                               type="monotone"
                               dataKey="bookings"
                               stroke="#8884d8"
                               strokeWidth={3}
+                              fill="url(#colorBookings)"
                               name="Réservations"
-                              dot={{ r: 5 }}
-                              activeDot={{ r: 7 }}
+                              dot={{ r: 4 }}
+                              activeDot={{ r: 6 }}
                             />
-                          </LineChart>
+                          </AreaChart>
                         </ResponsiveContainer>
                       </div>
                       {/* Statistiques résumées */}
@@ -436,7 +471,7 @@ export default function StatsPage() {
                         <div>
                           <p className="text-xs text-gray-500">Total</p>
                           <p className="text-lg font-semibold text-[#8884d8]">
-                            {evolution
+                            {evolutionSeries
                               .reduce(
                                 (sum: number, item: any) =>
                                   sum + (item.bookings || 0),
@@ -448,13 +483,13 @@ export default function StatsPage() {
                         <div>
                           <p className="text-xs text-gray-500">Moyenne/jour</p>
                           <p className="text-lg font-semibold">
-                            {evolution.length > 0
+                            {evolutionSeries.length > 0
                               ? Math.round(
-                                  evolution.reduce(
+                                  evolutionSeries.reduce(
                                     (sum: number, item: any) =>
                                       sum + (item.bookings || 0),
                                     0
-                                  ) / evolution.length
+                                  ) / evolutionSeries.length
                                 )
                               : 0}
                           </p>
@@ -463,7 +498,7 @@ export default function StatsPage() {
                           <p className="text-xs text-gray-500">Pic</p>
                           <p className="text-lg font-semibold">
                             {Math.max(
-                              ...evolution.map(
+                              ...evolutionSeries.map(
                                 (item: any) => item.bookings || 0
                               )
                             )}
@@ -473,8 +508,7 @@ export default function StatsPage() {
                     </CardContent>
                   </Card>
                 </div>
-              </div>
-            )}
+            </div>
 
             {/* Services les plus commandés */}
             {topServices.length > 0 && (

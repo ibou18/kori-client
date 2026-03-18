@@ -5,6 +5,7 @@ import {
   ChartBarIcon,
   DollarSign,
   LayoutDashboard,
+  MapIcon,
   Settings,
   Store,
   UserPlus,
@@ -137,6 +138,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Configuration",
         url: "/admin/config",
         icon: Settings,
+      },
+      {
+        title: "Cartes",
+        url: "/admin/maps",
+        icon: MapIcon,
       },
     ],
     navSecondary: [
