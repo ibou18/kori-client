@@ -4,6 +4,7 @@ import { Download, Smartphone, X } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useGetPlatformConfig } from "@/app/data/hooks";
 
 interface ServiceData {
   id: string;
@@ -36,6 +37,11 @@ export default function ServiceSharePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(true);
+  const { data: platformConfigData } = useGetPlatformConfig();
+  const bookingFeeRate =
+    platformConfigData?.data?.defaultCommissionRate ??
+    platformConfigData?.defaultCommissionRate ??
+    0.06;
 
   // Récupérer le deep link depuis l'URL ou le générer
   const getDeepLink = () => {
@@ -183,6 +189,11 @@ export default function ServiceSharePage() {
   };
 
   const minPrice = getMinPrice();
+  const minPriceWithFee =
+    minPrice !== null
+      ? minPrice +
+        Number((Math.ceil(minPrice * bookingFeeRate * 100) / 100).toFixed(2))
+      : null;
 
   if (loading) {
     return (
@@ -261,9 +272,14 @@ export default function ServiceSharePage() {
             )}
             <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
               {minPrice && (
-                <span className="font-semibold text-green-600 text-lg">
-                  {minPrice} $
-                </span>
+                <div className="text-center">
+                  <span className="font-semibold text-green-600 text-lg">
+                    {minPriceWithFee} $
+                  </span>
+                  <p className="text-[11px] text-gray-500">
+                    incluant frais de reservation (6%)
+                  </p>
+                </div>
               )}
               {service.duration && (
                 <span className="text-gray-500">

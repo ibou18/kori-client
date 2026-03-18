@@ -1,9 +1,17 @@
 "use client";
 
+import React from "react";
 import { BookingStatusBadge, PaymentStatusBadge } from "@/utils/statusUtils";
 import { Badge } from "@/components/ui/badge";
 import dayjs from "dayjs";
-import { Calendar, Clock, MapPin, User, Building2, CreditCard } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Building2,
+  CreditCard,
+} from "lucide-react";
 
 interface Booking {
   id: string;
@@ -36,6 +44,8 @@ interface Booking {
     total: number;
     subtotal: number;
     tax: number;
+    depositAmount?: number;
+    platformFee?: number;
     paymentStatus: string;
   };
   actualPaidAmount?: number;
@@ -53,7 +63,9 @@ const formatCurrency = (amount: number) => {
   }).format(amount / 100);
 };
 
-export function BookingDetailsModal({ booking }: BookingDetailsModalProps) {
+export function BookingDetailsModal({
+  booking,
+}: BookingDetailsModalProps): React.JSX.Element | null {
   if (!booking) return null;
 
   return (
@@ -109,7 +121,7 @@ export function BookingDetailsModal({ booking }: BookingDetailsModalProps) {
             <div>
               <p className="text-sm font-medium text-gray-900">
                 {dayjs(booking.appointmentStartDateTime).format(
-                  "dddd DD MMMM YYYY"
+                  "dddd DD MMMM YYYY",
                 )}
               </p>
               <p className="text-sm text-gray-600">
@@ -210,9 +222,27 @@ export function BookingDetailsModal({ booking }: BookingDetailsModalProps) {
                   </span>
                 </div>
               )}
+              {booking.payment.depositAmount !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">
+                    Frais de reservation payes
+                  </span>
+                  <span className="text-sm font-medium text-[#53745D]">
+                    {formatCurrency(booking.payment.depositAmount)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">
+                  Reste a payer au salon
+                </span>
+                <span className="text-sm font-medium text-gray-900">
+                  {formatCurrency(booking.payment.subtotal)}
+                </span>
+              </div>
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-sm font-semibold text-gray-900">
-                  Total
+                  Total affiche (taxes + frais)
                 </span>
                 <span className="text-sm font-bold text-[#53745D]">
                   {formatCurrency(booking.payment.total)}
@@ -249,4 +279,3 @@ export function BookingDetailsModal({ booking }: BookingDetailsModalProps) {
     </div>
   );
 }
-
