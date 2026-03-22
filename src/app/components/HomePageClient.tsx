@@ -33,6 +33,10 @@ import { useRouter } from "next/navigation";
 
 import { KoriEmailColors } from "@/utils/koriColors";
 
+const APP_STORE_URL = "https://apps.apple.com/app/kori/id6754260244";
+const GOOGLE_PLAY_URL =
+  "https://play.google.com/store/apps/details?id=com.laguidev.kori";
+
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
@@ -262,7 +266,12 @@ export default function HomePageClient(): JSX.Element {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          <Link href="#" className="transition-transform hover:scale-105">
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-transform hover:scale-105"
+          >
             <Image
               width={200}
               height={100}
@@ -270,8 +279,13 @@ export default function HomePageClient(): JSX.Element {
               alt="App Store"
               className="h-16 object-contain"
             />
-          </Link>
-          <Link href="#" className="transition-transform hover:scale-105">
+          </a>
+          <a
+            href={GOOGLE_PLAY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-transform hover:scale-105"
+          >
             <Image
               width={220}
               height={120}
@@ -279,7 +293,7 @@ export default function HomePageClient(): JSX.Element {
               alt="Google Play"
               className="h-14 object-contain"
             />
-          </Link>
+          </a>
         </motion.div>
 
         {/* <motion.div
@@ -734,7 +748,12 @@ export default function HomePageClient(): JSX.Element {
               <div>
                 <h4 className="font-semibold mb-4">Téléchargez l'app</h4>
                 <div className="space-y-3">
-                  <Link href="#" className="block">
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
                     <Image
                       src={apple}
                       alt="App Store"
@@ -742,8 +761,13 @@ export default function HomePageClient(): JSX.Element {
                       height={50}
                       className="h-12 w-auto"
                     />
-                  </Link>
-                  <Link href="#" className="block">
+                  </a>
+                  <a
+                    href={GOOGLE_PLAY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
                     <Image
                       src={android}
                       alt="Google Play"
@@ -751,7 +775,7 @@ export default function HomePageClient(): JSX.Element {
                       height={50}
                       className="h-12 w-auto"
                     />
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>
