@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { getPostAuthRedirectPath } from "@/utils/authRedirects";
 import { signIn } from "next-auth/react";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import logo from "@/assets/logo-white.png";
@@ -18,6 +20,9 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
+
   const [email, setEmail] = useState(
     process.env.NODE_ENV === "development"
       ? "support@koribeauty.com"
@@ -61,23 +66,14 @@ export function LoginForm({
 
             console.log("session", sessionData);
 
-            if (sessionData?.user?.role === "ADMIN") {
-              window.location.href = "/admin/dashboard";
-            } else if (sessionData?.user?.role === "USER") {
-              window.location.href = "/admin/trips";
-            } else if (sessionData?.user?.role === "TRAVELER") {
-              window.location.href = "/admin/deliveries";
-            } else {
-              // Fallback au cas où le rôle n'est pas défini
-              window.location.href = "/admin/dashboard";
-            }
+            const role = sessionData?.user?.role as string | undefined;
+            window.location.href = getPostAuthRedirectPath(locale, role);
           } catch (error) {
             console.error(
               "Erreur lors de la récupération de la session:",
               error
             );
-            // Redirection par défaut en cas d'erreur
-            window.location.href = "/admin/dashboard";
+            window.location.href = getPostAuthRedirectPath(locale, undefined);
           }
         }, 800);
       }

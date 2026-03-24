@@ -1,6 +1,6 @@
 "use client";
 
-import { ADMIN, TRAVELER, USER } from "@/shared/constantes";
+import { ADMIN, CLIENT, TRAVELER, USER } from "@/shared/constantes";
 import { normalizePathname } from "@/utils/utils";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -34,6 +34,7 @@ import {
 import {
   BoxIcon,
   BuildingIcon,
+  Calendar,
   CreditCard,
   FileTextIcon,
   HelpCircle,
@@ -65,6 +66,34 @@ export const navigation = [
     href: "/",
     current: true,
     icon: <HomeIcon className="size-4 mr-2" />,
+  },
+  {
+    name: "Support",
+    href: "/support",
+    current: false,
+    icon: <LifeBuoyIcon className="size-4 mr-2" />,
+  },
+  {
+    name: "Conditions",
+    href: "/terms/privacy-policy",
+    current: false,
+    icon: <FileTextIcon className="size-4 mr-2" />,
+  },
+];
+
+/** Navigation pages espace client (hors page salon partagée). */
+export const clientNavigation = [
+  {
+    name: "Accueil",
+    href: "/",
+    current: true,
+    icon: <HomeIcon className="size-4 mr-2" />,
+  },
+  {
+    name: "Mes rendez-vous",
+    href: "/mes-rendez-vous",
+    current: false,
+    icon: <Calendar className="size-4 mr-2" />,
   },
   {
     name: "Support",
@@ -179,7 +208,8 @@ export const adminNavigation = [
 
 export default function Navbar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { data: session }: any = useSession();
+  const locale = pathname?.match(/^\/(fr|en)(?:\/|$)/)?.[1] ?? "fr";
+  const { data: session, status }: any = useSession();
   const [currentNavigation, setCurrentNavigation] = useState(navigation);
 
   useEffect(() => {
@@ -187,6 +217,8 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
       setCurrentNavigation(adminNavigation);
     } else if (!session) {
       setCurrentNavigation(navigation);
+    } else if (session?.user?.role === CLIENT) {
+      setCurrentNavigation(clientNavigation);
     } else if (
       (session && session.user.role === USER) ||
       session.user.role === TRAVELER
@@ -207,7 +239,13 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
               <div className="flex items-center">
                 <div className="shrink-0">
                   <Link
-                    href={session ? "/admin/dashboard" : "/"}
+                    href={
+                      session?.user?.role === CLIENT
+                        ? "/"
+                        : session
+                          ? "/admin/dashboard"
+                          : "/"
+                    }
                     className="flex items-center"
                   >
                     <Image
@@ -311,99 +349,37 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
 
               {/* Right side actions (Desktop) */}
               <div className="hidden md:flex items-center gap-4">
-                <Link href="/auth/signin" className="flex items-center gap-2">
-                  <LogInIcon className="size-4" />
-                  <span>Se connecter</span>
-                </Link>
                 <LanguageToggle />
-
-                {/* {session ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="relative h-8 w-8 rounded-full"
+                {status === "loading" ? (
+                  <span className="text-sm text-muted-foreground">…</span>
+                ) : session ? (
+                  <div className="flex items-center gap-3 pl-2 border-l border-border">
+                    <span className="text-sm text-muted-foreground max-w-[11rem] truncate">
+                      {session.user?.firstName || session.user?.email}
+                    </span>
+                    {session.user?.role !== CLIENT && (
+                      <Link
+                        href="/admin/account"
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground"
                       >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={session.user.image || ""}
-                            alt={session.user.firstName || "User"}
-                          />
-                          <AvatarFallback className="bg-teal-600 text-white">
-                            {session.user.firstName?.[0] ||
-                              session.user.email?.[0] ||
-                              "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="sr-only">Menu utilisateur</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel>
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">
-                            {session.user.firstName} {session.user.lastName}
-                          </p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {session.user.email}
-                          </p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/admin/account"
-                          className="flex items-center"
-                        >
-                          <User className="mr-2 h-4 w-4" />
-                          <span>Mon profil</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      {session.user.role === "TRAVELER" && (
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href="/admin/earnings"
-                            className="flex items-center"
-                          >
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            <span>Mes gains</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/admin/settings"
-                          className="flex items-center"
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Paramètres</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/support" className="flex items-center">
-                          <HelpCircle className="mr-2 h-4 w-4" />
-                          <span>Aide</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <LogoutButton>
-                          <span>Se déconnecter</span>
-                        </LogoutButton>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                        Mon espace
+                      </Link>
+                    )}
+                    <LogoutButton className="mt-0 py-1 px-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+                      <span>Déconnexion</span>
+                    </LogoutButton>
+                  </div>
                 ) : (
                   <Button asChild variant="default" size="sm">
                     <Link
-                      href="/auth/signin"
+                      href={`/${locale}/auth/signin?callbackUrl=${encodeURIComponent(pathname || `/${locale}`)}`}
                       className="flex items-center gap-2"
                     >
                       <LogInIcon className="size-4" />
                       <span>Se connecter</span>
                     </Link>
                   </Button>
-                )} */}
+                )}
               </div>
 
               {/* Mobile menu button */}
@@ -482,37 +458,41 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
                             <p className="text-xs font-medium mb-1 px-2 text-muted-foreground">
                               Mon compte
                             </p>
-                            <SheetClose asChild>
-                              <Link
-                                href="/admin/account"
-                                className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                              >
-                                <User className="mr-2 h-4 w-4" />
-                                <span>Mon profil</span>
-                              </Link>
-                            </SheetClose>
+                            {session.user?.role !== CLIENT && (
+                              <>
+                                <SheetClose asChild>
+                                  <Link
+                                    href="/admin/account"
+                                    className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
+                                  >
+                                    <User className="mr-2 h-4 w-4" />
+                                    <span>Mon profil</span>
+                                  </Link>
+                                </SheetClose>
 
-                            {session.user.role === "TRAVELER" && (
-                              <SheetClose asChild>
-                                <Link
-                                  href="/admin/earnings"
-                                  className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                                >
-                                  <CreditCard className="mr-2 h-4 w-4" />
-                                  <span>Mes gains</span>
-                                </Link>
-                              </SheetClose>
+                                {session.user.role === "TRAVELER" && (
+                                  <SheetClose asChild>
+                                    <Link
+                                      href="/admin/earnings"
+                                      className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
+                                    >
+                                      <CreditCard className="mr-2 h-4 w-4" />
+                                      <span>Mes gains</span>
+                                    </Link>
+                                  </SheetClose>
+                                )}
+
+                                <SheetClose asChild>
+                                  <Link
+                                    href="/admin/settings"
+                                    className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
+                                  >
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Paramètres</span>
+                                  </Link>
+                                </SheetClose>
+                              </>
                             )}
-
-                            <SheetClose asChild>
-                              <Link
-                                href="/admin/settings"
-                                className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                              >
-                                <Settings className="mr-2 h-4 w-4" />
-                                <span>Paramètres</span>
-                              </Link>
-                            </SheetClose>
 
                             <SheetClose asChild>
                               <Link
@@ -540,7 +520,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
                       ) : (
                         <Button asChild className="w-full">
                           <Link
-                            href="/auth/signin"
+                            href={`/${locale}/auth/signin?callbackUrl=${encodeURIComponent(pathname || `/${locale}`)}`}
                             className="flex items-center justify-center gap-2"
                           >
                             <LogInIcon className="size-4" />

@@ -54,12 +54,66 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set("callbackUrl", request.url);
       return NextResponse.redirect(url);
     }
+    const locale = pathname.startsWith("/en") ? "en" : "fr";
+    // Comptes client : pas d’accès au back-office (réservations côté /mes-rendez-vous)
+    if (token.role === "CLIENT") {
+      return NextResponse.redirect(
+        new URL(`/${locale}/mes-rendez-vous`, request.url)
+      );
+    }
     // Si la route est dans la liste des routes réservées aux ADMIN
     if (
       adminOnlyRoutes.some((route) => normalizedPathname.startsWith(route)) &&
       token.role !== "ADMIN"
     ) {
-      return NextResponse.redirect(new URL("/fr/admin/dashboard", request.url));
+      return NextResponse.redirect(
+        new URL(`/${locale}/admin/dashboard`, request.url)
+      );
+    }
+
+    const jwtSalonId = (token as { salonId?: string }).salonId;
+    if (token.role === "OWNER" || token.role === "EMPLOYEE") {
+      const proBlockedPrefixes = [
+        "/admin/users",
+        "/admin/prospect",
+        "/admin/services",
+        "/admin/stats",
+        "/admin/config",
+        "/admin/maps",
+      ];
+      for (const prefix of proBlockedPrefixes) {
+        if (
+          normalizedPathname === prefix ||
+          normalizedPathname.startsWith(`${prefix}/`)
+        ) {
+          return NextResponse.redirect(
+            new URL(`/${locale}/admin/dashboard`, request.url)
+          );
+        }
+      }
+
+      if (
+        normalizedPathname === "/admin/salons" ||
+        normalizedPathname.startsWith("/admin/salons/new")
+      ) {
+        if (jwtSalonId) {
+          return NextResponse.redirect(
+            new URL(`/${locale}/admin/salons/${jwtSalonId}`, request.url)
+          );
+        }
+        return NextResponse.redirect(
+          new URL(`/${locale}/admin/dashboard`, request.url)
+        );
+      }
+
+      const salonRoute = normalizedPathname.match(/^\/admin\/salons\/([^/]+)/);
+      if (salonRoute && salonRoute[1] !== "new" && jwtSalonId) {
+        if (salonRoute[1] !== jwtSalonId) {
+          return NextResponse.redirect(
+            new URL(`/${locale}/admin/salons/${jwtSalonId}`, request.url)
+          );
+        }
+      }
     }
   }
 
@@ -71,7 +125,15 @@ export async function middleware(request: NextRequest) {
     ) {
       return response;
     }
-    return NextResponse.redirect(new URL("/fr/admin/dashboard", request.url));
+    const locale = pathname.startsWith("/en") ? "en" : "fr";
+    if (token.role === "CLIENT") {
+      return NextResponse.redirect(
+        new URL(`/${locale}/mes-rendez-vous`, request.url)
+      );
+    }
+    return NextResponse.redirect(
+      new URL(`/${locale}/admin/dashboard`, request.url)
+    );
   }
 
   // Accès aux routes publiques

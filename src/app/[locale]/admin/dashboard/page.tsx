@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import PageWrapper from "@/app/components/block/PageWrapper";
 import { useGetAdminStats } from "@/app/data/hooks";
 import { useGetSalons, useGetUsers } from "@/app/data/hooks";
+import { EMPLOYEE, OWNER } from "@/shared/constantes";
 import {
   Select,
   SelectContent,
@@ -36,6 +37,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+import { SalonProDashboard } from "./SalonProDashboard";
 
 export interface IStats {
   name: string;
@@ -95,7 +98,25 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function Dashboard() {
-  useSession();
+  const { data: session } = useSession();
+  const salonUser = session?.user as
+    | { role?: string; salonId?: string }
+    | undefined;
+
+  if (salonUser?.role === OWNER || salonUser?.role === EMPLOYEE) {
+    if (!salonUser.salonId) {
+      return (
+        <PageWrapper title="Tableau de bord salon">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+            Aucun salon n’est associé à votre compte. Contactez le support
+            Korí.
+          </p>
+        </PageWrapper>
+      );
+    }
+    return <SalonProDashboard salonId={salonUser.salonId} />;
+  }
+
   const [stats, setStats] = useState<IStats[]>([]);
   const [evolutionRange, setEvolutionRange] = useState<EvolutionRange>("30");
   const { data: adminStats, isLoading: statsLoading } = useGetAdminStats();

@@ -1,10 +1,15 @@
 "use client";
 
-import { getSalonServiceByIdApi } from "@/app/data/services";
+import {
+  computePlatformFeeDollars,
+  formatSalonPriceDollars,
+} from "./web-booking/pricing";
+import { calculateTaxesApi, getSalonServiceByIdApi } from "@/app/data/services";
 import { useGetPlatformConfig } from "@/app/data/hooks";
-import { Download, Smartphone, X } from "lucide-react";
+import { SalonWebBookingModal } from "./web-booking";
+import { Download, Globe, Loader2, Smartphone, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ServiceData {
   id: string;
@@ -27,6 +32,7 @@ interface ServiceDetailModalProps {
   salonId: string;
   serviceId: string;
   salonName?: string;
+  salonProvince?: string;
   locale?: string;
   onClose: () => void;
 }
@@ -38,12 +44,16 @@ export function ServiceDetailModal({
   salonId,
   serviceId,
   salonName,
+  salonProvince,
   locale = "fr",
   onClose,
 }: ServiceDetailModalProps) {
   const [service, setService] = useState<ServiceData | null>(null);
+  const [webBookingOpen, setWebBookingOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [taxOnFee, setTaxOnFee] = useState<number | null>(null);
+  const [taxLoading, setTaxLoading] = useState(false);
   const { data: platformConfigData } = useGetPlatformConfig();
   const bookingFeeRate =
     platformConfigData?.data?.defaultCommissionRate ??
@@ -124,16 +134,57 @@ export function ServiceDetailModal({
   };
 
   const minPrice = getMinPrice();
-  const minPriceWithFee =
-    minPrice !== null
-      ? minPrice + Number((Math.ceil(minPrice * bookingFeeRate * 100) / 100).toFixed(2))
+  const province = (salonProvince || "QC").toUpperCase();
+  const feePercentLabel = Math.round(bookingFeeRate * 100);
+
+  const platformFee = useMemo(() => {
+    if (minPrice === null) return null;
+    return computePlatformFeeDollars(minPrice, bookingFeeRate);
+  }, [minPrice, bookingFeeRate]);
+
+  useEffect(() => {
+    if (platformFee === null) {
+      setTaxOnFee(null);
+      return;
+    }
+    let cancelled = false;
+    setTaxOnFee(null);
+    setTaxLoading(true);
+    (async () => {
+      try {
+        const res = await calculateTaxesApi({
+          amount: platformFee,
+          province,
+        });
+        const t = res?.data?.taxes?.totalTax;
+        if (!cancelled) {
+          setTaxOnFee(typeof t === "number" ? t : 0);
+        }
+      } catch {
+        if (!cancelled) setTaxOnFee(0);
+      } finally {
+        if (!cancelled) setTaxLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [platformFee, province]);
+
+  const totalAcompteEnLigne =
+    platformFee !== null && taxOnFee !== null
+      ? platformFee + taxOnFee
+      : null;
+  const totalGlobal =
+    minPrice !== null && platformFee !== null && taxOnFee !== null
+      ? minPrice + platformFee + taxOnFee
       : null;
 
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-2xl p-8 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#53745D] mx-auto mb-4" />
           <p className="text-slate-600">Chargement...</p>
         </div>
       </div>
@@ -153,7 +204,7 @@ export function ServiceDetailModal({
           </p>
           <button
             onClick={onClose}
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors"
+            className="bg-[#53745D] text-white px-6 py-3 rounded-xl font-semibold hover:bg-[#4A6854] transition-colors"
           >
             Fermer
           </button>
@@ -200,32 +251,71 @@ export function ServiceDetailModal({
                 {service.salon?.name || salonName}
               </p>
             )}
-            <div className="flex items-center justify-center gap-4 text-sm text-slate-600">
-              {minPrice !== null && (
-                <div className="text-center">
-                  <span className="font-semibold text-blue-600 text-lg">
-                    {minPriceWithFee} $
+            {minPrice !== null && platformFee !== null && (
+              <div className="mx-auto w-full max-w-xs rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-sm text-slate-700">
+                <div className="flex justify-between gap-2">
+                  <span className="text-slate-600">Prestation</span>
+                  <span className="font-medium tabular-nums">
+                    {formatSalonPriceDollars(minPrice)} $
                   </span>
-                  <p className="text-[11px] text-slate-500">
-                    incluant frais de reservation (6%)
-                  </p>
                 </div>
-              )}
-              {service.duration && (
-                <span className="text-slate-500">
-                  {Math.round(service.duration / 60)}h
-                </span>
-              )}
-            </div>
+                <div className="mt-1.5 flex justify-between gap-2">
+                  <span className="text-slate-600">
+                    Frais de réservation ({feePercentLabel}&nbsp;%) et taxes
+                  </span>
+                  {taxLoading ? (
+                    <Loader2
+                      className="h-4 w-4 shrink-0 animate-spin text-slate-400"
+                      aria-label="Calcul"
+                    />
+                  ) : totalAcompteEnLigne !== null ? (
+                    <span className="font-medium tabular-nums">
+                      {formatSalonPriceDollars(totalAcompteEnLigne)} $
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </div>
+                {totalGlobal !== null && (
+                  <div className="mt-1.5 flex justify-between gap-2 font-semibold text-slate-900">
+                    <span>Total</span>
+                    <span className="tabular-nums text-[#53745D]">
+                      {formatSalonPriceDollars(totalGlobal)} $
+                    </span>
+                  </div>
+                )}
+                <p className="mt-2 text-[10px] leading-snug text-slate-500">
+                  La prestation est réglée au salon le jour du rendez-vous
+                  (sauf indication contraire). Le paiement en ligne couvre
+                  uniquement les frais de réservation et les taxes associées.
+                </p>
+              </div>
+            )}
+            {service.duration && (
+              <p className="mt-3 text-center text-sm text-slate-500">
+                Durée indicative : {Math.round(service.duration / 60)}&nbsp;h
+              </p>
+            )}
           </div>
 
           <button
             onClick={handleOpenApp}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-3 mb-4 shadow-lg"
+            className="w-full bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg transition-all hover:brightness-110 active:brightness-95 flex items-center justify-center gap-3 mb-3"
           >
             <Smartphone className="w-6 h-6" />
             Ouvrir dans l&apos;app Korí
           </button>
+
+          {service.options && service.options.length > 0 && minPrice !== null && (
+            <button
+              type="button"
+              onClick={() => setWebBookingOpen(true)}
+              className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
+            >
+              <Globe className="w-5 h-5" />
+              Réserver en ligne
+            </button>
+          )}
 
           <button
             onClick={handleDownload}
@@ -236,10 +326,30 @@ export function ServiceDetailModal({
           </button>
 
           <p className="text-xs text-center text-slate-400 mt-4">
-            Réservez directement depuis votre mobile
+            Réservez sur le web ou depuis l&apos;application mobile
           </p>
         </div>
       </div>
+
+      <SalonWebBookingModal
+        open={webBookingOpen}
+        onClose={() => setWebBookingOpen(false)}
+        salonId={salonId}
+        salonName={salonName || service.salon?.name || ""}
+        locale={locale}
+        salonProvince={salonProvince}
+        service={
+          webBookingOpen
+            ? {
+                id: service.id,
+                name: service.name,
+                duration: service.duration,
+                photos: service.photos,
+                options: service.options,
+              }
+            : null
+        }
+      />
     </div>
   );
 }

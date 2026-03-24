@@ -404,9 +404,9 @@ export function QuickRegisterForm() {
               value={formData.phone}
               countryCode={formData.countryCode}
               onPhoneChange={(phone: string) => updateField("phone", phone)}
-              onCountryCodeChange={(dialCode: string) =>
-                updateField("countryCode", dialCode)
-              }
+              onCountryCodeChange={(dialCode: string) => {
+                updateField("countryCode", dialCode);
+              }}
               error={errors.phone as string | undefined}
               label="Téléphone"
               required

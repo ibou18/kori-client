@@ -1,12 +1,12 @@
 "use client";
 
 import { getSalonApi, getSalonServicesApi } from "@/app/data/services";
-import { useGetPlatformConfig } from "@/app/data/hooks";
 import { motion } from "framer-motion";
 import { ChevronRight, Clock, MapPin, Smartphone, Star } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatSalonPriceDollars } from "./components/web-booking/pricing";
 import { ServiceDetailModal } from "./components/ServiceDetailModal";
 
 // idsalon=cmipf1upw000j6fo8nni0kaes
@@ -42,6 +42,7 @@ interface Salon {
     city: string;
     postalCode: string;
     country: string;
+    province?: string;
   };
   photos?: Array<{
     id: string;
@@ -117,12 +118,6 @@ export default function SalonSharePage() {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
     null
   );
-  const { data: platformConfigData } = useGetPlatformConfig();
-  const bookingFeeRate =
-    platformConfigData?.data?.defaultCommissionRate ??
-    platformConfigData?.defaultCommissionRate ??
-    0.06;
-
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
   useEffect(() => {
     if (!salonId || hasTriedDeepLink) return;
@@ -457,15 +452,6 @@ export default function SalonSharePage() {
                           )
                         )
                       : null;
-                    const minPriceWithFee =
-                      minPrice !== null
-                        ? minPrice +
-                          Number(
-                            (
-                              Math.ceil(minPrice * bookingFeeRate * 100) / 100
-                            ).toFixed(2)
-                          )
-                        : null;
                     return (
                       <motion.button
                         key={service.id}
@@ -491,7 +477,7 @@ export default function SalonSharePage() {
                               <div className="flex items-center gap-2 mt-1">
                                 {minPrice !== null && (
                                   <span className="text-white font-bold text-sm drop-shadow">
-                                    {minPriceWithFee} $
+                                    {formatSalonPriceDollars(minPrice)} $
                                   </span>
                                 )}
                                 {service.duration && (
@@ -510,7 +496,7 @@ export default function SalonSharePage() {
                             <div className="flex items-center gap-2 mt-2">
                               {minPrice !== null && (
                                 <span className="text-blue-600 font-bold text-sm">
-                                  {minPriceWithFee} $
+                                  {formatSalonPriceDollars(minPrice)} $
                                 </span>
                               )}
                               {service.duration && (
@@ -521,8 +507,14 @@ export default function SalonSharePage() {
                             </div>
                           </div>
                         )}
-                        <div className="p-2 flex items-center justify-end">
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                        <div className="px-3 py-2 flex items-center justify-end gap-0.5 border-t border-[#53745D]/15 bg-[#F0F4F1]/80">
+                          <span className="text-sm font-semibold text-[#53745D]">
+                            {locale.startsWith("en") ? "Book" : "Réserver"}
+                          </span>
+                          <ChevronRight
+                            className="w-4 h-4 text-[#53745D] shrink-0"
+                            aria-hidden
+                          />
                         </div>
                       </motion.button>
                     );
@@ -538,6 +530,7 @@ export default function SalonSharePage() {
             salonId={salonId}
             serviceId={selectedServiceId}
             salonName={salon?.name}
+            salonProvince={salon?.address?.province}
             locale={locale}
             onClose={() => setSelectedServiceId(null)}
           />

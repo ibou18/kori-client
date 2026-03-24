@@ -6,13 +6,14 @@ import {
   formatPhoneNumber,
   getPhoneMaxLength,
   getPhonePlaceholder,
+  PHONE_COUNTRY_OPTIONS,
   validatePhoneNumber,
 } from "@/utils/phoneFormatter";
-import { useState } from "react";
 
 interface FormattedPhoneInputProps {
   value: string;
   countryCode: string;
+  /** ISO pays (ex. CA) — optionnel, pour formulaires qui le stockent ; non utilisé si l’indicatif est partagé (+1). */
   selectedCountryCode?: string;
   onPhoneChange: (phone: string) => void;
   onCountryCodeChange?: (dialCode: string, isoCode: string) => void;
@@ -22,17 +23,14 @@ interface FormattedPhoneInputProps {
   label?: string;
   required?: boolean;
   id?: string;
+  /** Classes pour le select indicatif */
+  selectClassName?: string;
 }
-
-const COUNTRY_CODES = [
-  { dialCode: "+1", isoCode: "CA", name: "Canada/US" },
-  { dialCode: "+33", isoCode: "FR", name: "France" },
-
-];
 
 export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   value,
   countryCode,
+  selectedCountryCode: _selectedCountryCode,
   onPhoneChange,
   onCountryCodeChange,
   error,
@@ -41,9 +39,8 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   label,
   required = false,
   id = "phone",
+  selectClassName,
 }) => {
-  const [isCountryCodeOpen, setIsCountryCodeOpen] = useState(false);
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     const formatted = formatPhoneNumber(text, countryCode);
@@ -53,18 +50,21 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   const handleCountryCodeChange = (
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    const selected = COUNTRY_CODES.find(
+    const selected = PHONE_COUNTRY_OPTIONS.find(
       (cc) => cc.dialCode === e.target.value
     );
     if (selected && onCountryCodeChange) {
       onCountryCodeChange(selected.dialCode, selected.isoCode);
-      // Réinitialiser le numéro quand l'indicatif change
       onPhoneChange("");
     }
   };
 
   const displayPlaceholder = placeholder || getPhonePlaceholder(countryCode);
-  const maxLength = getPhoneMaxLength(countryCode) + 5; // +5 pour les caractères de formatage
+  const maxLength = getPhoneMaxLength(countryCode) + 5;
+
+  const selectCls =
+    selectClassName ??
+    "px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed shrink-0 min-w-[9.5rem]";
 
   return (
     <div className="space-y-1">
@@ -79,16 +79,16 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
           value={countryCode}
           onChange={handleCountryCodeChange}
           disabled={disabled}
-          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+          aria-label="Indicatif pays"
+          className={selectCls}
         >
-          {COUNTRY_CODES.map((cc) => (
+          {PHONE_COUNTRY_OPTIONS.map((cc) => (
             <option key={cc.dialCode} value={cc.dialCode}>
-              {cc.dialCode} 
-              {/* ({cc.name}) */}
+              {cc.label}
             </option>
           ))}
         </select>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <Input
             id={id}
             type="tel"
@@ -97,13 +97,14 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
             placeholder={displayPlaceholder}
             disabled={disabled}
             maxLength={maxLength}
-            className={error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
+            autoComplete="tel-national"
+            className={
+              error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+            }
           />
         </div>
       </div>
-      {error && (
-        <p className="text-sm text-red-500 mt-1">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
     </div>
   );
 };
@@ -130,4 +131,3 @@ export const usePhoneValidation = (
 
   return { isValid: true, errorMessage: null };
 };
-
