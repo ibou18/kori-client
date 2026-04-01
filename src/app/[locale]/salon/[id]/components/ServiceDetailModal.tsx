@@ -111,18 +111,18 @@ export function ServiceDetailModal({
     }
     const fallback = setTimeout(() => {
       if (platform === "ios") window.location.href = IOS_STORE_URL;
-      else if (platform === "android")
-        window.location.href = ANDROID_STORE_URL;
+      else if (platform === "android") window.location.href = ANDROID_STORE_URL;
       else window.location.href = `/${locale}/download-app`;
     }, 2000);
-    window.addEventListener("blur", () => clearTimeout(fallback), { once: true });
+    window.addEventListener("blur", () => clearTimeout(fallback), {
+      once: true,
+    });
   };
 
   const handleDownload = () => {
     const platform = getUserPlatform();
     if (platform === "ios") window.location.href = IOS_STORE_URL;
-    else if (platform === "android")
-      window.location.href = ANDROID_STORE_URL;
+    else if (platform === "android") window.location.href = ANDROID_STORE_URL;
     else window.location.href = `/${locale}/download-app`;
   };
 
@@ -172,9 +172,7 @@ export function ServiceDetailModal({
   }, [platformFee, province]);
 
   const totalAcompteEnLigne =
-    platformFee !== null && taxOnFee !== null
-      ? platformFee + taxOnFee
-      : null;
+    platformFee !== null && taxOnFee !== null ? platformFee + taxOnFee : null;
   const totalGlobal =
     minPrice !== null && platformFee !== null && taxOnFee !== null
       ? minPrice + platformFee + taxOnFee
@@ -285,9 +283,9 @@ export function ServiceDetailModal({
                   </div>
                 )}
                 <p className="mt-2 text-[10px] leading-snug text-slate-500">
-                  La prestation est réglée au salon le jour du rendez-vous
-                  (sauf indication contraire). Le paiement en ligne couvre
-                  uniquement les frais de réservation et les taxes associées.
+                  La prestation est réglée au salon le jour du rendez-vous (sauf
+                  indication contraire). Le paiement en ligne couvre uniquement
+                  les frais de réservation et les taxes associées.
                 </p>
               </div>
             )}
@@ -306,16 +304,18 @@ export function ServiceDetailModal({
             Ouvrir dans l&apos;app Korí
           </button>
 
-          {service.options && service.options.length > 0 && minPrice !== null && (
-            <button
-              type="button"
-              onClick={() => setWebBookingOpen(true)}
-              className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
-            >
-              <Globe className="w-5 h-5" />
-              Réserver en ligne
-            </button>
-          )}
+          {service.options &&
+            service.options.length > 0 &&
+            minPrice !== null && (
+              <button
+                type="button"
+                onClick={() => setWebBookingOpen(true)}
+                className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
+              >
+                <Globe className="w-5 h-5" />
+                Réserver en ligne
+              </button>
+            )}
 
           <button
             onClick={handleDownload}
