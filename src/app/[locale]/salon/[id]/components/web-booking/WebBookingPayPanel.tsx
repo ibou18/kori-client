@@ -5,6 +5,7 @@ import {
   createBookingApi,
   createCheckoutSessionApi,
 } from "@/app/data/services";
+import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -26,6 +27,8 @@ interface WebBookingPayPanelProps {
   selectedOptionId: string;
   selectedSlot: SalonBookingTimeSlot;
   commissionRate: number;
+  isHomeService: boolean;
+  homeServiceAddress: AddressData | null;
   onBack: () => void;
 }
 
@@ -39,6 +42,8 @@ export function WebBookingPayPanel({
   selectedOptionId,
   selectedSlot,
   commissionRate,
+  isHomeService,
+  homeServiceAddress,
   onBack,
 }: WebBookingPayPanelProps) {
   const [error, setError] = useState<string | null>(null);
@@ -48,11 +53,15 @@ export function WebBookingPayPanel({
 
   const option = service.options?.find((o) => o.id === selectedOptionId);
   const servicePrice = option ? getOptionPriceDollars(option) : 0;
+  const travelFeeDollars = isHomeService
+    ? (service.homeTravelFeeDollars ?? 0)
+    : 0;
+  const clientSubtotalDollars = servicePrice + travelFeeDollars;
   const durationMin = getServiceDurationMinutes(service.duration);
 
   const platformFee = useMemo(
-    () => computePlatformFeeDollars(servicePrice, commissionRate),
-    [servicePrice, commissionRate]
+    () => computePlatformFeeDollars(clientSubtotalDollars, commissionRate),
+    [clientSubtotalDollars, commissionRate]
   );
 
   useEffect(() => {
@@ -89,6 +98,15 @@ export function WebBookingPayPanel({
       );
       return;
     }
+    if (
+      isHomeService &&
+      (!homeServiceAddress?.formattedAddress || !homeServiceAddress.street)
+    ) {
+      setError(
+        "Adresse à domicile manquante : retournez à l’étape créneau pour la renseigner."
+      );
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -105,9 +123,21 @@ export function WebBookingPayPanel({
         salonId,
         appointmentStartDateTime: selectedSlot.startDateTime,
         duration: durationMin,
-        isHomeService: false,
-        clientBookingSubtotalDollars: Number(servicePrice.toFixed(2)),
+        isHomeService,
+        clientBookingSubtotalDollars: Number(clientSubtotalDollars.toFixed(2)),
         services: [serviceLine],
+        ...(isHomeService &&
+          homeServiceAddress && {
+            serviceAddress: {
+              street: homeServiceAddress.street,
+              city: homeServiceAddress.city,
+              postalCode: homeServiceAddress.postalCode,
+              country: homeServiceAddress.country,
+              latitude: homeServiceAddress.latitude,
+              longitude: homeServiceAddress.longitude,
+              formattedAddress: homeServiceAddress.formattedAddress,
+            },
+          }),
       });
 
       const bookingPayload = bookingRes as {
@@ -182,10 +212,33 @@ export function WebBookingPayPanel({
             {selectedSlot.startTime} – {selectedSlot.endTime}
           </span>
         </p>
+        <p>
+          <span className="text-slate-500">Lieu</span>
+          <br />
+          <span className="font-medium">
+            {isHomeService
+              ? homeServiceAddress?.formattedAddress || "À domicile"
+              : "Au salon"}
+          </span>
+        </p>
         <div className="border-t border-slate-200 pt-2 mt-2 space-y-1">
           <div className="flex justify-between">
-            <span>Prix affiché (au salon)</span>
+            <span>Prestation</span>
             <span className="font-medium">{servicePrice.toFixed(2)} $</span>
+          </div>
+          {isHomeService && travelFeeDollars > 0 && (
+            <div className="flex justify-between text-sm">
+              <span>Déplacement à domicile</span>
+              <span className="font-medium">
+                {travelFeeDollars.toFixed(2)} $
+              </span>
+            </div>
+          )}
+          <div className="flex justify-between pt-1 border-t border-slate-100">
+            <span className="font-medium text-slate-800">Sous-total prestation</span>
+            <span className="font-semibold">
+              {clientSubtotalDollars.toFixed(2)} $
+            </span>
           </div>
           <div className="flex justify-between gap-3 pt-1 border-t border-slate-200">
             <div className="min-w-0">

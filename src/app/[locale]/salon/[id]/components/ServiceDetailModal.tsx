@@ -24,6 +24,8 @@ interface ServiceData {
     discountPrice?: number;
   }>;
   duration?: number;
+  availableLocations?: string[];
+  homeTravelFeeDollars?: number;
   salon?: { id: string; name: string };
   salonId?: string;
 }
@@ -33,6 +35,8 @@ interface ServiceDetailModalProps {
   serviceId: string;
   salonName?: string;
   salonProvince?: string;
+  /** Salon propose des services à domicile (API salon). */
+  salonOffersHomeService?: boolean;
   locale?: string;
   onClose: () => void;
 }
@@ -45,6 +49,7 @@ export function ServiceDetailModal({
   serviceId,
   salonName,
   salonProvince,
+  salonOffersHomeService = false,
   locale = "fr",
   onClose,
 }: ServiceDetailModalProps) {
@@ -338,6 +343,7 @@ export function ServiceDetailModal({
         salonName={salonName || service.salon?.name || ""}
         locale={locale}
         salonProvince={salonProvince}
+        salonOffersHomeService={salonOffersHomeService}
         service={
           webBookingOpen
             ? {
@@ -346,6 +352,8 @@ export function ServiceDetailModal({
                 duration: service.duration,
                 photos: service.photos,
                 options: service.options,
+                availableLocations: service.availableLocations,
+                homeTravelFeeDollars: service.homeTravelFeeDollars,
               }
             : null
         }

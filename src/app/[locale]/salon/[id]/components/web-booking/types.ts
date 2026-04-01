@@ -13,6 +13,10 @@ export interface WebBookingServicePayload {
   duration?: number;
   photos?: Array<{ url: string; alt?: string }>;
   options?: WebBookingServiceOption[];
+  /** Ex. SALON_ONLY, HOME_ONLY, BOTH (catalogue admin). */
+  availableLocations?: string[];
+  /** Supplément affiché pour l’intervention à domicile (CAD), si fourni par l’API. */
+  homeTravelFeeDollars?: number;
 }
 
 export interface SalonBookingTimeSlot {

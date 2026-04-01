@@ -8,10 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
 import { ChevronLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { getBookingLocationMode } from "./bookingLocation";
 import { ClientQuickAuthPanel } from "./ClientQuickAuthPanel";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
 import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
@@ -29,6 +31,8 @@ interface SalonWebBookingModalProps {
   locale: string;
   /** Province pour taxes Stripe (ex. QC) */
   salonProvince?: string;
+  /** Si le salon propose des déplacements à domicile (donnée salon). */
+  salonOffersHomeService?: boolean;
   service: WebBookingServicePayload | null;
 }
 
@@ -39,6 +43,7 @@ export function SalonWebBookingModal({
   salonName,
   locale,
   salonProvince = "QC",
+  salonOffersHomeService = false,
   service,
 }: SalonWebBookingModalProps) {
   const { data: session, status } = useSession();
@@ -54,21 +59,43 @@ export function SalonWebBookingModal({
   const [step, setStep] = useState<WebBookingStep>("auth");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SalonBookingTimeSlot | null>(
-    null
+    null,
   );
+  const [isHomeService, setIsHomeService] = useState(false);
+  const [homeServiceAddress, setHomeServiceAddress] =
+    useState<AddressData | null>(null);
+  /** Incrémenté à chaque ouverture du dialogue pour remonter le panneau créneaux (date = jour courant). */
+  const [slotPanelSessionKey, setSlotPanelSessionKey] = useState(0);
+  /** false = dialogue fermé ; true = déjà ouvert dans cette « session » modale (ne pas revider créneau au moindre changement de session). */
+  const wasDialogOpenRef = useRef(false);
 
   const authenticated = status === "authenticated" && !!session?.user;
 
   useEffect(() => {
-    if (!open) return;
-    setSelectedSlot(null);
+    if (!open) {
+      wasDialogOpenRef.current = false;
+      return;
+    }
+
+    if (!wasDialogOpenRef.current) {
+      // Ouverture du dialogue : jour courant + créneau remis à zéro (voir key sur WebBookingSlotPanel)
+      setSlotPanelSessionKey((k) => k + 1);
+      setSelectedSlot(null);
+      setHomeServiceAddress(null);
+      setStep(authenticated ? "slot" : "auth");
+      wasDialogOpenRef.current = true;
+      return;
+    }
+
+    // Déjà ouvert : ne jamais vider le créneau ici (retour paiement → créneau, ou refetch session).
     if (authenticated) {
-      setStep("slot");
+      setStep((s) => (s === "auth" ? "slot" : s));
     } else {
       setStep("auth");
     }
   }, [open, authenticated]);
 
+  // Ne pas dépendre de `service` ni de `service.options` (réf. instable) : relancer seulement à l’ouverture / changement de prestation.
   useEffect(() => {
     if (!open || !service?.options?.length) return;
     if (service.options.length === 1) {
@@ -76,7 +103,28 @@ export function SalonWebBookingModal({
     } else {
       setSelectedOptionId(null);
     }
-  }, [open, service]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `service.options` change de ref à chaque rendu ; on s’appuie sur id + longueur
+  }, [open, service?.id, service?.options?.length]);
+
+  const serviceLocationsKey = service?.availableLocations?.join("|") ?? "";
+
+  useEffect(() => {
+    if (!open || !service?.id) return;
+    const mode = getBookingLocationMode(
+      salonOffersHomeService,
+      service.availableLocations
+    );
+    if (mode === "home_only") {
+      setIsHomeService(true);
+    } else if (mode === "salon_only") {
+      setIsHomeService(false);
+      setHomeServiceAddress(null);
+    } else {
+      setIsHomeService(false);
+      setHomeServiceAddress(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `availableLocations` via serviceLocationsKey (ref instable)
+  }, [open, service?.id, salonOffersHomeService, serviceLocationsKey]);
 
   const servicePayload = useMemo((): WebBookingServicePayload | null => {
     if (!service) return null;
@@ -91,7 +139,7 @@ export function SalonWebBookingModal({
     step === "auth"
       ? "Votre compte"
       : step === "slot"
-        ? "Choisir un créneau"
+        ? "Choisir une option et un créneau"
         : "Paiement de l'acompte";
 
   if (!servicePayload) return null;
@@ -113,20 +161,24 @@ export function SalonWebBookingModal({
         )}
 
         {step === "auth" && (
-          <ClientQuickAuthPanel
-            onAuthenticated={() => setStep("slot")}
-          />
+          <ClientQuickAuthPanel onAuthenticated={() => setStep("slot")} />
         )}
 
         {step === "slot" && authenticated && (
           <>
             <WebBookingSlotPanel
+              key={slotPanelSessionKey}
               salonId={salonId}
+              salonOffersHomeService={salonOffersHomeService}
               service={servicePayload}
               selectedOptionId={selectedOptionId}
               onSelectOption={setSelectedOptionId}
               selectedSlot={selectedSlot}
               onSelectSlot={setSelectedSlot}
+              isHomeService={isHomeService}
+              onIsHomeServiceChange={setIsHomeService}
+              homeServiceAddress={homeServiceAddress}
+              onHomeServiceAddressChange={setHomeServiceAddress}
               onContinue={() => setStep("pay")}
             />
           </>
@@ -158,6 +210,8 @@ export function SalonWebBookingModal({
                 selectedOptionId={selectedOptionId}
                 selectedSlot={selectedSlot}
                 commissionRate={commissionRate}
+                isHomeService={isHomeService}
+                homeServiceAddress={homeServiceAddress}
                 onBack={() => setStep("slot")}
               />
             </>
