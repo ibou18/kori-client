@@ -34,9 +34,6 @@ interface ServiceData {
   salonId?: string;
 }
 
-const IOS_STORE_URL = "https://apple.co/4lPhmNde";
-const ANDROID_STORE_URL = "https://bit.ly/korí-android";
-
 export default function ServiceSharePage() {
   const params = useParams();
   const router = useRouter();
@@ -116,8 +113,10 @@ export default function ServiceSharePage() {
     }
 
     const fallback = setTimeout(() => {
-      if (platform === "ios") window.location.href = IOS_STORE_URL;
-      else if (platform === "android") window.location.href = ANDROID_STORE_URL;
+      if (platform === "ios")
+        window.location.href = process.env.IOS_STORE_URL || "";
+      else if (platform === "android")
+        window.location.href = process.env.ANDROID_STORE_URL || "";
       else window.location.href = `/${locale}/download-app`;
     }, 2000);
     window.addEventListener("blur", () => clearTimeout(fallback), {
@@ -127,8 +126,10 @@ export default function ServiceSharePage() {
 
   const handleDownload = () => {
     const platform = getUserPlatform();
-    if (platform === "ios") window.location.href = IOS_STORE_URL;
-    else if (platform === "android") window.location.href = ANDROID_STORE_URL;
+    if (platform === "ios")
+      window.location.href = process.env.IOS_STORE_URL || "";
+    else if (platform === "android")
+      window.location.href = process.env.ANDROID_STORE_URL || "";
     else window.location.href = `/${locale}/download-app`;
   };
 

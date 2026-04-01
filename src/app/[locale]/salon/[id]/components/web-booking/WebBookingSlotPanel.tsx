@@ -2,14 +2,22 @@
 
 import { getSalonBookingAvailabilityApi } from "@/app/data/services";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   GoogleAddressAutocomplete,
   type AddressData,
 } from "@/components/ui/GoogleAddressAutocomplete";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Plus } from "lucide-react";
+import { format, startOfDay } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Calendar as CalendarIcon, Check, Loader2, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { getBookingLocationMode } from "./bookingLocation";
@@ -50,6 +58,20 @@ function todayISODate(): string {
   return `${y}-${m}-${day}`;
 }
 
+function parseISODateToLocal(iso: string): Date | undefined {
+  const parts = iso.split("-").map((p) => parseInt(p, 10));
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return undefined;
+  const [y, mo, d] = parts;
+  return new Date(y, mo - 1, d);
+}
+
+function localDateToISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function WebBookingSlotPanel({
   salonId,
   salonOffersHomeService,
@@ -66,7 +88,13 @@ export function WebBookingSlotPanel({
   layoutVariant = "modal",
 }: WebBookingSlotPanelProps) {
   const [date, setDate] = useState(() => todayISODate());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const durationMin = getServiceDurationMinutes(service.duration);
+
+  const selectedCalendarDate = useMemo(
+    () => parseISODateToLocal(date),
+    [date]
+  );
 
   const locationMode = getBookingLocationMode(
     salonOffersHomeService,
@@ -277,17 +305,61 @@ export function WebBookingSlotPanel({
         <Label htmlFor="wb-date" className="text-base font-semibold">
           Date
         </Label>
-        <input
-          id="wb-date"
-          type="date"
-          min={todayISODate()}
-          value={date}
-          onChange={(e) => {
-            setDate(e.target.value);
-            onSelectSlot(null);
-          }}
-          className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#53745D]/30 focus:border-[#53745D]"
-        />
+        <Popover
+          open={datePickerOpen}
+          onOpenChange={setDatePickerOpen}
+          modal={false}
+        >
+          <PopoverTrigger asChild>
+            <Button
+              id="wb-date"
+              type="button"
+              variant="outline"
+              aria-expanded={datePickerOpen}
+              className={cn(
+                "mt-2 h-11 w-full justify-between rounded-lg border-slate-200 bg-white px-3 py-2 text-left font-normal text-slate-900 shadow-sm hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-[#53745D]/30 focus-visible:ring-offset-0",
+                !selectedCalendarDate && "text-slate-500"
+              )}
+            >
+              <span className="truncate">
+                {selectedCalendarDate
+                  ? format(selectedCalendarDate, "EEEE d MMMM yyyy", {
+                      locale: fr,
+                    })
+                  : "Choisir une date"}
+              </span>
+              <CalendarIcon
+                className="h-4 w-4 shrink-0 text-slate-500"
+                aria-hidden
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="z-[120] w-auto border-slate-200 p-0 shadow-lg"
+            align="start"
+          >
+            <Calendar
+              mode="single"
+              locale={fr}
+              selected={selectedCalendarDate}
+              onSelect={(d) => {
+                if (d) {
+                  setDate(localDateToISO(d));
+                  onSelectSlot(null);
+                  setDatePickerOpen(false);
+                }
+              }}
+              disabled={{ before: startOfDay(new Date()) }}
+              initialFocus
+              classNames={{
+                day_selected:
+                  "bg-[#53745D] text-white hover:bg-[#4A6854] hover:text-white focus:bg-[#53745D] focus:text-white",
+                day_today:
+                  "bg-[#F0F4F1] text-[#53745D] font-semibold aria-selected:bg-[#53745D] aria-selected:text-white",
+              }}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div>

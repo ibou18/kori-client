@@ -39,9 +39,6 @@ interface ServiceDetailModalProps {
   onClose: () => void;
 }
 
-const IOS_STORE_URL = "https://apple.co/4lPhmNde";
-const ANDROID_STORE_URL = "https://bit.ly/korí-android";
-
 export function ServiceDetailModal({
   salonId,
   serviceId,
@@ -112,8 +109,10 @@ export function ServiceDetailModal({
       link.click();
     }
     const fallback = setTimeout(() => {
-      if (platform === "ios") window.location.href = IOS_STORE_URL;
-      else if (platform === "android") window.location.href = ANDROID_STORE_URL;
+      if (platform === "ios")
+        window.location.href = process.env.IOS_STORE_URL || "";
+      else if (platform === "android")
+        window.location.href = process.env.ANDROID_STORE_URL || "";
       else window.location.href = `/${locale}/download-app`;
     }, 2000);
     window.addEventListener("blur", () => clearTimeout(fallback), {
@@ -123,8 +122,10 @@ export function ServiceDetailModal({
 
   const handleDownload = () => {
     const platform = getUserPlatform();
-    if (platform === "ios") window.location.href = IOS_STORE_URL;
-    else if (platform === "android") window.location.href = ANDROID_STORE_URL;
+    if (platform === "ios")
+      window.location.href = process.env.IOS_STORE_URL || "";
+    else if (platform === "android")
+      window.location.href = process.env.ANDROID_STORE_URL || "";
     else window.location.href = `/${locale}/download-app`;
   };
 

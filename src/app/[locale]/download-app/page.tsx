@@ -14,8 +14,6 @@ const screenshots = [
 export default function DownloadAppPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const IOS_STORE_URL = "https://apple.co/4lPhmNde";
-  const ANDROID_STORE_URL = "https://bit.ly/korí-android";
   const DEEP_LINK = "korí://";
 
   useEffect(() => {
@@ -46,7 +44,9 @@ export default function DownloadAppPage() {
 
   const handleOpenApp = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const storeUrl = isIOS ? IOS_STORE_URL : ANDROID_STORE_URL;
+    const storeUrl = isIOS
+      ? process.env.IOS_STORE_URL || ""
+      : process.env.ANDROID_STORE_URL || "";
     const start = Date.now();
 
     const timeoutId = window.setTimeout(() => {
@@ -160,7 +160,7 @@ export default function DownloadAppPage() {
           </motion.a>
 
           <motion.a
-            href={IOS_STORE_URL}
+            href={process.env.IOS_STORE_URL || ""}
             target="_blank"
             rel="noopener noreferrer"
             className="group bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl p-6 hover:bg-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -196,7 +196,7 @@ export default function DownloadAppPage() {
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
         >
           <a
-            href={IOS_STORE_URL}
+            href={process.env.IOS_STORE_URL || ""}
             target="_blank"
             rel="noopener noreferrer"
             className="transition-transform hover:scale-105"
@@ -210,7 +210,7 @@ export default function DownloadAppPage() {
             />
           </a>
           <a
-            href={ANDROID_STORE_URL}
+            href={process.env.ANDROID_STORE_URL || ""}
             target="_blank"
             rel="noopener noreferrer"
             className="transition-transform hover:scale-105"
@@ -347,7 +347,7 @@ export default function DownloadAppPage() {
               Ouvrir l’app
             </motion.button>
             <motion.a
-              href={ANDROID_STORE_URL}
+              href={process.env.ANDROID_STORE_URL || ""}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
@@ -358,7 +358,7 @@ export default function DownloadAppPage() {
               Télécharger pour Android
             </motion.a>
             <motion.a
-              href={IOS_STORE_URL}
+              href={process.env.IOS_STORE_URL || ""}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-black hover:bg-gray-800 text-white px-8 py-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"

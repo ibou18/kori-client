@@ -10,8 +10,6 @@ import { formatSalonPriceDollars } from "./components/web-booking/pricing";
 import { ServiceDetailModal } from "./components/ServiceDetailModal";
 
 // idsalon=cmipf1upw000j6fo8nni0kaes
-const IOS_STORE_URL = "https://apple.co/4lPhmNde";
-const ANDROID_STORE_URL = "https://bit.ly/korí-android";
 
 interface ServiceCategory {
   id: string;
@@ -116,10 +114,10 @@ export default function SalonSharePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasTriedDeepLink, setHasTriedDeepLink] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
-    null
+    null,
   );
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
   useEffect(() => {
@@ -139,7 +137,7 @@ export default function SalonSharePage() {
       const isAndroid = /Android/.test(navigator.userAgent);
       console.log(
         "📱 Plateforme détectée:",
-        isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web"
+        isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web",
       );
 
       // Essayer d'ouvrir l'app immédiatement
@@ -206,12 +204,14 @@ export default function SalonSharePage() {
     const deepLink = `kori://salon/salon-detail?id=${salonId}`;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    const storeUrl = isIOS ? IOS_STORE_URL : ANDROID_STORE_URL;
+    const storeUrl = isIOS
+      ? process.env.IOS_STORE_URL || ""
+      : process.env.ANDROID_STORE_URL || "";
 
     console.log("🔗 Deep Link:", deepLink);
     console.log(
       "📱 Plateforme:",
-      isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web"
+      isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web",
     );
     console.log("🏪 Store URL:", storeUrl);
 
@@ -421,8 +421,8 @@ export default function SalonSharePage() {
                   new Map(
                     services
                       .filter((s) => s.category)
-                      .map((s) => [s.category!.id, s.category!])
-                  ).values()
+                      .map((s) => [s.category!.id, s.category!]),
+                  ).values(),
                 ).map((category) => (
                   <button
                     key={category.id}
@@ -445,7 +445,8 @@ export default function SalonSharePage() {
                 {services
                   .filter(
                     (s) =>
-                      !selectedCategoryId || s.categoryId === selectedCategoryId
+                      !selectedCategoryId ||
+                      s.categoryId === selectedCategoryId,
                   )
                   .map((service) => {
                     const opts = service.options ?? [];
@@ -671,7 +672,7 @@ export default function SalonSharePage() {
             {/* Store Badges */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={IOS_STORE_URL}
+                href={process.env.IOS_STORE_URL || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-transform hover:scale-105"
@@ -685,7 +686,7 @@ export default function SalonSharePage() {
                 />
               </a>
               <a
-                href={ANDROID_STORE_URL}
+                href={process.env.ANDROID_STORE_URL || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-transform hover:scale-105"
