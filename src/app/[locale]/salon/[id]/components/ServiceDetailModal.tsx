@@ -6,9 +6,9 @@ import {
 } from "./web-booking/pricing";
 import { calculateTaxesApi, getSalonServiceByIdApi } from "@/app/data/services";
 import { useGetPlatformConfig } from "@/app/data/hooks";
-import { SalonWebBookingModal } from "./web-booking";
 import { Download, Globe, Loader2, Smartphone, X } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 interface ServiceData {
@@ -35,8 +35,6 @@ interface ServiceDetailModalProps {
   serviceId: string;
   salonName?: string;
   salonProvince?: string;
-  /** Salon propose des services à domicile (API salon). */
-  salonOffersHomeService?: boolean;
   locale?: string;
   onClose: () => void;
 }
@@ -49,12 +47,11 @@ export function ServiceDetailModal({
   serviceId,
   salonName,
   salonProvince,
-  salonOffersHomeService = false,
   locale = "fr",
   onClose,
 }: ServiceDetailModalProps) {
+  const router = useRouter();
   const [service, setService] = useState<ServiceData | null>(null);
-  const [webBookingOpen, setWebBookingOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [taxOnFee, setTaxOnFee] = useState<number | null>(null);
@@ -182,6 +179,11 @@ export function ServiceDetailModal({
     minPrice !== null && platformFee !== null && taxOnFee !== null
       ? minPrice + platformFee + taxOnFee
       : null;
+
+  const handleReserveOnline = () => {
+    onClose();
+    router.push(`/${locale}/service/${salonId}/${serviceId}/reservation`);
+  };
 
   if (loading) {
     return (
@@ -314,10 +316,10 @@ export function ServiceDetailModal({
             minPrice !== null && (
               <button
                 type="button"
-                onClick={() => setWebBookingOpen(true)}
+                onClick={handleReserveOnline}
                 className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
               >
-                <Globe className="w-5 h-5" />
+                <Globe className="w-5 h-5 shrink-0 pointer-events-none" />
                 Réserver en ligne
               </button>
             )}
@@ -335,29 +337,6 @@ export function ServiceDetailModal({
           </p>
         </div>
       </div>
-
-      <SalonWebBookingModal
-        open={webBookingOpen}
-        onClose={() => setWebBookingOpen(false)}
-        salonId={salonId}
-        salonName={salonName || service.salon?.name || ""}
-        locale={locale}
-        salonProvince={salonProvince}
-        salonOffersHomeService={salonOffersHomeService}
-        service={
-          webBookingOpen
-            ? {
-                id: service.id,
-                name: service.name,
-                duration: service.duration,
-                photos: service.photos,
-                options: service.options,
-                availableLocations: service.availableLocations,
-                homeTravelFeeDollars: service.homeTravelFeeDollars,
-              }
-            : null
-        }
-      />
     </div>
   );
 }

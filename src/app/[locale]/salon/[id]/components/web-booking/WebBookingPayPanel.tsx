@@ -13,12 +13,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { SalonBookingTimeSlot, WebBookingServicePayload } from "./types";
 import {
   computePlatformFeeDollars,
+  getEffectiveHomeTravelFeeDollars,
   getOptionPriceDollars,
   getServiceDurationMinutes,
 } from "./pricing";
 
 interface WebBookingPayPanelProps {
   salonId: string;
+  salonOffersHomeService: boolean;
   province: string;
   clientId: string;
   clientEmail: string;
@@ -34,6 +36,7 @@ interface WebBookingPayPanelProps {
 
 export function WebBookingPayPanel({
   salonId,
+  salonOffersHomeService,
   province,
   clientId,
   clientEmail,
@@ -54,7 +57,10 @@ export function WebBookingPayPanel({
   const option = service.options?.find((o) => o.id === selectedOptionId);
   const servicePrice = option ? getOptionPriceDollars(option) : 0;
   const travelFeeDollars = isHomeService
-    ? (service.homeTravelFeeDollars ?? 0)
+    ? getEffectiveHomeTravelFeeDollars(
+        service.homeTravelFeeDollars,
+        salonOffersHomeService
+      )
     : 0;
   const clientSubtotalDollars = servicePrice + travelFeeDollars;
   const durationMin = getServiceDurationMinutes(service.duration);

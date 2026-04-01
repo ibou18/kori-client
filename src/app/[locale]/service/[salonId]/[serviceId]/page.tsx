@@ -1,15 +1,10 @@
 "use client";
 
-import { SalonWebBookingModal } from "@/app/[locale]/salon/[id]/components/web-booking";
 import {
   computePlatformFeeDollars,
   formatSalonPriceDollars,
 } from "@/app/[locale]/salon/[id]/components/web-booking/pricing";
-import {
-  calculateTaxesApi,
-  getSalonApi,
-  getSalonServiceByIdApi,
-} from "@/app/data/services";
+import { calculateTaxesApi, getSalonServiceByIdApi } from "@/app/data/services";
 import { useGetPlatformConfig } from "@/app/data/hooks";
 import { Download, Globe, Loader2, Smartphone } from "lucide-react";
 import Image from "next/image";
@@ -50,8 +45,6 @@ export default function ServiceSharePage() {
   const locale = (params.locale as string) || "fr";
 
   const [service, setService] = useState<ServiceData | null>(null);
-  const [salonOffersHomeService, setSalonOffersHomeService] = useState(false);
-  const [webBookingOpen, setWebBookingOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [taxOnFee, setTaxOnFee] = useState<number | null>(null);
@@ -94,24 +87,6 @@ export default function ServiceSharePage() {
       fetchService();
     }
   }, [salonId, serviceId]);
-
-  useEffect(() => {
-    const fetchSalonFlags = async () => {
-      try {
-        const res = await getSalonApi(salonId);
-        const salon =
-          res && typeof res === "object" && "data" in res
-            ? (res as { data?: { offersHomeService?: boolean } }).data
-            : (res as { offersHomeService?: boolean } | null);
-        setSalonOffersHomeService(salon?.offersHomeService === true);
-      } catch {
-        setSalonOffersHomeService(false);
-      }
-    };
-    if (salonId) {
-      fetchSalonFlags();
-    }
-  }, [salonId]);
 
   const getUserPlatform = () => {
     if (typeof window === "undefined") return "desktop";
@@ -361,14 +336,13 @@ export default function ServiceSharePage() {
             {service.options &&
               service.options.length > 0 &&
               minPrice !== null && (
-                <button
-                  type="button"
-                  onClick={() => setWebBookingOpen(true)}
+                <Link
+                  href={`/${locale}/service/${salonId}/${serviceId}/reservation`}
                   className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
                 >
                   <Globe className="w-5 h-5" />
                   Réserver en ligne
-                </button>
+                </Link>
               )}
 
             <button
@@ -386,29 +360,6 @@ export default function ServiceSharePage() {
           </div>
         </article>
       </main>
-
-      <SalonWebBookingModal
-        open={webBookingOpen}
-        onClose={() => setWebBookingOpen(false)}
-        salonId={salonId}
-        salonName={service.salon?.name || ""}
-        locale={locale}
-        salonProvince={province}
-        salonOffersHomeService={salonOffersHomeService}
-        service={
-          webBookingOpen
-            ? {
-                id: service.id,
-                name: service.name,
-                duration: service.duration,
-                photos: service.photos,
-                options: service.options,
-                availableLocations: service.availableLocations,
-                homeTravelFeeDollars: service.homeTravelFeeDollars,
-              }
-            : null
-        }
-      />
     </div>
   );
 }

@@ -580,7 +580,6 @@ export default function SalonSharePage() {
             serviceId={selectedServiceId}
             salonName={salon?.name}
             salonProvince={salon?.address?.province}
-            salonOffersHomeService={salon?.offersHomeService === true}
             locale={locale}
             onClose={() => setSelectedServiceId(null)}
           />

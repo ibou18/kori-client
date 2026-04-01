@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/GoogleAddressAutocomplete";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { Check, Loader2, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -20,6 +21,7 @@ import type {
 } from "./types";
 import {
   formatSalonPriceDollars,
+  getEffectiveHomeTravelFeeDollars,
   getOptionPriceDollars,
   getServiceDurationMinutes,
 } from "./pricing";
@@ -37,6 +39,7 @@ interface WebBookingSlotPanelProps {
   homeServiceAddress: AddressData | null;
   onHomeServiceAddressChange: (value: AddressData | null) => void;
   onContinue: () => void;
+  layoutVariant?: "modal" | "page";
 }
 
 function todayISODate(): string {
@@ -60,6 +63,7 @@ export function WebBookingSlotPanel({
   homeServiceAddress,
   onHomeServiceAddressChange,
   onContinue,
+  layoutVariant = "modal",
 }: WebBookingSlotPanelProps) {
   const [date, setDate] = useState(() => todayISODate());
   const durationMin = getServiceDurationMinutes(service.duration);
@@ -69,7 +73,10 @@ export function WebBookingSlotPanel({
     service.availableLocations,
   );
   const showLocationSection = locationMode !== "salon_only";
-  const travelFee = service.homeTravelFeeDollars ?? 0;
+  const travelFee = getEffectiveHomeTravelFeeDollars(
+    service.homeTravelFeeDollars,
+    salonOffersHomeService
+  );
   const travelFeeLabel =
     travelFee > 0 ? `+ ${formatSalonPriceDollars(travelFee)} $` : "Gratuit";
 
@@ -115,7 +122,14 @@ export function WebBookingSlotPanel({
   }
 
   return (
-    <div className="space-y-5 max-h-[min(70vh,520px)] overflow-y-auto pr-1">
+    <div
+      className={cn(
+        "space-y-5 overflow-y-auto pr-1",
+        layoutVariant === "page"
+          ? "max-h-none pb-2"
+          : "max-h-[min(70vh,520px)]"
+      )}
+    >
       {options.length > 1 && (
         <div>
           <Label className="text-base font-semibold">Option</Label>
