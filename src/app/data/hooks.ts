@@ -6,6 +6,7 @@ import {
   GET_MY_SALON,
   GET_PAYOUTS,
   GET_PLATFORM_CONFIG,
+  GET_ADMIN_SHORT_LINKS,
   GET_PROSPECTS,
   GET_RATINGS,
   GET_REVIEW,
@@ -64,6 +65,7 @@ import {
   deleteUserApi,
   forgotPasswordApi,
   // Stats
+  getAdminShortLinksApi,
   getAdminStatsApi,
   getBookingApi,
   // Payouts
@@ -1642,6 +1644,26 @@ export const useGetSalonTypes = () => {
     queryKey: [GET_SALON_TYPES],
     queryFn: getSalonTypesApi,
     staleTime: 1000 * 60 * 60 * 24, // 24 hours (rarely changes)
+  });
+};
+
+// ============================================================================
+// SHORT LINKS (ADMIN)
+// ============================================================================
+
+export const useGetAdminShortLinks = (params?: {
+  limit?: number;
+  offset?: number;
+  type?: "all" | "salon" | "service" | "other";
+  search?: string;
+  enabled?: boolean;
+}) => {
+  const { enabled = true, ...queryParams } = params ?? {};
+  return useQuery({
+    queryKey: [GET_ADMIN_SHORT_LINKS, queryParams],
+    queryFn: () => getAdminShortLinksApi(queryParams),
+    staleTime: 1000 * 60,
+    enabled,
   });
 };
 

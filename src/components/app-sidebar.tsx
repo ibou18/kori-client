@@ -5,6 +5,7 @@ import {
   ChartBarIcon,
   DollarSign,
   LayoutDashboard,
+  Link2,
   MapIcon,
   Settings,
   Store,
@@ -84,6 +85,11 @@ const adminNavMain = [
     title: "Cartes",
     url: "/admin/maps",
     icon: MapIcon,
+  },
+  {
+    title: "Liens courts",
+    url: "/admin/shortlinks",
+    icon: Link2,
   },
 ];
 
