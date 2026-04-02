@@ -204,6 +204,7 @@ export default function SalonsPage() {
       filterComponent={filterComponent}
       itemsPerPage={itemsPerPage}
       totalItems={totalItems}
+      currentPage={currentPage}
       serverSidePagination={true}
       onPageChange={(page) => {
         setCurrentPage(page);

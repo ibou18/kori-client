@@ -53,6 +53,8 @@ interface AdminListLayoutProps<T> {
   filterComponent?: React.ReactNode;
   // Pagination côté serveur
   totalItems?: number;
+  /** Page courante (1-based), à lier à l’état parent quand `serverSidePagination` est true */
+  currentPage?: number;
   onPageChange?: (page: number) => void;
   serverSidePagination?: boolean;
 }
@@ -72,6 +74,7 @@ export function AdminListLayout<T extends { id: string }>({
   itemsPerPage = 10,
   filterComponent,
   totalItems,
+  currentPage: controlledCurrentPage,
   onPageChange,
   serverSidePagination = false,
 }: AdminListLayoutProps<T>) {
@@ -91,7 +94,9 @@ export function AdminListLayout<T extends { id: string }>({
 
   // Calculer la pagination selon le mode
   const currentItems = serverSidePagination ? filteredData : clientPagination.currentItems;
-  const currentPage = serverSidePagination ? 1 : clientPagination.currentPage;
+  const currentPage = serverSidePagination
+    ? (controlledCurrentPage ?? 1)
+    : clientPagination.currentPage;
   const totalPages = serverSidePagination 
     ? Math.ceil((totalItems || 0) / itemsPerPage)
     : clientPagination.totalPages;
