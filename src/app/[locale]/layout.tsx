@@ -10,6 +10,7 @@ import { authOptions } from "@/utils/authOptions";
 import { getServerSession } from "next-auth";
 
 import WelcomeComponent from "../components/WelcomeComponent";
+import { usesAdminShellRole } from "@/utils/authRedirects";
 import Navbar from "./Navbar";
 import LayoutWrapper from "./LayoutWrapper";
 
@@ -19,10 +20,11 @@ export default async function LocaleLayout({
   children: React.ReactNode;
 }) {
   const session: any = await getServerSession(authOptions);
+  const useAdminShell = usesAdminShellRole(session?.user?.role);
 
   return (
     <div className="flex flex-col py-2 bg-[#FEFCF9] min-h-screen">
-      {session?.user?.role === "ADMIN" ? (
+      {useAdminShell ? (
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>

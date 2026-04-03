@@ -1,17 +1,15 @@
 "use client";
 
 import { getSalonApi, getSalonServicesApi } from "@/app/data/services";
-import { useGetPlatformConfig } from "@/app/data/hooks";
 import { motion } from "framer-motion";
-import { ChevronRight, Clock, MapPin, Smartphone, Star } from "lucide-react";
+import { Clock, MapPin, Smartphone, Star } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatSalonPriceDollars } from "./components/web-booking/pricing";
 import { ServiceDetailModal } from "./components/ServiceDetailModal";
 
 // idsalon=cmipf1upw000j6fo8nni0kaes
-const IOS_STORE_URL = "https://apple.co/4lPhmNde";
-const ANDROID_STORE_URL = "https://bit.ly/korí-android";
 
 interface ServiceCategory {
   id: string;
@@ -22,12 +20,14 @@ interface SalonService {
   id: string;
   name: string;
   description?: string;
+  particularities?: string;
   duration?: number;
   categoryId?: string;
   category?: ServiceCategory;
   photos?: Array<{ url: string; alt?: string }>;
   options?: Array<{
     id: string;
+    name?: string;
     price: number;
     discountPrice?: number;
   }>;
@@ -42,6 +42,7 @@ interface Salon {
     city: string;
     postalCode: string;
     country: string;
+    province?: string;
   };
   photos?: Array<{
     id: string;
@@ -62,6 +63,7 @@ interface Salon {
   };
   rating?: number;
   reviewCount?: number;
+  offersHomeService?: boolean;
 }
 
 const getSalonTypeLabel = (type: string): string => {
@@ -112,17 +114,11 @@ export default function SalonSharePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasTriedDeepLink, setHasTriedDeepLink] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
-    null
+    null,
   );
-  const { data: platformConfigData } = useGetPlatformConfig();
-  const bookingFeeRate =
-    platformConfigData?.data?.defaultCommissionRate ??
-    platformConfigData?.defaultCommissionRate ??
-    0.06;
-
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
   useEffect(() => {
     if (!salonId || hasTriedDeepLink) return;
@@ -141,7 +137,7 @@ export default function SalonSharePage() {
       const isAndroid = /Android/.test(navigator.userAgent);
       console.log(
         "📱 Plateforme détectée:",
-        isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web"
+        isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web",
       );
 
       // Essayer d'ouvrir l'app immédiatement
@@ -208,12 +204,14 @@ export default function SalonSharePage() {
     const deepLink = `kori://salon/salon-detail?id=${salonId}`;
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    const storeUrl = isIOS ? IOS_STORE_URL : ANDROID_STORE_URL;
+    const storeUrl = isIOS
+      ? process.env.IOS_STORE_URL || ""
+      : process.env.ANDROID_STORE_URL || "";
 
     console.log("🔗 Deep Link:", deepLink);
     console.log(
       "📱 Plateforme:",
-      isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web"
+      isIOS ? "iOS" : isAndroid ? "Android" : "Desktop/Web",
     );
     console.log("🏪 Store URL:", storeUrl);
 
@@ -248,7 +246,7 @@ export default function SalonSharePage() {
     return (
       <div className="min-h-screen flex items-center justify-center max-w-3xl mx-auto">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#53745D] mx-auto mb-4" />
           <p className="text-slate-600">Chargement du salon...</p>
         </div>
       </div>
@@ -267,7 +265,7 @@ export default function SalonSharePage() {
           </p>
           <button
             onClick={() => router.push("/")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+            className="bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white px-6 py-3 rounded-xl font-semibold shadow-md transition-all hover:brightness-110"
           >
             Retour à l'accueil
           </button>
@@ -299,7 +297,7 @@ export default function SalonSharePage() {
             top: `${Math.random() * 100}%`,
             width: `${Math.random() * 60 + 20}px`,
             height: `${Math.random() * 60 + 20}px`,
-            background: `linear-gradient(45deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))`,
+            background: `linear-gradient(45deg, rgba(83, 116, 93, 0.14), rgba(58, 90, 71, 0.1))`,
           }}
           animate={{
             y: [0, -30, 0],
@@ -314,7 +312,7 @@ export default function SalonSharePage() {
         />
       ))}
 
-      <div className="relative z-10 container mx-auto px-4 py-8 md:py-16">
+      <div className="relative z-10 container mx-auto px-2 py-8 md:py-16">
         {/* Header avec nom du salon */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -352,7 +350,7 @@ export default function SalonSharePage() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8 max-w-3xl mx-auto"
           >
-            <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden bg-white shadow-xl">
+            <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden bg-white shadow-xl ring-1 ring-[#53745D]/15">
               {salonPhotos.map((photo, index) => (
                 <motion.div
                   key={photo.id}
@@ -413,8 +411,8 @@ export default function SalonSharePage() {
                   onClick={() => setSelectedCategoryId(null)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                     selectedCategoryId === null
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-white/80 text-slate-600 hover:bg-white border border-slate-200"
+                      ? "bg-[#53745D] text-white shadow-md"
+                      : "bg-white/80 text-slate-600 hover:bg-white border border-slate-200 hover:border-[#53745D]/35"
                   }`}
                 >
                   Tous
@@ -423,16 +421,16 @@ export default function SalonSharePage() {
                   new Map(
                     services
                       .filter((s) => s.category)
-                      .map((s) => [s.category!.id, s.category!])
-                  ).values()
+                      .map((s) => [s.category!.id, s.category!]),
+                  ).values(),
                 ).map((category) => (
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategoryId(category.id)}
                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                       selectedCategoryId === category.id
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "bg-white/80 text-slate-600 hover:bg-white border border-slate-200"
+                        ? "bg-[#53745D] text-white shadow-md"
+                        : "bg-white/80 text-slate-600 hover:bg-white border border-slate-200 hover:border-[#53745D]/35"
                     }`}
                   >
                     {category.name}
@@ -443,86 +441,130 @@ export default function SalonSharePage() {
 
             {/* Cards en scroll horizontal - 1 par colonne */}
             <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-              <div className="flex gap-4 min-w-max">
+              <div className="flex gap-4 min-w-max items-stretch">
                 {services
                   .filter(
                     (s) =>
-                      !selectedCategoryId || s.categoryId === selectedCategoryId
+                      !selectedCategoryId ||
+                      s.categoryId === selectedCategoryId,
                   )
                   .map((service) => {
-                    const minPrice = service.options?.length
-                      ? Math.min(
-                          ...service.options.map(
-                            (o) => o.discountPrice ?? o.price
-                          )
-                        )
+                    const opts = service.options ?? [];
+                    const effective = (o: (typeof opts)[number]) =>
+                      o.discountPrice ?? o.price;
+                    const minPrice = opts.length
+                      ? Math.min(...opts.map(effective))
                       : null;
-                    const minPriceWithFee =
-                      minPrice !== null
-                        ? minPrice +
-                          Number(
-                            (
-                              Math.ceil(minPrice * bookingFeeRate * 100) / 100
-                            ).toFixed(2)
-                          )
-                        : null;
+                    const maxPrice = opts.length
+                      ? Math.max(...opts.map(effective))
+                      : null;
+                    const subtitle =
+                      service.particularities?.trim() ||
+                      service.description?.trim();
+                    const isEn = locale.startsWith("en");
                     return (
                       <motion.button
                         key={service.id}
+                        type="button"
                         onClick={() => setSelectedServiceId(service.id)}
-                        className="text-left bg-white/90 backdrop-blur border border-slate-200 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all w-[200px] flex-shrink-0"
+                        className="text-left bg-white border border-[#53745D]/20 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:border-[#53745D]/35 transition-all w-[min(calc(100vw-2.5rem),300px)] sm:w-[300px] flex-shrink-0 flex flex-col self-stretch min-h-0"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        {service.photos?.[0]?.url ? (
-                          <div className="relative h-28 w-full">
-                            <Image
-                              src={service.photos[0].url}
-                              alt={service.name}
-                              fill
-                              className="object-cover"
-                              sizes="200px"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                            <div className="absolute bottom-2 left-2 right-2">
-                              <p className="font-semibold text-white text-sm line-clamp-2 drop-shadow">
-                                {service.name}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {minPrice !== null && (
-                                  <span className="text-white font-bold text-sm drop-shadow">
-                                    {minPriceWithFee} $
-                                  </span>
-                                )}
-                                {service.duration && (
-                                  <span className="text-white/90 text-xs drop-shadow">
-                                    {Math.round(service.duration / 60)}h
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4">
-                            <p className="font-semibold text-slate-800 text-sm line-clamp-2">
+                        <div className="flex flex-1 min-h-0 gap-3 items-start p-3">
+                          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                            <p className="font-bold text-slate-900 text-[15px] leading-snug line-clamp-2">
                               {service.name}
                             </p>
-                            <div className="flex items-center gap-2 mt-2">
-                              {minPrice !== null && (
-                                <span className="text-blue-600 font-bold text-sm">
-                                  {minPriceWithFee} $
-                                </span>
-                              )}
-                              {service.duration && (
-                                <span className="text-slate-500 text-xs">
-                                  {Math.round(service.duration / 60)}h
-                                </span>
-                              )}
-                            </div>
+                            {subtitle ? (
+                              <p className="text-xs text-slate-500 line-clamp-2">
+                                {subtitle}
+                              </p>
+                            ) : null}
+                            {service.duration ? (
+                              <p className="text-xs text-slate-500">
+                                {Math.round(service.duration / 60)}h
+                              </p>
+                            ) : null}
+                            {opts.length > 0 &&
+                            minPrice !== null &&
+                            maxPrice !== null ? (
+                              <>
+                                <p className="text-sm font-bold text-slate-900 mt-1 tabular-nums">
+                                  {minPrice === maxPrice
+                                    ? `${formatSalonPriceDollars(minPrice)} $`
+                                    : `${formatSalonPriceDollars(minPrice)} $ - ${formatSalonPriceDollars(maxPrice)} $`}
+                                </p>
+                                <ul className="mt-1.5 max-h-[5.5rem] overflow-y-auto space-y-0.5 pr-0.5">
+                                  {opts.map((o, i) => {
+                                    const final = effective(o);
+                                    const hasDiscount =
+                                      o.discountPrice != null &&
+                                      o.discountPrice < o.price;
+                                    const label =
+                                      o.name?.trim() ||
+                                      (isEn
+                                        ? `Option ${i + 1}`
+                                        : `Option ${i + 1}`);
+                                    return (
+                                      <li
+                                        key={o.id}
+                                        className="flex justify-between gap-2 text-[11px] leading-tight"
+                                      >
+                                        <span className="text-slate-500 truncate min-w-0">
+                                          {label}
+                                        </span>
+                                        <span className="shrink-0 flex items-center gap-1 tabular-nums">
+                                          {hasDiscount ? (
+                                            <span className="text-slate-400 line-through">
+                                              {formatSalonPriceDollars(o.price)}{" "}
+                                              $
+                                            </span>
+                                          ) : null}
+                                          <span
+                                            className={
+                                              hasDiscount
+                                                ? "font-semibold text-red-600"
+                                                : "font-semibold text-slate-900"
+                                            }
+                                          >
+                                            {formatSalonPriceDollars(final)} $
+                                          </span>
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </>
+                            ) : minPrice !== null ? (
+                              <p className="text-sm font-bold text-slate-900 mt-1 tabular-nums">
+                                {formatSalonPriceDollars(minPrice)} $
+                              </p>
+                            ) : null}
                           </div>
-                        )}
-                        <div className="p-2 flex items-center justify-end">
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
+                          <div className="relative h-[4.5rem] w-[4.5rem] sm:h-[5rem] sm:w-[5rem] shrink-0 rounded-xl overflow-hidden bg-slate-100">
+                            {service.photos?.[0]?.url ? (
+                              <Image
+                                src={service.photos[0].url}
+                                alt={service.name}
+                                fill
+                                className="object-cover"
+                                sizes="80px"
+                              />
+                            ) : (
+                              <div
+                                className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 text-center px-1"
+                                aria-hidden
+                              >
+                                Korí
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-auto shrink-0 border-t border-[#53745D]/10 px-3 pb-3 pt-3">
+                          <span className="flex w-full items-center justify-center rounded-lg border border-[#53745D]/35 bg-[#F0F4F1]/50 py-2 text-sm font-medium text-[#3a5a47]">
+                            {isEn ? "Book" : "Réserver"}
+                          </span>
                         </div>
                       </motion.button>
                     );
@@ -538,6 +580,7 @@ export default function SalonSharePage() {
             salonId={salonId}
             serviceId={selectedServiceId}
             salonName={salon?.name}
+            salonProvince={salon?.address?.province}
             locale={locale}
             onClose={() => setSelectedServiceId(null)}
           />
@@ -551,7 +594,7 @@ export default function SalonSharePage() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="mb-8 max-w-3xl mx-auto"
           >
-            <div className="bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div className="bg-white/80 backdrop-blur-lg border border-[#53745D]/20 rounded-2xl p-6 shadow-lg">
               <h2 className="text-2xl font-bold text-slate-800 mb-4">
                 À propos
               </h2>
@@ -570,9 +613,9 @@ export default function SalonSharePage() {
             transition={{ duration: 0.8, delay: 0.5 }}
             className="mb-8  mx-auto"
           >
-            <div className="bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl p-6 shadow-lg">
+            <div className="bg-white/80 backdrop-blur-lg border border-[#53745D]/20 rounded-2xl p-6 shadow-lg">
               <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Clock className="w-6 h-6" />
+                <Clock className="w-6 h-6 text-[#53745D]" />
                 Horaires d'ouverture
               </h2>
               <div className="space-y-2">
@@ -586,7 +629,7 @@ export default function SalonSharePage() {
                     </span>
                     <span
                       className={`font-semibold ${
-                        day.isOpen ? "text-green-600" : "text-slate-400"
+                        day.isOpen ? "text-[#53745D]" : "text-slate-400"
                       }`}
                     >
                       {day.hours}
@@ -605,19 +648,19 @@ export default function SalonSharePage() {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="text-center  mx-auto"
         >
-          <div className="bg-white/80 backdrop-blur-lg border border-slate-200 rounded-2xl p-8 shadow-lg mb-6">
+          <div className="bg-white/80 backdrop-blur-lg border border-[#53745D]/20 rounded-2xl p-8 shadow-lg mb-6">
             <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4">
-              Réservez vos services
+              Téléchargez l&apos;application korí
             </h3>
             <p className="text-slate-600 mb-6">
-              Ouvrez l'application korí pour découvrir tous les services et
-              réserver votre rendez-vous.
+              Téléchargez l&apos;application korí pour découvrir tous nos
+              services et réserver vos rendez-vous.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
               <motion.button
                 onClick={handleOpenApp}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg"
+                className="bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white px-8 py-4 rounded-xl font-semibold shadow-lg transition-all hover:brightness-110 flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -629,7 +672,7 @@ export default function SalonSharePage() {
             {/* Store Badges */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href={IOS_STORE_URL}
+                href={process.env.IOS_STORE_URL || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-transform hover:scale-105"
@@ -643,7 +686,7 @@ export default function SalonSharePage() {
                 />
               </a>
               <a
-                href={ANDROID_STORE_URL}
+                href={process.env.ANDROID_STORE_URL || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="transition-transform hover:scale-105"

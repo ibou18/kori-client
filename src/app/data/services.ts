@@ -103,6 +103,52 @@ export const getProspectByIdApi = async (id: string) => {
   }
 };
 
+export type AdminShortLinkTargetType = "salon" | "service" | "other";
+
+export interface AdminShortLinkRow {
+  id: string;
+  code: string;
+  longUrl: string;
+  shortUrl: string;
+  clickCount: number;
+  createdAt: string;
+  updatedAt: string;
+  targetType: AdminShortLinkTargetType;
+  salonId: string | null;
+  salonName: string | null;
+}
+
+export const getAdminShortLinksApi = async (params?: {
+  limit?: number;
+  offset?: number;
+  type?: "all" | "salon" | "service" | "other";
+  search?: string;
+}) => {
+  try {
+    const response = await requestWrapper.get("/short-links/admin", {
+      params: {
+        limit: params?.limit,
+        offset: params?.offset,
+        type: params?.type === "all" ? undefined : params?.type,
+        search: params?.search?.trim() || undefined,
+      },
+    });
+    return response.data as {
+      success?: boolean;
+      data?: AdminShortLinkRow[];
+      pagination?: {
+        total: number;
+        limit: number;
+        offset: number;
+        hasMore?: boolean;
+      };
+    };
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des liens courts");
+    return null;
+  }
+};
+
 export const updateProspectStatusApi = async (data: {
   id: string;
   status: string;

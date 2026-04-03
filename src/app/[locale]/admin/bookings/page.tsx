@@ -15,9 +15,10 @@ import {
 import { BookingStatusBadge, PaymentStatusBadge } from "@/utils/statusUtils";
 import { message } from "antd";
 import dayjs from "dayjs";
+import { ADMIN, EMPLOYEE, OWNER } from "@/shared/constantes";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface Booking {
   id: string;
@@ -56,6 +57,17 @@ interface Booking {
   createdAt: string;
 }
 
+/** Montants API en centimes → affichage CAD avec 2 décimales. */
+function formatCadFromCents(cents: number | undefined | null): string {
+  if (cents === undefined || cents === null) return "—";
+  return new Intl.NumberFormat("fr-CA", {
+    style: "currency",
+    currency: "CAD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
 export default function BookingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -63,12 +75,30 @@ export default function BookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data, isLoading } = useGetBookings();
+  const user = session?.user as { role?: string; salonId?: string } | undefined;
+  const isSalonPro = user?.role === OWNER || user?.role === EMPLOYEE;
+
+  const bookingParams = useMemo(() => {
+    if (user?.role === ADMIN) return undefined;
+    if (isSalonPro && user?.salonId) return { salonId: user.salonId };
+    return undefined;
+  }, [user?.role, user?.salonId, isSalonPro]);
+
+  const { data, isLoading } = useGetBookings(bookingParams);
 
   if (!session) {
     return (
       <p className="text-center mt-10">
         Connexion requise pour accéder à cette page!
+      </p>
+    );
+  }
+
+  if (isSalonPro && !user?.salonId) {
+    return (
+      <p className="text-center mt-10 text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-lg mx-auto">
+        Aucun salon n’est lié à votre compte. Les réservations ne peuvent pas
+        être chargées.
       </p>
     );
   }
@@ -155,6 +185,15 @@ export default function BookingsPage() {
         ) : (
           <span className="text-sm text-gray-500">N/A</span>
         ),
+    },
+    {
+      key: "amount",
+      header: "Montant total",
+      render: (booking: Booking) => (
+        <div className="text-sm font-medium tabular-nums">
+          {formatCadFromCents(booking.payment?.total)}
+        </div>
+      ),
     },
     {
       key: "createdAt",

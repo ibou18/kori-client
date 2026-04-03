@@ -53,6 +53,8 @@ interface AdminListLayoutProps<T> {
   filterComponent?: React.ReactNode;
   // Pagination côté serveur
   totalItems?: number;
+  /** Page courante (1-based), à lier à l’état parent quand `serverSidePagination` est true */
+  currentPage?: number;
   onPageChange?: (page: number) => void;
   serverSidePagination?: boolean;
 }
@@ -72,6 +74,7 @@ export function AdminListLayout<T extends { id: string }>({
   itemsPerPage = 10,
   filterComponent,
   totalItems,
+  currentPage: controlledCurrentPage,
   onPageChange,
   serverSidePagination = false,
 }: AdminListLayoutProps<T>) {
@@ -90,12 +93,16 @@ export function AdminListLayout<T extends { id: string }>({
   });
 
   // Calculer la pagination selon le mode
-  const currentItems = serverSidePagination ? filteredData : clientPagination.currentItems;
-  const currentPage = serverSidePagination ? 1 : clientPagination.currentPage;
-  const totalPages = serverSidePagination 
+  const currentItems = serverSidePagination
+    ? filteredData
+    : clientPagination.currentItems;
+  const currentPage = serverSidePagination
+    ? (controlledCurrentPage ?? 1)
+    : clientPagination.currentPage;
+  const totalPages = serverSidePagination
     ? Math.ceil((totalItems || 0) / itemsPerPage)
     : clientPagination.totalPages;
-  
+
   const handlePageChange = (page: number) => {
     if (serverSidePagination && onPageChange) {
       onPageChange(page);
@@ -136,7 +143,8 @@ export function AdminListLayout<T extends { id: string }>({
             />
           </div>
           <div className="text-sm text-gray-600">
-            {serverSidePagination ? (totalItems || 0) : filteredData.length} {title.toLowerCase()}
+            {serverSidePagination ? totalItems || 0 : filteredData.length}{" "}
+            {title.toLowerCase()}
           </div>
         </div>
       </div>
@@ -180,6 +188,19 @@ export function AdminListLayout<T extends { id: string }>({
                 <TableBody>
                   {currentItems.map((item) => (
                     <TableRow key={item.id}>
+                      <TableCell className="text-right">
+                        {onView && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onView(item)}
+                            className="h-8 w-8 p-0 hover:bg-[#F0F4F1] hover:text-[#53745D]"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+
                       {columns.map((column) => (
                         <TableCell
                           key={column.key}

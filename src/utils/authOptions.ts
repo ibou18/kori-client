@@ -50,6 +50,7 @@ export const authOptions: NextAuthOptions = {
 
           const user = responseData.user;
           const token = responseData.token;
+          const salon = responseData.salon as { id?: string; name?: string } | null | undefined;
 
           if (!user || !token) {
             throw new Error("Données d'authentification incomplètes");
@@ -57,6 +58,9 @@ export const authOptions: NextAuthOptions = {
 
           // La vérification du mot de passe est déjà faite côté serveur,
           // car le token est renvoyé uniquement si l'authentification a réussi
+
+          const salonId =
+            salon?.id != null ? String(salon.id) : undefined;
 
           return {
             id: user.id.toString(),
@@ -68,7 +72,8 @@ export const authOptions: NextAuthOptions = {
             isVerified: user.isEmailVerified || false,
             phone: user.phone,
             avatar: user.avatar,
-            // Autres données si nécessaire
+            salonId,
+            salonName: salon?.name,
           };
         } catch (error: any) {
           console.error("❌ Error during authentication:", error);
@@ -111,7 +116,8 @@ export const authOptions: NextAuthOptions = {
         token.isVerified = user.isVerified;
         token.phone = user.phone;
         token.avatar = user.avatar;
-        // Autres données si nécessaire
+        token.salonId = (user as { salonId?: string }).salonId;
+        token.salonName = (user as { salonName?: string }).salonName;
       }
       return token;
     },
@@ -125,7 +131,12 @@ export const authOptions: NextAuthOptions = {
         session.user.isVerified = token.isVerified;
         session.user.phone = token.phone;
         session.user.avatar = token.avatar;
-        // Autres données si nécessaire
+        (session.user as { salonId?: string }).salonId = token.salonId as
+          | string
+          | undefined;
+        (session.user as { salonName?: string }).salonName = token.salonName as
+          | string
+          | undefined;
       }
       return session;
     },

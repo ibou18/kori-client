@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import PageWrapper from "@/app/components/block/PageWrapper";
 import { useGetAdminStats } from "@/app/data/hooks";
 import { useGetSalons, useGetUsers } from "@/app/data/hooks";
+import { EMPLOYEE, OWNER } from "@/shared/constantes";
 import {
   Select,
   SelectContent,
@@ -30,12 +31,17 @@ import {
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+
+import { SalonProDashboard } from "./SalonProDashboard";
 
 export interface IStats {
   name: string;
@@ -95,7 +101,11 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function Dashboard() {
-  useSession();
+  const { data: session } = useSession();
+  const salonUser = session?.user as
+    | { role?: string; salonId?: string }
+    | undefined;
+
   const [stats, setStats] = useState<IStats[]>([]);
   const [evolutionRange, setEvolutionRange] = useState<EvolutionRange>("30");
   const { data: adminStats, isLoading: statsLoading } = useGetAdminStats();
@@ -104,6 +114,71 @@ export default function Dashboard() {
     limit: 10000,
     offset: 0,
   });
+
+  useEffect(() => {
+    if (salonUser?.role === OWNER || salonUser?.role === EMPLOYEE) return;
+    if (adminStats?.data) {
+      const statsData = adminStats.data;
+      const newStats: IStats[] = [
+        {
+          name: "Total Utilisateurs",
+          stat: statsData.users?.total || 0,
+          href: "/admin/users",
+          icon: <Users className="w-4 h-4 text-[#53745D]" />,
+          color: "bg-[#F0F4F1]",
+        },
+        {
+          name: "Total Salons",
+          stat: statsData.salons?.total || 0,
+          href: "/admin/salons",
+          icon: <Store className="w-4 h-4 text-[#4A6854]" />,
+          color: "bg-[#D6E3D8]",
+        },
+        {
+          name: "Réservations Aujourd'hui",
+          stat: statsData.bookings?.today || 0,
+          href: "/admin/bookings",
+          icon: <Calendar className="w-4 h-4 text-[#53745D]" />,
+          color: "bg-[#F0F4F1]",
+        },
+        {
+          name: "Revenus Totaux",
+          stat: formatCurrency(statsData.revenue?.total || 0),
+          href: "/admin/payments",
+          icon: <DollarSign className="w-4 h-4 text-[#53745D]" />,
+          color: "bg-[#F0F4F1]",
+        },
+        {
+          name: "Revenus Ce Mois",
+          stat: formatCurrency(statsData.revenue?.thisMonth || 0),
+          href: "/admin/payments",
+          icon: <TrendingUp className="w-4 h-4 text-[#4A6854]" />,
+          color: "bg-[#D6E3D8]",
+        },
+        {
+          name: "Réservations Total",
+          stat: statsData.bookings?.total || 0,
+          href: "/admin/bookings",
+          icon: <Calendar className="w-4 h-4 text-[#3F5749]" />,
+          color: "bg-[#B8CFBC]",
+        },
+      ];
+      setStats(newStats);
+    }
+  }, [adminStats, salonUser?.role]);
+
+  if (salonUser?.role === OWNER || salonUser?.role === EMPLOYEE) {
+    if (!salonUser.salonId) {
+      return (
+        <PageWrapper title="Tableau de bord salon">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+            Aucun salon n’est associé à votre compte. Contactez le support Korí.
+          </p>
+        </PageWrapper>
+      );
+    }
+    return <SalonProDashboard salonId={salonUser.salonId} />;
+  }
 
   const usersData = Array.isArray(usersResponse)
     ? usersResponse
@@ -211,65 +286,24 @@ export default function Dashboard() {
   };
 
   const rangeInDays = Number(evolutionRange);
-  const clientEvolutionData = buildRegistrationEvolution(usersData, rangeInDays, {
-    filter: (user: any) => user?.role === "CLIENT",
-  });
+  const clientEvolutionData = buildRegistrationEvolution(
+    usersData,
+    rangeInDays,
+    {
+      filter: (user: any) => user?.role === "CLIENT",
+    },
+  );
   const salonEvolutionData = buildRegistrationEvolution(
     salonsData,
     rangeInDays,
   );
   const isChartsLoading = usersLoading || salonsLoading;
 
-  useEffect(() => {
-    if (adminStats?.data) {
-      const statsData = adminStats.data;
-      const newStats: IStats[] = [
-        {
-          name: "Total Utilisateurs",
-          stat: statsData.users?.total || 0,
-          href: "/admin/users",
-          icon: <Users className="w-4 h-4 text-[#53745D]" />,
-          color: "bg-[#F0F4F1]",
-        },
-        {
-          name: "Total Salons",
-          stat: statsData.salons?.total || 0,
-          href: "/admin/salons",
-          icon: <Store className="w-4 h-4 text-[#4A6854]" />,
-          color: "bg-[#D6E3D8]",
-        },
-        {
-          name: "Réservations Aujourd'hui",
-          stat: statsData.bookings?.today || 0,
-          href: "/admin/bookings",
-          icon: <Calendar className="w-4 h-4 text-[#53745D]" />,
-          color: "bg-[#F0F4F1]",
-        },
-        {
-          name: "Revenus Totaux",
-          stat: formatCurrency(statsData.revenue?.total || 0),
-          href: "/admin/payments",
-          icon: <DollarSign className="w-4 h-4 text-[#53745D]" />,
-          color: "bg-[#F0F4F1]",
-        },
-        {
-          name: "Revenus Ce Mois",
-          stat: formatCurrency(statsData.revenue?.thisMonth || 0),
-          href: "/admin/payments",
-          icon: <TrendingUp className="w-4 h-4 text-[#4A6854]" />,
-          color: "bg-[#D6E3D8]",
-        },
-        {
-          name: "Réservations Total",
-          stat: statsData.bookings?.total || 0,
-          href: "/admin/bookings",
-          icon: <Calendar className="w-4 h-4 text-[#3F5749]" />,
-          color: "bg-[#B8CFBC]",
-        },
-      ];
-      setStats(newStats);
-    }
-  }, [adminStats]);
+  const nonCumulativeCombinedData = salonEvolutionData.map((row, i) => ({
+    period: row.month,
+    nouveauxSalons: row.newCount,
+    nouveauxClients: clientEvolutionData[i]?.newCount ?? 0,
+  }));
 
   return (
     <PageWrapper title="Dashboard Admin">
@@ -569,6 +603,61 @@ export default function Dashboard() {
                       activeDot={{ r: 5 }}
                     />
                   </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="xl:col-span-2 rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              Inscriptions par période (non cumulé)
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Nombre de nouveaux salons et de nouveaux clients par intervalle sur
+              les {getRangeLabel(evolutionRange)} — chaque barre correspond à la
+              période affichée sur l&apos;axe, sans addition avec les périodes
+              précédentes.
+            </p>
+            {isChartsLoading ? (
+              <Skeleton className="h-72 w-full" />
+            ) : (
+              <div className="h-72 w-full min-h-[288px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={nonCumulativeCombinedData}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ECECEC" />
+                    <XAxis
+                      dataKey="period"
+                      tick={{ fontSize: 11 }}
+                      interval="preserveStartEnd"
+                      minTickGap={8}
+                    />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number, name: string) => [
+                        `${value}`,
+                        name,
+                      ]}
+                      labelFormatter={(label: string) => `Période : ${label}`}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="nouveauxSalons"
+                      name="Nouveaux salons"
+                      fill="#4A6854"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={40}
+                    />
+                    <Bar
+                      dataKey="nouveauxClients"
+                      name="Nouveaux clients"
+                      fill="#7A9B82"
+                      radius={[4, 4, 0, 0]}
+                      maxBarSize={40}
+                    />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             )}

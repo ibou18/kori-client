@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/select";
 import { BookingStatusBadge, PaymentStatusBadge } from "@/utils/statusUtils";
 import dayjs from "dayjs";
+import { ADMIN, EMPLOYEE, OWNER } from "@/shared/constantes";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface Payment {
   id: string;
@@ -45,12 +46,30 @@ export default function PaymentsPage() {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data: bookingsData, isLoading } = useGetBookings();
+  const user = session?.user as { role?: string; salonId?: string } | undefined;
+  const isSalonPro = user?.role === OWNER || user?.role === EMPLOYEE;
+
+  const bookingParams = useMemo(() => {
+    if (user?.role === ADMIN) return undefined;
+    if (isSalonPro && user?.salonId) return { salonId: user.salonId };
+    return undefined;
+  }, [user?.role, user?.salonId, isSalonPro]);
+
+  const { data: bookingsData, isLoading } = useGetBookings(bookingParams);
 
   if (!session) {
     return (
       <p className="text-center mt-10">
         Connexion requise pour accéder à cette page!
+      </p>
+    );
+  }
+
+  if (isSalonPro && !user?.salonId) {
+    return (
+      <p className="text-center mt-10 text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-lg mx-auto">
+        Aucun salon n’est lié à votre compte. Les paiements ne peuvent pas être
+        chargés.
       </p>
     );
   }
