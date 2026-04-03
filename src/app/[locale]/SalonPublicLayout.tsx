@@ -29,7 +29,7 @@ export default function SalonPublicLayout({
   return (
     <div className="min-h-full">
       <SalonPublicNavbar locale={locale} pathname={pathname} />
-      <main className="mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <main className="mx-auto px-4 sm:px-4 lg:px-8 pb-12">
         <div className="min-h-screen mt-4">{children}</div>
       </main>
     </div>

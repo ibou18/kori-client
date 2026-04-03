@@ -283,10 +283,20 @@ export function ServiceDetailModal({
                   )}
                 </div>
                 {totalGlobal !== null && (
-                  <div className="mt-1.5 flex justify-between gap-2 font-semibold text-slate-900">
+                  <div className="mt-1.5 flex justify-between gap-2 font-medium text-slate-900">
                     <span>Total</span>
-                    <span className="tabular-nums text-[#53745D]">
+                    <span className="tabular-nums">
                       {formatSalonPriceDollars(totalGlobal)} $
+                    </span>
+                  </div>
+                )}
+
+                <div className="my-2 h-[1px] bg-slate-200" />
+                {totalGlobal !== null && (
+                  <div className="mt-1.5 flex justify-between gap-2 font-semibold text-slate-900">
+                    <span> A Payer maintenant ({feePercentLabel}&nbsp;%)</span>
+                    <span className="tabular-nums text-[#53745D]">
+                      {formatSalonPriceDollars(totalAcompteEnLigne ?? 0)} $
                     </span>
                   </div>
                 )}
@@ -304,26 +314,26 @@ export function ServiceDetailModal({
             )}
           </div>
 
-          <button
-            onClick={handleOpenApp}
-            className="w-full bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg transition-all hover:brightness-110 active:brightness-95 flex items-center justify-center gap-3 mb-3"
-          >
-            <Smartphone className="w-6 h-6" />
-            Ouvrir dans l&apos;app Korí
-          </button>
-
           {service.options &&
             service.options.length > 0 &&
             minPrice !== null && (
               <button
                 type="button"
                 onClick={handleReserveOnline}
-                className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
+                className="w-full bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white px-6 py-4 rounded-xl font-bold text-lg shadow-lg transition-all hover:brightness-110 active:brightness-95 flex items-center justify-center gap-3 mb-3"
               >
                 <Globe className="w-5 h-5 shrink-0 pointer-events-none" />
                 Réserver en ligne
               </button>
             )}
+
+          {/* <button
+            onClick={handleOpenApp}
+            className="w-full border-2 border-[#53745D] bg-white text-[#53745D] px-6 py-3 rounded-xl font-semibold transition-colors hover:bg-[#F0F4F1] flex items-center justify-center gap-2 mb-4"
+          >
+            <Smartphone className="w-6 h-6" />
+            Ouvrir dans l&apos;app Korí
+          </button> */}
 
           <button
             onClick={handleDownload}

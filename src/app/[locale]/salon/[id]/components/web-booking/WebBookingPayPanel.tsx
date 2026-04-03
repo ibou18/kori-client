@@ -59,7 +59,7 @@ export function WebBookingPayPanel({
   const travelFeeDollars = isHomeService
     ? getEffectiveHomeTravelFeeDollars(
         service.homeTravelFeeDollars,
-        salonOffersHomeService
+        salonOffersHomeService,
       )
     : 0;
   const clientSubtotalDollars = servicePrice + travelFeeDollars;
@@ -67,7 +67,7 @@ export function WebBookingPayPanel({
 
   const platformFee = useMemo(
     () => computePlatformFeeDollars(clientSubtotalDollars, commissionRate),
-    [clientSubtotalDollars, commissionRate]
+    [clientSubtotalDollars, commissionRate],
   );
 
   useEffect(() => {
@@ -94,13 +94,12 @@ export function WebBookingPayPanel({
     };
   }, [platformFee, province]);
 
-  const totalAcompte =
-    taxTotal != null ? platformFee + taxTotal : null;
+  const totalAcompte = taxTotal != null ? platformFee + taxTotal : null;
 
   const handlePay = async () => {
     if (!clientEmail.trim()) {
       setError(
-        "Votre compte n'a pas d'email : ajoutez-en un dans votre profil ou reconnectez-vous."
+        "Votre compte n'a pas d'email : ajoutez-en un dans votre profil ou reconnectez-vous.",
       );
       return;
     }
@@ -109,7 +108,7 @@ export function WebBookingPayPanel({
       (!homeServiceAddress?.formattedAddress || !homeServiceAddress.street)
     ) {
       setError(
-        "Adresse à domicile manquante : retournez à l’étape créneau pour la renseigner."
+        "Adresse à domicile manquante : retournez à l’étape créneau pour la renseigner.",
       );
       return;
     }
@@ -186,8 +185,7 @@ export function WebBookingPayPanel({
 
       const url = checkoutPayload?.data?.sessionUrl;
       if (!checkoutPayload?.success || !url) {
-        const msg =
-          checkoutPayload?.message || "Paiement indisponible.";
+        const msg = checkoutPayload?.message || "Paiement indisponible.";
         setError(typeof msg === "string" ? msg : "Erreur paiement.");
         return;
       }
@@ -241,18 +239,21 @@ export function WebBookingPayPanel({
             </div>
           )}
           <div className="flex justify-between pt-1 border-t border-slate-100">
-            <span className="font-medium text-slate-800">Sous-total prestation</span>
+            <span className="font-medium text-slate-800">
+              Sous-total prestation
+            </span>
             <span className="font-semibold">
               {clientSubtotalDollars.toFixed(2)} $
             </span>
           </div>
           <div className="flex justify-between gap-3 pt-1 border-t border-slate-200">
             <div className="min-w-0">
-              <span className="text-slate-900 font-medium">
-                Frais et taxes (acompte)
+              <span className="text-slate-900 font-semibold">
+                À payer maintenant
               </span>
               <p className="text-xs text-slate-500 mt-0.5">
-                Frais plateforme ({Math.round(commissionRate * 100)}&nbsp;%) + taxes
+                Frais plateforme ({Math.round(commissionRate * 100)}&nbsp;%) +
+                taxes
                 {province ? ` (${province})` : ""}
               </p>
             </div>

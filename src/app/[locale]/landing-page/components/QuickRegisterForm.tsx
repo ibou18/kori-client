@@ -54,11 +54,7 @@ export function QuickRegisterForm() {
     lastName: devMode ? "Test" : "",
     phone: devMode ? "2345678901" : "",
     countryCode: "+1",
-    services: devMode ? [
-      "HAIRDRESSER",
-      "BARBER",
-      "NAIL_SALON",
-    ] : [],
+    services: devMode ? ["HAIRDRESSER", "BARBER", "NAIL_SALON"] : [],
   });
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
@@ -150,7 +146,8 @@ export function QuickRegisterForm() {
       EMAIL_ALREADY_EXISTS:
         "Cette adresse email est déjà enregistrée. Nous vous contacterons bientôt !",
       VALIDATION_ERROR: "Veuillez vérifier les informations saisies.",
-      NETWORK_ERROR: "Problème de connexion. Vérifiez votre connexion internet.",
+      NETWORK_ERROR:
+        "Problème de connexion. Vérifiez votre connexion internet.",
     };
 
     if (errorCode && errorMessages[errorCode]) {
@@ -219,7 +216,8 @@ export function QuickRegisterForm() {
             {/* Liens de téléchargement des applications */}
             <div className="mb-6">
               <p className="text-gray-700 text-sm mb-4">
-                En attendant, téléchargez l&apos;application mobile korí pour découvrir notre plateforme :
+                En attendant, téléchargez l&apos;application mobile korí pour
+                découvrir notre plateforme :
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
@@ -320,25 +318,24 @@ export function QuickRegisterForm() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
             >
-              Rejoignez la communauté{" "}
-              <span className="text-primary">korí</span>
+              Rejoignez la communauté <span className="text-primary">korí</span>
             </motion.h1>
-           <motion.p
-                  className="mt-6 text-pretty mx-auto lg:mx-0 max-w-2xl text-lg font-medium text-gray-600 sm:text-xl"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
-                >
-                  Créez votre profil professionnel et commencez à recevoir des
-                  réservations. Gérez votre salon, vos services et vos clients
-                  en toute simplicité.
-                </motion.p>
+            <motion.p
+              className="mt-6 text-pretty mx-auto lg:mx-0 max-w-2xl text-lg font-medium text-gray-600 sm:text-xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: "easeOut" }}
+            >
+              Créez votre profil professionnel et commencez à recevoir des
+              réservations. Gérez votre salon, vos services et vos clients en
+              toute simplicité.
+            </motion.p>
           </div>
         </div>
       </div>
 
       {/* Formulaire */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-12">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-4 lg:px-8 pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -363,7 +360,9 @@ export function QuickRegisterForm() {
                   className={cn(errors.firstName && "border-red-500")}
                 />
                 {errors.firstName && (
-                  <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.firstName}
+                  </p>
                 )}
               </div>
 
@@ -422,37 +421,43 @@ export function QuickRegisterForm() {
               {isLoadingSalonTypes ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-3 text-sm text-gray-500">Chargement des services...</p>
+                  <p className="mt-3 text-sm text-gray-500">
+                    Chargement des services...
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {(salonTypes.length > 0 ? salonTypes : SERVICE_TYPES).map((service: any) => (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => toggleService(service.id)}
-                      className={cn(
-                        "p-4 rounded-lg border-2 transition-all text-left",
-                        formData.services.includes(service.id)
-                          ? "border-primary bg-primary/5"
-                          : "border-gray-200 hover:border-gray-300"
-                      )}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">
-                            {service.name || service.label}
-                          </h3>
-                          {service.description && (
-                            <p className="text-sm text-gray-600">{service.description}</p>
+                  {(salonTypes.length > 0 ? salonTypes : SERVICE_TYPES).map(
+                    (service: any) => (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => toggleService(service.id)}
+                        className={cn(
+                          "p-4 rounded-lg border-2 transition-all text-left",
+                          formData.services.includes(service.id)
+                            ? "border-primary bg-primary/5"
+                            : "border-gray-200 hover:border-gray-300",
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-1">
+                              {service.name || service.label}
+                            </h3>
+                            {service.description && (
+                              <p className="text-sm text-gray-600">
+                                {service.description}
+                              </p>
+                            )}
+                          </div>
+                          {formData.services.includes(service.id) && (
+                            <Check className="w-5 h-5 text-primary flex-shrink-0 ml-2" />
                           )}
                         </div>
-                        {formData.services.includes(service.id) && (
-                          <Check className="w-5 h-5 text-primary flex-shrink-0 ml-2" />
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ),
+                  )}
                 </div>
               )}
 
@@ -479,7 +484,10 @@ export function QuickRegisterForm() {
 
             <p className="text-xs text-center text-gray-500">
               En vous inscrivant, vous acceptez nos{" "}
-              <Link href="/terms/cgu-pro" className="text-primary hover:underline">
+              <Link
+                href="/terms/cgu-pro"
+                className="text-primary hover:underline"
+              >
                 conditions d&apos;utilisation
               </Link>{" "}
               et notre{" "}

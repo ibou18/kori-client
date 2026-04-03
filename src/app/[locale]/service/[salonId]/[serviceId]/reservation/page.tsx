@@ -72,9 +72,7 @@ export default function ServiceReservationPage() {
         if (salon && typeof salon === "object") {
           setSalonName(typeof salon.name === "string" ? salon.name : "");
           setSalonOffersHomeService(salon.offersHomeService === true);
-          const addr = salon.address as
-            | { province?: string }
-            | undefined;
+          const addr = salon.address as { province?: string } | undefined;
           if (addr?.province && typeof addr.province === "string") {
             setSalonProvince(addr.province);
           }
@@ -110,7 +108,9 @@ export default function ServiceReservationPage() {
   if (error || !service?.options?.length) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center px-4 text-center">
-        <p className="text-slate-700 mb-4">{error || "Réservation indisponible."}</p>
+        <p className="text-slate-700 mb-4">
+          {error || "Réservation indisponible."}
+        </p>
         <Link
           href={backHref}
           className="text-[#53745D] font-semibold underline underline-offset-2"
@@ -135,8 +135,8 @@ export default function ServiceReservationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F0F4F1]/50 to-slate-50">
-      <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
-        <div className="bg-white rounded-2xl border border-[#53745D]/15 shadow-md p-6 md:p-10">
+      <div className="max-w-2xl mx-auto px-0 py-8 md:py-12">
+        <div className="bg-white rounded-2xl border border-[#53745D]/15 shadow-md p-4 md:p-10">
           <SalonWebBookingFlow
             variant="page"
             salonId={salonId}

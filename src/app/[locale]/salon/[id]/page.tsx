@@ -312,7 +312,7 @@ export default function SalonSharePage() {
         />
       ))}
 
-      <div className="relative z-10 container mx-auto px-4 py-8 md:py-16">
+      <div className="relative z-10 container mx-auto px-2 py-8 md:py-16">
         {/* Header avec nom du salon */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -650,11 +650,11 @@ export default function SalonSharePage() {
         >
           <div className="bg-white/80 backdrop-blur-lg border border-[#53745D]/20 rounded-2xl p-8 shadow-lg mb-6">
             <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-4">
-              Réservez vos services
+              Téléchargez l&apos;application korí
             </h3>
             <p className="text-slate-600 mb-6">
-              Ouvrez l'application korí pour découvrir tous les services et
-              réserver votre rendez-vous.
+              Téléchargez l&apos;application korí pour découvrir tous nos
+              services et réserver vos rendez-vous.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
