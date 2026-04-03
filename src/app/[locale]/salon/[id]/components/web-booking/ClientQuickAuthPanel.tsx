@@ -79,7 +79,7 @@ export function ClientQuickAuthPanel({
 
       const phoneErr = validateOptionalRegistrationPhone(
         phoneDialCode,
-        phoneLocal
+        phoneLocal,
       );
       if (phoneErr) {
         setPhoneFieldError(phoneErr);
@@ -110,7 +110,7 @@ export function ClientQuickAuthPanel({
       if (!result?.token) {
         setError(
           (result as { message?: string })?.message ||
-            "Inscription refusée. Vérifiez vos informations."
+            "Inscription refusée. Vérifiez vos informations.",
         );
         return;
       }
@@ -121,7 +121,7 @@ export function ClientQuickAuthPanel({
       });
       if (sign?.error) {
         setError(
-          "Compte créé mais connexion automatique échouée. Connectez-vous manuellement."
+          "Compte créé mais connexion automatique échouée. Connectez-vous manuellement.",
         );
         return;
       }
@@ -144,46 +144,11 @@ export function ClientQuickAuthPanel({
           {error}
         </p>
       )}
-      <Tabs defaultValue="login" className="w-full">
+      <Tabs defaultValue="register" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Connexion</TabsTrigger>
           <TabsTrigger value="register">Inscription</TabsTrigger>
+          <TabsTrigger value="login">Connexion</TabsTrigger>
         </TabsList>
-        <TabsContent value="login" className="space-y-3 pt-2">
-          <form onSubmit={handleLogin} className="space-y-3">
-            <div>
-              <Label htmlFor="wb-login-email">Email</Label>
-              <Input
-                id="wb-login-email"
-                type="email"
-                autoComplete="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="wb-login-password">Mot de passe</Label>
-              <Input
-                id="wb-login-password"
-                type="password"
-                autoComplete="current-password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Se connecter"
-              )}
-            </Button>
-          </form>
-        </TabsContent>
         <TabsContent value="register" className="space-y-3 pt-2">
           <form onSubmit={handleRegister} className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
@@ -262,6 +227,41 @@ export function ClientQuickAuthPanel({
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 "Créer mon compte"
+              )}
+            </Button>
+          </form>
+        </TabsContent>
+        <TabsContent value="login" className="space-y-3 pt-2">
+          <form onSubmit={handleLogin} className="space-y-3">
+            <div>
+              <Label htmlFor="wb-login-email">Email</Label>
+              <Input
+                id="wb-login-email"
+                type="email"
+                autoComplete="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="wb-login-password">Mot de passe</Label>
+              <Input
+                id="wb-login-password"
+                type="password"
+                autoComplete="current-password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+                className="mt-1"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Se connecter"
               )}
             </Button>
           </form>
