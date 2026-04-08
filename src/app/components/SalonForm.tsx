@@ -28,6 +28,77 @@ import { z } from "zod";
 
 import { DAYS, SALON_TYPES, TIMEZONES } from "@/utils/constants";
 
+const OPENING_HOUR_KEYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+] as const;
+
+type OpeningHourKey = (typeof OPENING_HOUR_KEYS)[number];
+
+/** Un jour est « ouvert » seulement si open et close sont des chaînes non vides (API peut envoyer {}, "", null). */
+function normalizeDaySlot(
+  day: unknown,
+): { open: string; close: string } | null {
+  if (day == null) {
+    return null;
+  }
+  if (typeof day !== "object") {
+    return null;
+  }
+  const o = day as { open?: unknown; close?: unknown };
+  const open = String(o.open ?? "").trim();
+  const close = String(o.close ?? "").trim();
+  if (!open || !close) {
+    return null;
+  }
+  return { open, close };
+}
+
+function normalizeOpeningHoursFromApi(
+  raw: unknown,
+): Record<OpeningHourKey, { open: string; close: string } | null> {
+  const src =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const result = {} as Record<
+    OpeningHourKey,
+    { open: string; close: string } | null
+  >;
+  for (const key of OPENING_HOUR_KEYS) {
+    result[key] = normalizeDaySlot(src[key]);
+  }
+  return result;
+}
+
+function isDayScheduleEnabled(dayValue: unknown): boolean {
+  return normalizeDaySlot(dayValue) !== null;
+}
+
+const emptyOpeningHours = (): Record<
+  OpeningHourKey,
+  { open: string; close: string } | null
+> => ({
+  monday: null,
+  tuesday: null,
+  wednesday: null,
+  thursday: null,
+  friday: null,
+  saturday: null,
+  sunday: null,
+});
+
+const openingHoursDaySchema = z
+  .object({
+    open: z.string(),
+    close: z.string(),
+  })
+  .nullable()
+  .optional();
+
 const salonFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   description: z.string().optional(),
@@ -48,57 +119,19 @@ const salonFormSchema = z.object({
     province: z.string().optional(),
     country: z.string().min(1, "Le pays est requis"),
   }),
-  openingHours: z.object({
-    monday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-    tuesday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-    wednesday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-    thursday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-    friday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-    saturday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-    sunday: z
-      .object({
-        open: z.string(),
-        close: z.string(),
-      })
-      .nullable()
-      .optional(),
-  }),
+  // Pré-normalise les créneaux (RHF peut fusionner parent null + sous-champs vides → objets invalides).
+  openingHours: z.preprocess(
+    (val) => normalizeOpeningHoursFromApi(val),
+    z.object({
+      monday: openingHoursDaySchema,
+      tuesday: openingHoursDaySchema,
+      wednesday: openingHoursDaySchema,
+      thursday: openingHoursDaySchema,
+      friday: openingHoursDaySchema,
+      saturday: openingHoursDaySchema,
+      sunday: openingHoursDaySchema,
+    }),
+  ),
 });
 
 export type SalonFormValues = z.infer<typeof salonFormSchema>;
@@ -134,50 +167,38 @@ export function SalonForm({
         province: "",
         country: "Canada",
       },
-      openingHours: {
-        monday: null,
-        tuesday: null,
-        wednesday: null,
-        thursday: null,
-        friday: null,
-        saturday: null,
-        sunday: null,
-      },
+      openingHours: emptyOpeningHours(),
     },
   });
 
   useEffect(() => {
-    if (salon) {
-      form.reset({
-        name: salon.name || "",
-        description: salon.description || "",
-        phone: salon.phone || "",
-        email: salon.email || "",
-        website: salon.website || "",
-        salonTypes: salon.salonTypes || [],
-        timezone: salon.timezone || "America/Toronto",
-        offersHomeService: salon.offersHomeService || false,
-        isActive: salon.isActive !== undefined ? salon.isActive : true,
-        isVerified: salon.isVerified !== undefined ? salon.isVerified : false,
-        address: {
-          street: salon.address?.street || "",
-          city: salon.address?.city || "",
-          postalCode: salon.address?.postalCode || "",
-          province: salon.address?.province || "",
-          country: salon.address?.country || "Canada",
-        },
-        openingHours: salon.openingHours || {
-          monday: null,
-          tuesday: null,
-          wednesday: null,
-          thursday: null,
-          friday: null,
-          saturday: null,
-          sunday: null,
-        },
-      });
+    if (!salon?.id) {
+      return;
     }
-  }, [salon, form]);
+    form.reset({
+      name: salon.name || "",
+      description: salon.description || "",
+      phone: salon.phone || "",
+      email: salon.email || "",
+      website: salon.website || "",
+      salonTypes: salon.salonTypes || [],
+      timezone: salon.timezone || "America/Toronto",
+      offersHomeService: salon.offersHomeService || false,
+      isActive: salon.isActive !== undefined ? salon.isActive : true,
+      isVerified: salon.isVerified !== undefined ? salon.isVerified : false,
+      address: {
+        street: salon.address?.street || "",
+        city: salon.address?.city || "",
+        postalCode: salon.address?.postalCode || "",
+        province: salon.address?.province || "",
+        country: salon.address?.country || "Canada",
+      },
+      openingHours: normalizeOpeningHoursFromApi(salon.openingHours),
+    });
+    // Reset uniquement au changement de salon (`id`). Ne pas lister `salon.*` : évite un reset à chaque re-fetch React Query.
+    // `form` est inclus pour une closure correcte avec react-hook-form (référence stable).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: pas de reset sur chaque nouvelle référence `salon`
+  }, [salon?.id, form]);
 
   const handleSubmit = async (values: SalonFormValues) => {
     // Nettoyer les valeurs
@@ -192,8 +213,8 @@ export function SalonForm({
       openingHours: Object.fromEntries(
         Object.entries(values.openingHours).map(([key, value]) => [
           key,
-          value || null,
-        ])
+          normalizeDaySlot(value),
+        ]),
       ),
     };
 
@@ -332,8 +353,8 @@ export function SalonForm({
                                     : field.onChange(
                                         field.value?.filter(
                                           (value: string) =>
-                                            value !== type.value
-                                        )
+                                            value !== type.value,
+                                        ),
                                       );
                                 }}
                               />
@@ -469,7 +490,7 @@ export function SalonForm({
           <CardContent className="space-y-4">
             {DAYS.map((day) => {
               const dayValue = form.watch(`openingHours.${day.key}` as any);
-              const isEnabled = dayValue !== null && dayValue !== undefined;
+              const isEnabled = isDayScheduleEnabled(dayValue);
 
               return (
                 <div key={day.key} className="flex items-center gap-4">
@@ -650,8 +671,8 @@ export function SalonForm({
             {isSubmitting
               ? "Enregistrement..."
               : salon
-              ? "Mettre à jour"
-              : "Créer"}
+                ? "Mettre à jour"
+                : "Créer"}
           </Button>
         </div>
       </form>
