@@ -71,10 +71,7 @@ function BookingCard({
         <div>
           <p className="font-semibold text-slate-900">
             {salonLink ? (
-              <Link
-                href={salonLink}
-                className="text-[#53745D] hover:underline"
-              >
+              <Link href={salonLink} className="text-[#53745D] hover:underline">
                 {booking.salon?.name || "Salon"}
               </Link>
             ) : (
@@ -87,7 +84,7 @@ function BookingCard({
           <p className="text-sm text-slate-700 mt-2">
             <span className="font-medium">
               {dayjs(booking.appointmentStartDateTime).format(
-                "ddd D MMM YYYY · HH:mm"
+                "ddd D MMM YYYY · HH:mm",
               )}
             </span>
             {" — "}
