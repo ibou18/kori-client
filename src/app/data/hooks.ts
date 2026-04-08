@@ -500,6 +500,8 @@ export const useGetSalons = (params?: {
   salonType?: string;
   city?: string;
   search?: string;
+  isActive?: boolean;
+  isVerified?: boolean;
 }) => {
   return useQuery({
     queryKey: [GET_SALONS, params],

@@ -9,7 +9,9 @@ import { message } from "antd";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -39,8 +41,19 @@ export default function SalonsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [cityDraft, setCityDraft] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+
+  useEffect(() => {
+    const t = setTimeout(() => setCityFilter(cityDraft.trim()), 400);
+    return () => clearTimeout(t);
+  }, [cityDraft]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [cityFilter]);
 
   // Calculer limit et offset pour la pagination côté serveur
   const limit = itemsPerPage;
@@ -52,10 +65,15 @@ export default function SalonsPage() {
     offset: number;
     isActive?: boolean;
     isVerified?: boolean;
+    city?: string;
   } = {
     limit,
     offset,
   };
+
+  if (cityFilter) {
+    apiParams.city = cityFilter;
+  }
 
   // Appliquer les filtres côté serveur
   if (statusFilter === "active") {
@@ -112,9 +130,7 @@ export default function SalonsPage() {
     {
       key: "name",
       header: "Nom",
-      render: (salon: Salon) => (
-        <div className="font-medium">{salon.name}</div>
-      ),
+      render: (salon: Salon) => <div className="font-medium">{salon.name}</div>,
     },
     {
       key: "contact",
@@ -140,7 +156,9 @@ export default function SalonsPage() {
       header: "Note",
       render: (salon: Salon) => (
         <div className="flex items-center gap-2">
-          <span className="font-medium">{salon.rating?.toFixed(1) || "0.0"}</span>
+          <span className="font-medium">
+            {salon.rating?.toFixed(1) || "0.0"}
+          </span>
           <span className="text-xs text-gray-500">
             ({salon.reviewCount || 0} avis)
           </span>
@@ -169,23 +187,40 @@ export default function SalonsPage() {
   ];
 
   const filterComponent = (
-    <Select 
-      value={statusFilter} 
-      onValueChange={(value) => {
-        setStatusFilter(value);
-        setCurrentPage(1); // Réinitialiser à la page 1 lors du changement de filtre
-      }}
-    >
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Filtrer par statut" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">Tous les salons</SelectItem>
-        <SelectItem value="active">Actifs</SelectItem>
-        <SelectItem value="inactive">Inactifs</SelectItem>
-        <SelectItem value="unverified">Non vérifiés</SelectItem>
-      </SelectContent>
-    </Select>
+    <>
+      <Select
+        value={statusFilter}
+        onValueChange={(value) => {
+          setStatusFilter(value);
+          setCurrentPage(1);
+        }}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Filtrer par statut" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Tous les salons</SelectItem>
+          <SelectItem value="active">Actifs</SelectItem>
+          <SelectItem value="inactive">Inactifs</SelectItem>
+          <SelectItem value="unverified">Non vérifiés</SelectItem>
+        </SelectContent>
+      </Select>
+      <div className="flex flex-row gap-1.5 min-w-[200px] items-center">
+        <Label
+          htmlFor="admin-salons-city"
+          className="text-xs text-muted-foreground"
+        >
+          Ville
+        </Label>
+        <Input
+          id="admin-salons-city"
+          placeholder="Ex. Montréal, Gatineau…"
+          value={cityDraft}
+          onChange={(e) => setCityDraft(e.target.value)}
+          className="w-[220px]"
+        />
+      </div>
+    </>
   );
 
   return (
@@ -214,4 +249,3 @@ export default function SalonsPage() {
     />
   );
 }
-
