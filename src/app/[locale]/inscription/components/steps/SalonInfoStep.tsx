@@ -237,7 +237,9 @@ export function SalonInfoStep({
           formData.salonAddress?.postalCode && (
             <>
               <div>
-                <Label htmlFor="apartment">Appartement / Suite (optionnel)</Label>
+                <Label htmlFor="apartment">
+                  Appartement / Suite (optionnel)
+                </Label>
                 <Input
                   id="apartment"
                   placeholder="Apt 4B"
@@ -245,12 +247,8 @@ export function SalonInfoStep({
                   onChange={(e) =>
                     updateFormData({
                       salonAddress: {
-                        ...formData.salonAddress,
+                        ...formData.salonAddress!,
                         apartment: e.target.value,
-                        street: formData.salonAddress?.street || "",
-                        city: formData.salonAddress?.city || "",
-                        postalCode: formData.salonAddress?.postalCode || "",
-                        country: formData.salonAddress?.country || "Canada",
                       } as FormData["salonAddress"],
                     })
                   }
@@ -268,11 +266,8 @@ export function SalonInfoStep({
                     onChange={(e) =>
                       updateFormData({
                         salonAddress: {
-                          ...formData.salonAddress,
+                          ...formData.salonAddress!,
                           city: e.target.value,
-                          street: formData.salonAddress?.street || "",
-                          postalCode: formData.salonAddress?.postalCode || "",
-                          country: formData.salonAddress?.country || "Canada",
                         } as FormData["salonAddress"],
                       })
                     }
@@ -288,11 +283,8 @@ export function SalonInfoStep({
                     onChange={(e) =>
                       updateFormData({
                         salonAddress: {
-                          ...formData.salonAddress,
+                          ...formData.salonAddress!,
                           postalCode: e.target.value,
-                          street: formData.salonAddress?.street || "",
-                          city: formData.salonAddress?.city || "",
-                          country: formData.salonAddress?.country || "Canada",
                         } as FormData["salonAddress"],
                       })
                     }
@@ -309,11 +301,8 @@ export function SalonInfoStep({
                   onChange={(e) =>
                     updateFormData({
                       salonAddress: {
-                        ...formData.salonAddress,
+                        ...formData.salonAddress!,
                         country: e.target.value,
-                        street: formData.salonAddress?.street || "",
-                        city: formData.salonAddress?.city || "",
-                        postalCode: formData.salonAddress?.postalCode || "",
                       } as FormData["salonAddress"],
                     })
                   }

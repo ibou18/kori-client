@@ -20,16 +20,46 @@ interface GooglePlacePrediction {
   };
 }
 
+/** Réponse Places Details — `location` est en général { lat, lng } numériques (API REST). */
 interface GooglePlaceDetails {
   place_id: string;
   formatted_address: string;
   address_components: AddressComponent[];
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
+  geometry?: {
+    location?: {
+      lat?: number;
+      lng?: number;
     };
   };
+}
+
+/**
+ * Extrait lat/lng depuis la géométrie Google (tolère champs optionnels ou formats atypiques).
+ */
+function extractLatLngFromGeometry(
+  details: GooglePlaceDetails,
+): { lat: number; lng: number } | null {
+  const loc = details.geometry?.location;
+  if (!loc) {
+    return null;
+  }
+  const rawLat = loc.lat;
+  const rawLng = loc.lng;
+  const lat =
+    typeof rawLat === "number" && Number.isFinite(rawLat)
+      ? rawLat
+      : parseFloat(String(rawLat ?? "").replace(",", "."));
+  const lng =
+    typeof rawLng === "number" && Number.isFinite(rawLng)
+      ? rawLng
+      : parseFloat(String(rawLng ?? "").replace(",", "."));
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return null;
+  }
+  return { lat, lng };
 }
 
 export interface AddressData {
@@ -114,42 +144,23 @@ export function GoogleAddressAutocomplete({
       return;
     }
 
-    console.log("🔍 Recherche d'adresses pour:", searchQuery);
     setIsLoading(true);
     try {
-      // Utiliser l'endpoint API proxy pour éviter les problèmes CORS
       const url = `/api/google-places/autocomplete?input=${encodeURIComponent(
         searchQuery.trim()
       )}`;
-      console.log("📡 Appel API:", url);
-      
       const response = await fetch(url);
       const data = await response.json();
 
-      console.log("📥 Réponse API:", data);
-
       if (data.success && data.predictions) {
-        console.log(`✅ ${data.predictions.length} prédictions trouvées`);
         setPredictions(data.predictions);
         setShowPredictions(true);
       } else {
-        console.warn("⚠️ Aucune prédiction ou erreur:", data.error || data);
         setPredictions([]);
         setShowPredictions(false);
-        
-        // Afficher un message d'erreur spécifique pour les erreurs de configuration
-        if (data.error) {
-          console.warn("⚠️ Erreur recherche adresses:", data.error);
-          
-          // Si c'est une erreur de facturation Google, afficher un message plus clair
-          if (data.error.includes("Billing") || data.error.includes("REQUEST_DENIED")) {
-            console.error("❌ Google Places API nécessite la facturation activée sur Google Cloud Console");
-            console.error("❌ Veuillez activer la facturation sur: https://console.cloud.google.com/project/_/billing/enable");
-          }
-        }
       }
     } catch (error) {
-      console.error("❌ Erreur recherche adresses:", error);
+      console.error("Erreur recherche adresses:", error);
       setPredictions([]);
       setShowPredictions(false);
     } finally {
@@ -169,14 +180,11 @@ export function GoogleAddressAutocomplete({
       const data = await response.json();
 
       if (data.success && data.result) {
-        return data.result;
-      }
-      if (data.error) {
-        console.warn("⚠️ Erreur détails adresse:", data.error);
+        return data.result as GooglePlaceDetails;
       }
       return null;
     } catch (error) {
-      console.error("❌ Erreur détails adresse:", error);
+      console.error("Erreur détails adresse:", error);
       return null;
     }
   };
@@ -235,14 +243,16 @@ export function GoogleAddressAutocomplete({
       country = countryMap[countryCode] || countryComponent.long_name;
     }
 
+    const coords = extractLatLngFromGeometry(details);
+
     return {
       street,
       city,
       postalCode,
       country,
       apartment,
-      latitude: details.geometry.location.lat,
-      longitude: details.geometry.location.lng,
+      latitude: coords?.lat,
+      longitude: coords?.lng,
       formattedAddress: details.formatted_address,
     };
   };
@@ -285,7 +295,7 @@ export function GoogleAddressAutocomplete({
         onAddressSelect(addressData);
       }
     } catch (error) {
-      console.error("❌ Erreur sélection adresse:", error);
+      console.error("Erreur sélection adresse:", error);
     } finally {
       setIsLoading(false);
     }

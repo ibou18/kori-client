@@ -243,6 +243,36 @@ export function ProviderRegisterForm() {
       );
     };
 
+    const rawAddress = data.salonAddress;
+    const gps =
+      rawAddress &&
+      rawAddress.latitude != null &&
+      rawAddress.longitude != null &&
+      Number.isFinite(Number(rawAddress.latitude)) &&
+      Number.isFinite(Number(rawAddress.longitude))
+        ? {
+            latitude: Number(rawAddress.latitude),
+            longitude: Number(rawAddress.longitude),
+          }
+        : null;
+
+    const addressPayload =
+      rawAddress != null
+        ? {
+            street: rawAddress.street,
+            city: rawAddress.city,
+            postalCode: rawAddress.postalCode,
+            country: rawAddress.country,
+            apartment: rawAddress.apartment,
+            ...(gps ?? {}),
+          }
+        : {
+            street: "À définir",
+            city: "À définir",
+            postalCode: "À définir",
+            country: "Canada",
+          };
+
     return {
       user: {
         email: data.email,
@@ -255,12 +285,7 @@ export function ProviderRegisterForm() {
       salon: {
         name: data.salonName,
         description: data.salonDescription,
-        address: data.salonAddress || {
-          street: "À définir",
-          city: "À définir",
-          postalCode: "À définir",
-          country: "Canada",
-        },
+        address: addressPayload,
         phone: data.countryCode + data.phone,
         email: data.email,
         salonTypes: getSalonTypes(data.services),
@@ -298,12 +323,9 @@ export function ProviderRegisterForm() {
 
     try {
       const salonPayload = transformFormDataToSalonPayload(formData);
-      console.log("📤 Payload salon:", salonPayload);
 
       registerSalon(salonPayload, {
         onSuccess: async (data) => {
-          console.log("✅ Salon créé avec succès:", data);
-
           // Upload des images si elles existent
           if (formData.salonImages.length > 0 && data?.data?.salon?.id) {
             try {
@@ -332,10 +354,8 @@ export function ProviderRegisterForm() {
               });
 
               if (uploadResponse) {
-                console.log("✅ Images uploadées avec succès:", uploadResponse);
                 toast.success("Images uploadées avec succès");
               } else {
-                console.warn("⚠️ Aucune réponse lors de l'upload des images");
                 toast.warning("Les images n'ont pas pu être uploadées", {
                   description:
                     "Vous pourrez les ajouter plus tard depuis votre espace.",
