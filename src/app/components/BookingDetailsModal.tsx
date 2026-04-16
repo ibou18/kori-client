@@ -210,21 +210,21 @@ export function BookingDetailsModal({
           </div>
           {booking.payment && (
             <>
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Sous-total</span>
                 <span className="text-sm font-medium text-gray-900">
                   {formatCurrency(booking.payment.subtotal)}
                 </span>
-              </div>
-              {booking.payment.tax > 0 && (
+              </div> */}
+              {/* {booking.payment.tax > 0 && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Taxes</span>
                   <span className="text-sm font-medium text-gray-900">
                     {formatCurrency(booking.payment.tax)}
                   </span>
                 </div>
-              )}
-              {booking.payment.depositAmount !== undefined && (
+              )} */}
+              {/* {booking.payment.depositAmount !== undefined && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">
                     Frais de reservation payes
@@ -233,7 +233,7 @@ export function BookingDetailsModal({
                     {formatCurrency(booking.payment.depositAmount)}
                   </span>
                 </div>
-              )}
+              )} */}
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">
                   Reste a payer au salon
@@ -247,7 +247,9 @@ export function BookingDetailsModal({
                   Total affiche (taxes + frais)
                 </span>
                 <span className="text-sm font-bold text-[#53745D]">
-                  {formatCurrency(booking.payment.total)}
+                  {formatCurrency(
+                    booking.payment.subtotal + (booking.actualPaidAmount || 0),
+                  )}
                 </span>
               </div>
               {booking.actualPaidAmount !== undefined &&

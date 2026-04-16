@@ -112,7 +112,7 @@ export default function BookingsPage() {
   const handleDelete = () => {
     // TODO: Implémenter la suppression de réservation
     message.warning(
-      "La suppression de réservation n'est pas encore disponible"
+      "La suppression de réservation n'est pas encore disponible",
     );
   };
 
@@ -191,7 +191,9 @@ export default function BookingsPage() {
       header: "Montant total",
       render: (booking: Booking) => (
         <div className="text-sm font-medium tabular-nums">
-          {formatCadFromCents(booking.payment?.total)}
+          {formatCadFromCents(
+            (booking.payment?.subtotal || 0) + (booking.actualPaidAmount || 0),
+          )}
         </div>
       ),
     },
