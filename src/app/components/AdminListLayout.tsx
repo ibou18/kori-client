@@ -57,6 +57,15 @@ interface AdminListLayoutProps<T> {
   currentPage?: number;
   onPageChange?: (page: number) => void;
   serverSidePagination?: boolean;
+  /**
+   * Recherche gérée par le parent (ex. filtre API). Sans filtre local sur `data` :
+   * indispensable quand `serverSidePagination` ne charge qu’une page.
+   */
+  controlledSearch?: {
+    value: string;
+    onChange: (value: string) => void;
+  };
+  searchPlaceholder?: string;
 }
 
 export function AdminListLayout<T extends { id: string }>({
@@ -77,14 +86,19 @@ export function AdminListLayout<T extends { id: string }>({
   currentPage: controlledCurrentPage,
   onPageChange,
   serverSidePagination = false,
+  controlledSearch,
+  searchPlaceholder,
 }: AdminListLayoutProps<T>) {
   const [deleteItem, setDeleteItem] = useState<T | null>(null);
 
-  // Recherche
-  const { searchQuery, setSearchQuery, filteredData } = useSearch({
+  // Recherche locale, sauf si le parent pilote (ex. recherche côté API)
+  const localSearch = useSearch({
     data,
     searchKeys: searchKeys as string[],
   });
+  const searchQuery = controlledSearch?.value ?? localSearch.searchQuery;
+  const setSearchQuery = controlledSearch?.onChange ?? localSearch.setSearchQuery;
+  const filteredData = controlledSearch ? data : localSearch.filteredData;
 
   // Pagination côté client ou serveur
   const clientPagination = usePagination({
@@ -139,7 +153,10 @@ export function AdminListLayout<T extends { id: string }>({
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder={`Rechercher dans ${title.toLowerCase()}...`}
+              placeholder={
+                searchPlaceholder ??
+                `Rechercher dans ${title.toLowerCase()}...`
+              }
             />
           </div>
           <div className="text-sm text-gray-600">

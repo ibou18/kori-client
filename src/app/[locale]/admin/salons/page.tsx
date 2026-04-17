@@ -55,6 +55,18 @@ export default function SalonsPage() {
     setCurrentPage(1);
   }, [cityFilter]);
 
+  const [searchDraft, setSearchDraft] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchDraft.trim()), 400);
+    return () => clearTimeout(t);
+  }, [searchDraft]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
+
   // Calculer limit et offset pour la pagination côté serveur
   const limit = itemsPerPage;
   const offset = (currentPage - 1) * itemsPerPage;
@@ -66,6 +78,7 @@ export default function SalonsPage() {
     isActive?: boolean;
     isVerified?: boolean;
     city?: string;
+    search?: string;
   } = {
     limit,
     offset,
@@ -73,6 +86,10 @@ export default function SalonsPage() {
 
   if (cityFilter) {
     apiParams.city = cityFilter;
+  }
+
+  if (debouncedSearch) {
+    apiParams.search = debouncedSearch;
   }
 
   // Appliquer les filtres côté serveur
@@ -190,7 +207,7 @@ export default function SalonsPage() {
     <>
       <Select
         value={statusFilter}
-        onValueChange={(value) => {
+        onValueChange={(value: string) => {
           setStatusFilter(value);
           setCurrentPage(1);
         }}
@@ -230,6 +247,11 @@ export default function SalonsPage() {
       isLoading={isLoading}
       columns={columns}
       searchKeys={["name", "email", "phone"]}
+      controlledSearch={{
+        value: searchDraft,
+        onChange: setSearchDraft,
+      }}
+      searchPlaceholder="Nom, email ou téléphone (chiffres sans espaces possibles)…"
       onAdd={handleAdd}
       onView={handleView}
       onEdit={handleEdit}
