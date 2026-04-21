@@ -239,11 +239,15 @@ export function WebBookingPayPanel({
             </div>
           )}
           <div className="flex justify-between pt-1 border-t border-slate-100">
-            <span className="font-medium text-slate-800">
-              Sous-total prestation
-            </span>
+            <span className="font-medium text-slate-800">Total</span>
             <span className="font-semibold">
-              {clientSubtotalDollars.toFixed(2)} $
+              {taxLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+              ) : totalAcompte != null ? (
+                `${(clientSubtotalDollars + totalAcompte).toFixed(2)} $`
+              ) : (
+                `${(clientSubtotalDollars + platformFee).toFixed(2)} $`
+              )}
             </span>
           </div>
           <div className="flex justify-between gap-3 pt-1 border-t border-slate-200">

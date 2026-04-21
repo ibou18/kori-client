@@ -36,7 +36,7 @@ export default function ServiceReservationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const backHref = `/${locale}/service/${salonId}/${serviceId}`;
+  const backHref = `/${locale}/salon/${salonId}`;
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +115,7 @@ export default function ServiceReservationPage() {
           href={backHref}
           className="text-[#53745D] font-semibold underline underline-offset-2"
         >
-          Retour à la fiche service
+          Retour au salon
         </Link>
       </div>
     );

@@ -2,10 +2,7 @@
 
 import { useGetPlatformConfig } from "@/app/data/hooks";
 import { Button } from "@/components/ui/button";
-import {
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Check, ChevronLeft } from "lucide-react";
@@ -60,7 +57,7 @@ export function SalonWebBookingFlow({
   const [step, setStep] = useState<WebBookingStep>("auth");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SalonBookingTimeSlot | null>(
-    null
+    null,
   );
   const [isHomeService, setIsHomeService] = useState(false);
   const [homeServiceAddress, setHomeServiceAddress] =
@@ -128,7 +125,7 @@ export function SalonWebBookingFlow({
     if (!active || !service?.id) return;
     const mode = getBookingLocationMode(
       salonOffersHomeService,
-      service.availableLocations
+      service.availableLocations,
     );
     if (mode === "home_only") {
       setIsHomeService(true);
@@ -154,8 +151,7 @@ export function SalonWebBookingFlow({
         ? "Option et créneau"
         : "Paiement de l'acompte";
 
-  const stepIndex =
-    step === "auth" ? 0 : step === "slot" ? 1 : 2;
+  const stepIndex = step === "auth" ? 0 : step === "slot" ? 1 : 2;
 
   const stepLabels = ["Compte", "Créneau", "Paiement"];
 
@@ -179,7 +175,7 @@ export function SalonWebBookingFlow({
             className="inline-flex items-center gap-2 text-sm text-[#53745D] font-medium hover:underline mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour au service
+            Retour au salon
           </Link>
         ) : null}
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
@@ -215,7 +211,11 @@ export function SalonWebBookingFlow({
                         : "bg-slate-200 text-slate-600"
                   }`}
                 >
-                  {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
+                  {done ? (
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  ) : (
+                    i + 1
+                  )}
                 </span>
                 {label}
               </li>
