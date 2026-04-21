@@ -7,7 +7,6 @@ import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatSalonPriceDollars } from "./components/web-booking/pricing";
-import { ServiceDetailModal } from "./components/ServiceDetailModal";
 
 // idsalon=cmipf1upw000j6fo8nni0kaes
 
@@ -114,9 +113,6 @@ export default function SalonSharePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [hasTriedDeepLink, setHasTriedDeepLink] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null,
-  );
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
     null,
   );
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
@@ -466,7 +462,11 @@ export default function SalonSharePage() {
                       <motion.button
                         key={service.id}
                         type="button"
-                        onClick={() => setSelectedServiceId(service.id)}
+                        onClick={() =>
+                          router.push(
+                            `/${locale}/service/${salonId}/${service.id}/reservation`,
+                          )
+                        }
                         className="text-left bg-white border border-[#53745D]/20 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:border-[#53745D]/35 transition-all w-[min(calc(100vw-2.5rem),300px)] sm:w-[300px] flex-shrink-0 flex flex-col self-stretch min-h-0"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -572,18 +572,6 @@ export default function SalonSharePage() {
               </div>
             </div>
           </motion.div>
-        )}
-
-        {/* Modal détail service */}
-        {selectedServiceId && (
-          <ServiceDetailModal
-            salonId={salonId}
-            serviceId={selectedServiceId}
-            salonName={salon?.name}
-            salonProvince={salon?.address?.province}
-            locale={locale}
-            onClose={() => setSelectedServiceId(null)}
-          />
         )}
 
         {/* A propos */}
