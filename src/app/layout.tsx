@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
+import Script from "next/script";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 
@@ -81,6 +82,11 @@ export default async function RootLayout({
               <StyledComponentsRegistry>
                 <Providers session={session}>
                   <Analytics />
+                  <Script
+                    defer
+                    src="https://wtrack.ca/script.js"
+                    data-website-id="648503ff-36e1-4622-b736-05c51f7fd291"
+                  />
                   {children}
                   <Toaster />
                 </Providers>
