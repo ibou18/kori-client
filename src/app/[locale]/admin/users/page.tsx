@@ -34,8 +34,8 @@ import dayjs from "dayjs";
 import { Building2, Mail, Phone, Trash2, User as UserIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -58,8 +58,40 @@ interface User {
 export default function UsersPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Filtres, recherche et page — initialisés depuis l'URL au montage
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [urlInitialized, setUrlInitialized] = useState(false);
+
+  // Lecture de l'URL au montage (côté client uniquement)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setRoleFilter(params.get("role") || "all");
+    setStatusFilter(params.get("status") || "all");
+    setSearchQuery(params.get("q") || "");
+    setCurrentPage(Number(params.get("page")) || 1);
+    setUrlInitialized(true);
+  }, []);
+
+  // Synchronisation de l'état vers l'URL (après initialisation, avec debounce pour la recherche)
+  useEffect(() => {
+    if (!urlInitialized) return;
+    const t = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (roleFilter !== "all") params.set("role", roleFilter);
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (searchQuery) params.set("q", searchQuery);
+      if (currentPage > 1) params.set("page", String(currentPage));
+      const qs = params.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [roleFilter, statusFilter, searchQuery, currentPage, urlInitialized, pathname, router]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
   const [isSalonModalOpen, setIsSalonModalOpen] = useState(false);
@@ -378,9 +410,24 @@ export default function UsersPage() {
     },
   ];
 
+  const handleRoleFilterChange = (value: string) => {
+    setRoleFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
   const filterComponent = (
     <div className="flex flex-wrap gap-4">
-      <Select value={roleFilter} onValueChange={setRoleFilter}>
+      <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filtrer par rôle" />
         </SelectTrigger>
@@ -392,7 +439,7 @@ export default function UsersPage() {
           <SelectItem value="ADMIN">Administrateurs</SelectItem>
         </SelectContent>
       </Select>
-      <Select value={statusFilter} onValueChange={setStatusFilter}>
+      <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filtrer par statut" />
         </SelectTrigger>
@@ -413,6 +460,10 @@ export default function UsersPage() {
         isLoading={isLoading}
         columns={columns}
         searchKeys={["firstName", "lastName", "email", "phone", "role"]}
+        controlledSearch={{ value: searchQuery, onChange: handleSearchChange }}
+        currentPage={currentPage}
+        onPageChange={(page) => setCurrentPage(page)}
+        filterKey={`${roleFilter}-${statusFilter}`}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}

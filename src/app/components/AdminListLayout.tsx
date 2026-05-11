@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Edit, Eye, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Column<T> {
   key: string;
@@ -53,10 +53,19 @@ interface AdminListLayoutProps<T> {
   filterComponent?: React.ReactNode;
   // Pagination côté serveur
   totalItems?: number;
-  /** Page courante (1-based), à lier à l’état parent quand `serverSidePagination` est true */
+  /**
+   * Page courante (1-based). En mode server-side, obligatoire.
+   * En mode client-side, si fourni, la tranche affichée est calculée par le parent
+   * (pratique pour synchroniser la page avec l’URL).
+   */
   currentPage?: number;
   onPageChange?: (page: number) => void;
   serverSidePagination?: boolean;
+  /**
+   * Clé opaque qui, quand elle change, remet la pagination client à la page 1.
+   * Utilisé quand les filtres changent depuis le parent.
+   */
+  filterKey?: string | number;
   /**
    * Recherche gérée par le parent (ex. filtre API). Sans filtre local sur `data` :
    * indispensable quand `serverSidePagination` ne charge qu’une page.
@@ -86,6 +95,7 @@ export function AdminListLayout<T extends { id: string }>({
   currentPage: controlledCurrentPage,
   onPageChange,
   serverSidePagination = false,
+  filterKey,
   controlledSearch,
   searchPlaceholder,
 }: AdminListLayoutProps<T>) {
@@ -100,27 +110,48 @@ export function AdminListLayout<T extends { id: string }>({
   const setSearchQuery = controlledSearch?.onChange ?? localSearch.setSearchQuery;
   const filteredData = controlledSearch ? data : localSearch.filteredData;
 
-  // Pagination côté client ou serveur
+  // Pagination côté client
   const clientPagination = usePagination({
     data: filteredData,
     itemsPerPage,
   });
 
-  // Calculer la pagination selon le mode
-  const currentItems = serverSidePagination
-    ? filteredData
-    : clientPagination.currentItems;
+  // Quand filterKey change, remettre la pagination interne à la page 1
+  // (uniquement en mode client-side sans contrôle externe de la page)
+  useEffect(() => {
+    if (!serverSidePagination && controlledCurrentPage === undefined) {
+      clientPagination.setCurrentPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
+
+  // En mode client-side avec page externe, on calcule la tranche ici
+  const isClientControlled = !serverSidePagination && controlledCurrentPage !== undefined;
+
   const currentPage = serverSidePagination
     ? (controlledCurrentPage ?? 1)
+    : isClientControlled
+    ? controlledCurrentPage
     : clientPagination.currentPage;
+
   const totalPages = serverSidePagination
     ? Math.ceil((totalItems || 0) / itemsPerPage)
-    : clientPagination.totalPages;
+    : Math.ceil(filteredData.length / itemsPerPage);
+
+  const currentItems = serverSidePagination
+    ? filteredData
+    : isClientControlled
+    ? filteredData.slice(
+        (controlledCurrentPage - 1) * itemsPerPage,
+        controlledCurrentPage * itemsPerPage
+      )
+    : clientPagination.currentItems;
 
   const handlePageChange = (page: number) => {
-    if (serverSidePagination && onPageChange) {
+    if (onPageChange) {
       onPageChange(page);
-    } else {
+    }
+    if (!serverSidePagination && !isClientControlled) {
       clientPagination.setCurrentPage(page);
     }
   };
@@ -205,19 +236,6 @@ export function AdminListLayout<T extends { id: string }>({
                 <TableBody>
                   {currentItems.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="text-right">
-                        {onView && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onView(item)}
-                            className="h-8 w-8 p-0 hover:bg-[#F0F4F1] hover:text-[#53745D]"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
-
                       {columns.map((column) => (
                         <TableCell
                           key={column.key}

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -39,33 +39,64 @@ interface Salon {
 export default function SalonsPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [cityDraft, setCityDraft] = useState("");
-  const [cityFilter, setCityFilter] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
+  // État local — initialisé depuis l'URL au montage
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [cityDraft, setCityDraft] = useState(""); // valeur saisie (input)
+  const [cityFilter, setCityFilter] = useState(""); // valeur debounce → API
+  const [searchDraft, setSearchDraft] = useState(""); // valeur saisie (input)
+  const [debouncedSearch, setDebouncedSearch] = useState(""); // valeur debounce → API
+  const [currentPage, setCurrentPage] = useState(1);
+  const [urlInitialized, setUrlInitialized] = useState(false);
+
+  // Lecture de l'URL au montage (côté client uniquement)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initStatus = params.get("status") || "all";
+    const initCity = params.get("city") || "";
+    const initSearch = params.get("q") || "";
+    const initPage = Number(params.get("page")) || 1;
+    setStatusFilter(initStatus);
+    setCityDraft(initCity);
+    setCityFilter(initCity);
+    setSearchDraft(initSearch);
+    setDebouncedSearch(initSearch);
+    setCurrentPage(initPage);
+    setUrlInitialized(true);
+  }, []);
+
+  // Debounce ville → cityFilter
   useEffect(() => {
     const t = setTimeout(() => setCityFilter(cityDraft.trim()), 400);
     return () => clearTimeout(t);
   }, [cityDraft]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [cityFilter]);
-
-  const [searchDraft, setSearchDraft] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
+  // Debounce recherche → debouncedSearch
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchDraft.trim()), 400);
     return () => clearTimeout(t);
   }, [searchDraft]);
 
+  // Reset page quand un filtre ou la recherche change
   useEffect(() => {
+    if (!urlInitialized) return;
     setCurrentPage(1);
-  }, [debouncedSearch]);
+  }, [cityFilter, debouncedSearch, statusFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Synchronisation vers l'URL (uniquement les valeurs debounce, pas les drafts)
+  useEffect(() => {
+    if (!urlInitialized) return;
+    const params = new URLSearchParams();
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (cityFilter) params.set("city", cityFilter);
+    if (debouncedSearch) params.set("q", debouncedSearch);
+    if (currentPage > 1) params.set("page", String(currentPage));
+    const qs = params.toString();
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [statusFilter, cityFilter, debouncedSearch, currentPage, urlInitialized, pathname, router]);
 
   // Calculer limit et offset pour la pagination côté serveur
   const limit = itemsPerPage;
@@ -207,10 +238,7 @@ export default function SalonsPage() {
     <>
       <Select
         value={statusFilter}
-        onValueChange={(value: string) => {
-          setStatusFilter(value);
-          setCurrentPage(1);
-        }}
+        onValueChange={(value: string) => setStatusFilter(value)}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filtrer par statut" />
