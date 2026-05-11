@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 interface UseSearchProps<T> {
   data: T[];
@@ -12,6 +12,16 @@ export function useSearch<T>({
   initialQuery = "",
 }: UseSearchProps<T>) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+
+  // Quand initialQuery arrive avec une valeur non-vide (ex : restore depuis URL après montage),
+  // on synchronise une seule fois.
+  const syncedRef = useRef(false);
+  useEffect(() => {
+    if (!syncedRef.current && initialQuery) {
+      setSearchQuery(initialQuery);
+      syncedRef.current = true;
+    }
+  }, [initialQuery]);
 
   const filteredData = useMemo(() => {
     if (!searchQuery) return data;

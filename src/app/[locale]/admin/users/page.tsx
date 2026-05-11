@@ -118,7 +118,7 @@ export default function UsersPage() {
   // Normaliser les données - gérer les deux formats possibles
   const usersData = Array.isArray(data) ? data : data?.data || [];
 
-  // Filtrer par rôle et statut
+  // Filtrer par rôle et statut (la recherche texte est gérée par AdminListLayout via useSearch)
   const filteredData = usersData.filter((user: User) => {
     if (roleFilter !== "all" && user.role !== roleFilter) return false;
     if (statusFilter !== "all") {
@@ -460,7 +460,8 @@ export default function UsersPage() {
         isLoading={isLoading}
         columns={columns}
         searchKeys={["firstName", "lastName", "email", "phone", "role"]}
-        controlledSearch={{ value: searchQuery, onChange: handleSearchChange }}
+        initialSearchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
         currentPage={currentPage}
         onPageChange={(page) => setCurrentPage(page)}
         filterKey={`${roleFilter}-${statusFilter}`}

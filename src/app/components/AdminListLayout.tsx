@@ -67,14 +67,21 @@ interface AdminListLayoutProps<T> {
    */
   filterKey?: string | number;
   /**
-   * Recherche gérée par le parent (ex. filtre API). Sans filtre local sur `data` :
+   * Recherche gérée par le parent (ex. filtre API côté serveur). Sans filtre local sur `data` :
    * indispensable quand `serverSidePagination` ne charge qu’une page.
    */
   controlledSearch?: {
     value: string;
     onChange: (value: string) => void;
   };
+  /**
+   * Valeur initiale de la barre de recherche (mode client-side uniquement).
+   * Permet de restaurer la recherche depuis l’URL sans passer en mode controlledSearch.
+   */
+  initialSearchQuery?: string;
   searchPlaceholder?: string;
+  /** Callback appelé quand la recherche interne change (pour sync URL en mode client-side). */
+  onSearchChange?: (value: string) => void;
 }
 
 export function AdminListLayout<T extends { id: string }>({
@@ -97,17 +104,28 @@ export function AdminListLayout<T extends { id: string }>({
   serverSidePagination = false,
   filterKey,
   controlledSearch,
+  initialSearchQuery,
   searchPlaceholder,
+  onSearchChange,
 }: AdminListLayoutProps<T>) {
   const [deleteItem, setDeleteItem] = useState<T | null>(null);
 
-  // Recherche locale, sauf si le parent pilote (ex. recherche côté API)
+  // Recherche locale, sauf si le parent pilote (ex. recherche côté API server-side)
   const localSearch = useSearch({
     data,
     searchKeys: searchKeys as string[],
+    initialQuery: initialSearchQuery,
   });
+
   const searchQuery = controlledSearch?.value ?? localSearch.searchQuery;
-  const setSearchQuery = controlledSearch?.onChange ?? localSearch.setSearchQuery;
+
+  const setSearchQuery = controlledSearch
+    ? controlledSearch.onChange
+    : (value: string) => {
+        localSearch.setSearchQuery(value);
+        onSearchChange?.(value);
+      };
+
   const filteredData = controlledSearch ? data : localSearch.filteredData;
 
   // Pagination côté client
