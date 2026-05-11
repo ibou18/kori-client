@@ -134,14 +134,20 @@ export function AdminListLayout<T extends { id: string }>({
     itemsPerPage,
   });
 
-  // Quand filterKey change, remettre la pagination interne à la page 1
-  // (uniquement en mode client-side sans contrôle externe de la page)
+  // Quand filterKey ou la recherche change, remettre la pagination interne à la page 1
   useEffect(() => {
-    if (!serverSidePagination && controlledCurrentPage === undefined) {
+    if (!serverSidePagination) {
       clientPagination.setCurrentPage(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey]);
+
+  useEffect(() => {
+    if (!serverSidePagination && !controlledSearch) {
+      clientPagination.setCurrentPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   // En mode client-side avec page externe, on calcule la tranche ici
   const isClientControlled = !serverSidePagination && controlledCurrentPage !== undefined;

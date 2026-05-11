@@ -60,11 +60,10 @@ export default function UsersPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Filtres, recherche et page — initialisés depuis l'URL au montage
+  // Filtres — initialisés depuis l'URL au montage
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [urlInitialized, setUrlInitialized] = useState(false);
 
   // Lecture de l'URL au montage (côté client uniquement)
@@ -73,11 +72,10 @@ export default function UsersPage() {
     setRoleFilter(params.get("role") || "all");
     setStatusFilter(params.get("status") || "all");
     setSearchQuery(params.get("q") || "");
-    setCurrentPage(Number(params.get("page")) || 1);
     setUrlInitialized(true);
   }, []);
 
-  // Synchronisation de l'état vers l'URL (après initialisation, avec debounce pour la recherche)
+  // Synchronisation vers l'URL (debounce 300 ms pour la recherche)
   useEffect(() => {
     if (!urlInitialized) return;
     const t = setTimeout(() => {
@@ -85,12 +83,11 @@ export default function UsersPage() {
       if (roleFilter !== "all") params.set("role", roleFilter);
       if (statusFilter !== "all") params.set("status", statusFilter);
       if (searchQuery) params.set("q", searchQuery);
-      if (currentPage > 1) params.set("page", String(currentPage));
       const qs = params.toString();
       router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
     }, 300);
     return () => clearTimeout(t);
-  }, [roleFilter, statusFilter, searchQuery, currentPage, urlInitialized, pathname, router]);
+  }, [roleFilter, statusFilter, searchQuery, urlInitialized, pathname, router]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInvitationModalOpen, setIsInvitationModalOpen] = useState(false);
@@ -412,17 +409,14 @@ export default function UsersPage() {
 
   const handleRoleFilterChange = (value: string) => {
     setRoleFilter(value);
-    setCurrentPage(1);
   };
 
   const handleStatusFilterChange = (value: string) => {
     setStatusFilter(value);
-    setCurrentPage(1);
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
   };
 
   const filterComponent = (
@@ -462,8 +456,6 @@ export default function UsersPage() {
         searchKeys={["firstName", "lastName", "email", "phone", "role"]}
         initialSearchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
         filterKey={`${roleFilter}-${statusFilter}`}
         onView={handleView}
         onEdit={handleEdit}
