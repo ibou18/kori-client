@@ -125,6 +125,7 @@ export default function SalonDetailPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
+  const locale = params?.locale as string;
   const salonId = params?.id as string;
 
   const { data: salonData, isLoading, error } = useGetSalon(salonId);
@@ -211,6 +212,7 @@ export default function SalonDetailPage() {
   const openingHoursList = salon.openingHours
     ? formatOpeningHours(salon.openingHours)
     : null;
+  const publicSalonHref = `/${locale}/salon/${salon.id}`;
 
   return (
     <PageWrapper
@@ -224,6 +226,10 @@ export default function SalonDetailPage() {
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
+          </Button>
+          <Button variant="outline" onClick={() => router.push(publicSalonHref)}>
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Voir la page du salon
           </Button>
           <Button onClick={() => router.push(`/admin/salons/${salon.id}/edit`)}>
             <Edit className="h-4 w-4 mr-2" />
@@ -824,6 +830,14 @@ export default function SalonDetailPage() {
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Modifier le salon
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => router.push(publicSalonHref)}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Voir la page du salon
               </Button>
               {salon.owner && (
                 <Button
