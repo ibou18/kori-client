@@ -10,7 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import type { SalonBookingTimeSlot, WebBookingServicePayload } from "./types";
+import type {
+  SalonBookingTimeSlot,
+  WebBookingAssignmentMode,
+  WebBookingServicePayload,
+} from "./types";
 import {
   computePlatformFeeDollars,
   getEffectiveHomeTravelFeeDollars,
@@ -28,6 +32,8 @@ interface WebBookingPayPanelProps {
   service: WebBookingServicePayload;
   selectedOptionId: string;
   selectedSlot: SalonBookingTimeSlot;
+  assignmentMode: WebBookingAssignmentMode;
+  employeeId?: string;
   commissionRate: number;
   isHomeService: boolean;
   homeServiceAddress: AddressData | null;
@@ -44,6 +50,8 @@ export function WebBookingPayPanel({
   service,
   selectedOptionId,
   selectedSlot,
+  assignmentMode,
+  employeeId,
   commissionRate,
   isHomeService,
   homeServiceAddress,
@@ -131,6 +139,10 @@ export function WebBookingPayPanel({
         isHomeService,
         clientBookingSubtotalDollars: Number(clientSubtotalDollars.toFixed(2)),
         services: [serviceLine],
+        assignmentMode,
+        ...(assignmentMode === "SPECIFIC_EMPLOYEE" && employeeId
+          ? { employeeId }
+          : {}),
         ...(isHomeService &&
           homeServiceAddress && {
             serviceAddress: {

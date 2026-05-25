@@ -1,20 +1,28 @@
 "use client";
 
 import { useGetPlatformConfig } from "@/app/data/hooks";
+import { getSalonApi } from "@/app/data/services";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getBookingLocationMode } from "./bookingLocation";
 import { ClientQuickAuthPanel } from "./ClientQuickAuthPanel";
+import {
+  buildWebBookingStaffOptions,
+  parseSalonDetailPayload,
+  salonHasTeamEmployees,
+} from "./salonStaff";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
 import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
 import type {
   SalonBookingTimeSlot,
+  WebBookingAssignmentMode,
   WebBookingServicePayload,
   WebBookingStep,
 } from "./types";
@@ -63,12 +71,56 @@ export function SalonWebBookingFlow({
   const [homeServiceAddress, setHomeServiceAddress] =
     useState<AddressData | null>(null);
   const [slotPanelSessionKey, setSlotPanelSessionKey] = useState(0);
+  const [assignmentMode, setAssignmentMode] =
+    useState<WebBookingAssignmentMode>("FIRST_AVAILABLE");
+  const [employeeId, setEmployeeId] = useState<string | undefined>();
 
   const wasDialogOpenRef = useRef(false);
   const lastPageServiceIdRef = useRef<string | null>(null);
 
   const authenticated = status === "authenticated" && !!session?.user;
   const active = variant === "page" || !!open;
+
+  const { data: salonDetailRaw } = useQuery({
+    queryKey: ["web-booking-salon-detail", salonId],
+    queryFn: () => getSalonApi(salonId),
+    enabled: !!salonId && active,
+    staleTime: 5 * 60_000,
+  });
+
+  const salonDetail = useMemo(
+    () => parseSalonDetailPayload(salonDetailRaw),
+    [salonDetailRaw],
+  );
+
+  const staffOptions = useMemo(
+    () => buildWebBookingStaffOptions(salonDetail),
+    [salonDetail],
+  );
+
+  const hasEmployees = useMemo(
+    () => salonHasTeamEmployees(salonDetail),
+    [salonDetail],
+  );
+
+  useEffect(() => {
+    if (!hasEmployees && assignmentMode !== "FIRST_AVAILABLE") {
+      setAssignmentMode("FIRST_AVAILABLE");
+      setEmployeeId(undefined);
+      setSelectedSlot(null);
+    }
+  }, [hasEmployees, assignmentMode]);
+
+  useEffect(() => {
+    if (
+      hasEmployees &&
+      assignmentMode === "SPECIFIC_EMPLOYEE" &&
+      !employeeId &&
+      staffOptions.length > 0
+    ) {
+      setEmployeeId(staffOptions[0].id);
+    }
+  }, [hasEmployees, assignmentMode, employeeId, staffOptions]);
 
   useEffect(() => {
     if (variant === "modal") {
@@ -80,6 +132,8 @@ export function SalonWebBookingFlow({
         setSlotPanelSessionKey((k) => k + 1);
         setSelectedSlot(null);
         setHomeServiceAddress(null);
+        setAssignmentMode("FIRST_AVAILABLE");
+        setEmployeeId(undefined);
         setStep(authenticated ? "slot" : "auth");
         wasDialogOpenRef.current = true;
         return;
@@ -99,6 +153,8 @@ export function SalonWebBookingFlow({
       setSlotPanelSessionKey((k) => k + 1);
       setSelectedSlot(null);
       setHomeServiceAddress(null);
+      setAssignmentMode("FIRST_AVAILABLE");
+      setEmployeeId(undefined);
       setStep(authenticated ? "slot" : "auth");
       return;
     }
@@ -249,6 +305,12 @@ export function SalonWebBookingFlow({
           onSelectOption={setSelectedOptionId}
           selectedSlot={selectedSlot}
           onSelectSlot={setSelectedSlot}
+          hasEmployees={hasEmployees}
+          staffOptions={staffOptions}
+          assignmentMode={assignmentMode}
+          onAssignmentModeChange={setAssignmentMode}
+          employeeId={employeeId}
+          onEmployeeIdChange={setEmployeeId}
           isHomeService={isHomeService}
           onIsHomeServiceChange={setIsHomeService}
           homeServiceAddress={homeServiceAddress}
@@ -284,6 +346,10 @@ export function SalonWebBookingFlow({
               service={payload}
               selectedOptionId={selectedOptionId}
               selectedSlot={selectedSlot}
+              assignmentMode={assignmentMode}
+              employeeId={
+                assignmentMode === "SPECIFIC_EMPLOYEE" ? employeeId : undefined
+              }
               commissionRate={commissionRate}
               isHomeService={isHomeService}
               homeServiceAddress={homeServiceAddress}

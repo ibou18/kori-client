@@ -626,20 +626,31 @@ export const getSalonAvailabilityApi = async (
 export const getSalonBookingAvailabilityApi = async (
   salonId: string,
   date: string,
-  duration: number
+  duration: number,
+  options?: {
+    employeeId?: string;
+    assignmentMode?: "FIRST_AVAILABLE" | "SPECIFIC_EMPLOYEE";
+  },
 ) => {
   try {
     const response = await requestWrapper.get(
       `/salons/${salonId}/booking-availability`,
       {
-        params: { date, duration },
-      }
+        params: {
+          date,
+          duration,
+          ...(options?.employeeId ? { employeeId: options.employeeId } : {}),
+          ...(options?.assignmentMode
+            ? { assignmentMode: options.assignmentMode }
+            : {}),
+        },
+      },
     );
     return response.data;
   } catch (error) {
     handleError(
       error,
-      "Erreur lors de la récupération des disponibilités de réservation"
+      "Erreur lors de la récupération des disponibilités de réservation",
     );
     return null;
   }
