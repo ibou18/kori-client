@@ -97,7 +97,7 @@ const SERVICE_LOCATIONS = [
 export default function ServicesPage() {
   const { data: session } = useSession();
   const [editingService, setEditingService] = useState<DefaultService | null>(
-    null
+    null,
   );
   const [creatingService, setCreatingService] = useState<string | null>(null); // salonType pour la création
   const [creatingCategory, setCreatingCategory] = useState<boolean>(false); // Flag pour la création de catégorie
@@ -269,15 +269,15 @@ export default function ServicesPage() {
           { category: ServiceCategory; services: DefaultService[] }
         >;
       }
-    >
+    >,
   );
 
   // Filtrer les types de salon qui n'ont plus de services/catégories
   // Le backend gère déjà le filtrage selon le rôle utilisateur
   const filteredServicesBySalonType = Object.fromEntries(
     Object.entries(servicesBySalonType).filter(
-      ([, data]) => Object.keys(data.categories).length > 0
-    )
+      ([, data]) => Object.keys(data.categories).length > 0,
+    ),
   );
 
   const formatDuration = (minutes: number | undefined | null) => {
@@ -376,7 +376,7 @@ export default function ServicesPage() {
           onSuccess: () => {
             handleCloseModal();
           },
-        }
+        },
       );
     } else if (creatingService) {
       // Création
@@ -397,7 +397,7 @@ export default function ServicesPage() {
           onSuccess: () => {
             handleCloseModal();
           },
-        }
+        },
       );
     }
   };
@@ -405,7 +405,7 @@ export default function ServicesPage() {
   const handleDeleteService = (service: DefaultService) => {
     if (
       window.confirm(
-        `Êtes-vous sûr de vouloir supprimer le service "${service.name}" ?`
+        `Êtes-vous sûr de vouloir supprimer le service "${service.name}" ?`,
       )
     ) {
       deleteService(service.id, {
@@ -419,7 +419,7 @@ export default function ServicesPage() {
   const handleDeleteCategory = (category: ServiceCategory) => {
     if (
       window.confirm(
-        `Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ?\n\nAttention : Cette action est irréversible et ne sera possible que si la catégorie ne contient aucun service.`
+        `Êtes-vous sûr de vouloir supprimer la catégorie "${category.name}" ?\n\nAttention : Cette action est irréversible et ne sera possible que si la catégorie ne contient aucun service.`,
       )
     ) {
       deleteCategory(category.id, {
@@ -452,7 +452,7 @@ export default function ServicesPage() {
           onSuccess: () => {
             handleCloseCategoryModal();
           },
-        }
+        },
       );
     } else if (creatingCategory) {
       // Création
@@ -467,7 +467,7 @@ export default function ServicesPage() {
           onSuccess: () => {
             handleCloseCategoryModal();
           },
-        }
+        },
       );
     }
   };
@@ -513,7 +513,7 @@ export default function ServicesPage() {
               ({ salonType, categories: salonCategories }) => {
                 const totalServices = Object.values(salonCategories).reduce(
                   (sum, cat) => sum + cat.services.length,
-                  0
+                  0,
                 );
                 return (
                   <AccordionItem
@@ -672,7 +672,7 @@ export default function ServicesPage() {
                                               <div className="flex flex-wrap gap-1.5 mt-2">
                                                 <Badge variant="outline">
                                                   {getSalonTypeLabel(
-                                                    service.salonType
+                                                    service.salonType,
                                                   )}
                                                 </Badge>
                                                 <Badge variant="outline">
@@ -714,7 +714,7 @@ export default function ServicesPage() {
                                                   id={`service-toggle-${service.id}`}
                                                   checked={service.isActive}
                                                   onChange={(
-                                                    checked: boolean
+                                                    checked: boolean,
                                                   ) => {
                                                     updateService({
                                                       id: service.id,
@@ -757,7 +757,7 @@ export default function ServicesPage() {
                                               </p>
                                               <p className="text-xs text-gray-600">
                                                 {formatDuration(
-                                                  service.duration
+                                                  service.duration,
                                                 )}
                                               </p>
                                             </div>
@@ -791,11 +791,11 @@ export default function ServicesPage() {
                                                           </div>
                                                           <p className="text-xs font-semibold text-[#53745D] ml-2 flex-shrink-0">
                                                             {formatCurrency(
-                                                              option.price
+                                                              option.price,
                                                             )}
                                                           </p>
                                                         </div>
-                                                      )
+                                                      ),
                                                     )}
                                                   </div>
                                                 </div>
@@ -807,14 +807,14 @@ export default function ServicesPage() {
                                   </div>
                                 </AccordionContent>
                               </AccordionItem>
-                            )
+                            ),
                           )}
                         </Accordion>
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 );
-              }
+              },
             )}
           </Accordion>
         )}
@@ -1054,8 +1054,8 @@ export default function ServicesPage() {
                     ? "Enregistrement..."
                     : "Création..."
                   : editingService
-                  ? "Enregistrer"
-                  : "Créer"}
+                    ? "Enregistrer"
+                    : "Créer"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1185,8 +1185,8 @@ export default function ServicesPage() {
                     ? "Enregistrement..."
                     : "Création..."
                   : editingCategory
-                  ? "Enregistrer"
-                  : "Créer"}
+                    ? "Enregistrer"
+                    : "Créer"}
               </Button>
             </DialogFooter>
           </DialogContent>

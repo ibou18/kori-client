@@ -720,7 +720,7 @@ export default function SalonDetailPage() {
                       <p className="text-xs text-gray-500 mt-1">
                         Dernière:{" "}
                         {dayjs(salon.lastProviderCancellation).format(
-                          "DD MMM YYYY"
+                          "DD MMM YYYY",
                         )}
                       </p>
                     )}
