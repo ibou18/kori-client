@@ -435,10 +435,9 @@ export default function SalonSharePage() {
               </div>
             </div>
 
-            {/* Cards en scroll horizontal - 1 par colonne */}
-            <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-              <div className="flex gap-4 min-w-max items-stretch">
-                {services
+            {/* Cards en scroll vertical */}
+            <div className="flex flex-col gap-4">
+              {services
                   .filter(
                     (s) =>
                       !selectedCategoryId ||
@@ -467,7 +466,7 @@ export default function SalonSharePage() {
                             `/${locale}/service/${salonId}/${service.id}/reservation`,
                           )
                         }
-                        className="text-left bg-white border border-[#53745D]/20 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:border-[#53745D]/35 transition-all w-[min(calc(100vw-2.5rem),300px)] sm:w-[300px] flex-shrink-0 flex flex-col self-stretch min-h-0"
+                        className="text-left bg-white border border-[#53745D]/20 rounded-xl overflow-hidden shadow-md hover:shadow-xl hover:border-[#53745D]/35 transition-all w-full flex flex-col min-h-0"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
@@ -569,7 +568,6 @@ export default function SalonSharePage() {
                       </motion.button>
                     );
                   })}
-              </div>
             </div>
           </motion.div>
         )}
