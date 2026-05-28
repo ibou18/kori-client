@@ -1,4 +1,4 @@
-export type WebBookingStep = "auth" | "slot" | "pay";
+export type WebBookingStep = "auth" | "slot" | "notes" | "pay";
 
 export type WebBookingAssignmentMode =
   | "FIRST_AVAILABLE"

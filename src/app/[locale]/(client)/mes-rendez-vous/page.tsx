@@ -6,6 +6,7 @@ import { useGetClientBookings } from "@/app/data/hooks";
 import { Button } from "@/components/ui/button";
 import { BookingStatusBadge, PaymentStatusBadge } from "@/utils/statusUtils";
 import dayjs from "dayjs";
+import "dayjs/locale/fr";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -83,12 +84,12 @@ function BookingCard({
           )}
           <p className="text-sm text-slate-700 mt-2">
             <span className="font-medium">
-              {dayjs(booking.appointmentStartDateTime).format(
-                "ddd D MMM YYYY · HH:mm",
-              )}
+              {dayjs(booking.appointmentStartDateTime)
+                .locale("fr")
+                .format("ddd D MMM YYYY · HH:mm")}
             </span>
             {" — "}
-            {dayjs(booking.appointmentEndDateTime).format("HH:mm")}
+            {dayjs(booking.appointmentEndDateTime).locale("fr").format("HH:mm")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

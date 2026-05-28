@@ -1,6 +1,6 @@
 "use client";
 
-import { registerApi } from "@/app/data/services";
+import { forgotPasswordApi, registerApi } from "@/app/data/services";
 import {
   getRegisterErrorMessage,
   phoneE164ForRegister,
@@ -35,8 +35,24 @@ export function ClientQuickAuthPanel({
   const [phoneDialCode, setPhoneDialCode] = useState("+1");
   const [phoneLocal, setPhoneLocal] = useState("");
   const [phoneFieldError, setPhoneFieldError] = useState<string | undefined>();
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const openForgotPassword = () => {
+    setError(null);
+    setForgotSuccess(false);
+    setForgotEmail(loginEmail.trim());
+    setShowForgotPassword(true);
+  };
+
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false);
+    setForgotSuccess(false);
+    setError(null);
+  };
 
   const finishAuth = async () => {
     await getSession();
@@ -60,6 +76,30 @@ export function ClientQuickAuthPanel({
       await finishAuth();
     } catch {
       setError("Connexion impossible. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setForgotSuccess(false);
+    const email = forgotEmail.trim();
+    if (!email) {
+      setError("Veuillez saisir votre adresse email.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await forgotPasswordApi(email);
+      if (!result) {
+        setError("Erreur lors de l'envoi de l'email de réinitialisation.");
+        return;
+      }
+      setForgotSuccess(true);
+    } catch {
+      setError("Erreur lors de l'envoi de l'email de réinitialisation.");
     } finally {
       setLoading(false);
     }
@@ -139,11 +179,60 @@ export function ClientQuickAuthPanel({
         Connectez-vous ou créez un compte client en quelques secondes pour
         poursuivre la réservation.
       </p>
+      {forgotSuccess && (
+        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+          Si un compte existe pour cette adresse, un email de réinitialisation a
+          été envoyé. Consultez votre boîte de réception puis reconnectez-vous
+          ici.
+        </p>
+      )}
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
+      {showForgotPassword ? (
+        <div className="space-y-3 pt-1">
+          <p className="text-sm text-slate-600">
+            Saisissez l’email de votre compte. Nous vous enverrons un lien pour
+            choisir un nouveau mot de passe.
+          </p>
+          <form onSubmit={handleForgotPassword} className="space-y-3">
+            <div>
+              <Label htmlFor="wb-forgot-email">Email</Label>
+              <Input
+                id="wb-forgot-email"
+                type="email"
+                autoComplete="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+                disabled={loading || forgotSuccess}
+                className="mt-1"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || forgotSuccess}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Envoyer le lien"
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-slate-600"
+              onClick={closeForgotPassword}
+            >
+              Retour à la connexion
+            </Button>
+          </form>
+        </div>
+      ) : (
       <Tabs defaultValue="register" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="register">Inscription</TabsTrigger>
@@ -246,7 +335,16 @@ export function ClientQuickAuthPanel({
               />
             </div>
             <div>
-              <Label htmlFor="wb-login-password">Mot de passe</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="wb-login-password">Mot de passe</Label>
+                <button
+                  type="button"
+                  onClick={openForgotPassword}
+                  className="text-xs text-[#53745D] hover:underline"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
               <Input
                 id="wb-login-password"
                 type="password"
@@ -267,6 +365,7 @@ export function ClientQuickAuthPanel({
           </form>
         </TabsContent>
       </Tabs>
+      )}
     </div>
   );
 }

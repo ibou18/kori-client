@@ -1333,6 +1333,27 @@ export const deleteSalonPhotoApi = async (photoId: string) => {
   }
 };
 
+export const uploadBookingPhotoApi = async (bookingId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+
+  try {
+    const response = await requestWrapper.post(
+      `/photos/booking/${bookingId}/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'upload de la photo de référence");
+    return null;
+  }
+};
+
 // ============================================================================
 // STATS
 // ============================================================================

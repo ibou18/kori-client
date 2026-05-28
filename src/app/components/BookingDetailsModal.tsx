@@ -4,6 +4,10 @@ import React from "react";
 import { BookingStatusBadge, PaymentStatusBadge } from "@/utils/statusUtils";
 import { Badge } from "@/components/ui/badge";
 import dayjs from "dayjs";
+import "dayjs/locale/fr";
+
+const formatDateFr = (value: string, template: string) =>
+  dayjs(value).locale("fr").format(template);
 import {
   Calendar,
   Clock,
@@ -11,7 +15,9 @@ import {
   User,
   Building2,
   CreditCard,
+  MessageSquare,
 } from "lucide-react";
+import Image from "next/image";
 
 interface Booking {
   id: string;
@@ -49,6 +55,12 @@ interface Booking {
     paymentStatus: string;
   };
   actualPaidAmount?: number;
+  clientNotes?: string | null;
+  referencePhoto?: {
+    url: string;
+    caption?: string | null;
+    alt?: string | null;
+  } | null;
   createdAt: string;
 }
 
@@ -69,6 +81,9 @@ export function BookingDetailsModal({
   booking,
 }: BookingDetailsModalProps): React.JSX.Element | null {
   if (!booking) return null;
+
+  const hasClientRemarks =
+    !!booking.clientNotes?.trim() || !!booking.referencePhoto?.url;
 
   return (
     <div className="space-y-6">
@@ -122,13 +137,14 @@ export function BookingDetailsModal({
             <Clock className="h-4 w-4 text-gray-500" />
             <div>
               <p className="text-sm font-medium text-gray-900">
-                {dayjs(booking.appointmentStartDateTime).format(
-                  "dddd DD MMMM YYYY",
+                {formatDateFr(
+                  booking.appointmentStartDateTime,
+                  "dddd D MMMM YYYY",
                 )}
               </p>
               <p className="text-sm text-gray-600">
-                {dayjs(booking.appointmentStartDateTime).format("HH:mm")} -{" "}
-                {dayjs(booking.appointmentEndDateTime).format("HH:mm")}
+                {formatDateFr(booking.appointmentStartDateTime, "HH:mm")} -{" "}
+                {formatDateFr(booking.appointmentEndDateTime, "HH:mm")}
               </p>
             </div>
           </div>
@@ -190,6 +206,50 @@ export function BookingDetailsModal({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {hasClientRemarks && (
+        <div className="rounded-lg border bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-4 w-4 text-[#53745D]" />
+            <h3 className="font-semibold text-gray-900">
+              Remarques pour la prestataire
+            </h3>
+          </div>
+          {booking.clientNotes?.trim() && (
+            <p className="text-sm text-gray-700 whitespace-pre-wrap rounded-lg bg-[#F0F4F1]/80 border border-[#53745D]/15 px-3 py-2.5">
+              {booking.clientNotes.trim()}
+            </p>
+          )}
+          {booking.referencePhoto?.url && (
+            <div
+              className={
+                booking.clientNotes?.trim() ? "mt-3 space-y-2" : "space-y-2"
+              }
+            >
+              <p className="text-xs font-medium text-gray-500">
+                Photo de référence
+              </p>
+              <Image
+                src={booking.referencePhoto.url}
+                alt={
+                  booking.referencePhoto.alt ||
+                  booking.referencePhoto.caption ||
+                  "Photo de référence"
+                }
+                width={480}
+                height={320}
+                unoptimized
+                className="w-full max-w-sm rounded-lg border border-slate-200 object-cover max-h-56"
+              />
+              {booking.referencePhoto.caption && (
+                <p className="text-xs text-gray-500">
+                  {booking.referencePhoto.caption}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -277,7 +337,8 @@ export function BookingDetailsModal({
           <BookingStatusBadge status={booking.status} />
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Créée le {dayjs(booking.createdAt).format("DD MMMM YYYY à HH:mm")}
+          Créée le{" "}
+          {formatDateFr(booking.createdAt, "D MMMM YYYY [à] HH:mm")}
         </p>
       </div>
     </div>

@@ -532,7 +532,7 @@ export function WebBookingSlotPanel({
         disabled={!canContinue}
         onClick={onContinue}
       >
-        Continuer vers le paiement
+        Continuer vers les remarques
       </Button>
     </div>
   );
