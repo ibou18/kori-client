@@ -4,13 +4,19 @@ import {
   calculateTaxesApi,
   createBookingApi,
   createCheckoutSessionApi,
+  uploadBookingPhotoApi,
 } from "@/app/data/services";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
-import type { SalonBookingTimeSlot, WebBookingServicePayload } from "./types";
+import type {
+  SalonBookingTimeSlot,
+  WebBookingAssignmentMode,
+  WebBookingServicePayload,
+} from "./types";
 import {
   computePlatformFeeDollars,
   getEffectiveHomeTravelFeeDollars,
@@ -28,9 +34,14 @@ interface WebBookingPayPanelProps {
   service: WebBookingServicePayload;
   selectedOptionId: string;
   selectedSlot: SalonBookingTimeSlot;
+  assignmentMode: WebBookingAssignmentMode;
+  employeeId?: string;
   commissionRate: number;
   isHomeService: boolean;
   homeServiceAddress: AddressData | null;
+  clientNotes?: string;
+  referencePhotoFile?: File | null;
+  referencePhotoPreview?: string | null;
   onBack: () => void;
 }
 
@@ -44,9 +55,14 @@ export function WebBookingPayPanel({
   service,
   selectedOptionId,
   selectedSlot,
+  assignmentMode,
+  employeeId,
   commissionRate,
   isHomeService,
   homeServiceAddress,
+  clientNotes = "",
+  referencePhotoFile = null,
+  referencePhotoPreview = null,
   onBack,
 }: WebBookingPayPanelProps) {
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +111,8 @@ export function WebBookingPayPanel({
   }, [platformFee, province]);
 
   const totalAcompte = taxTotal != null ? platformFee + taxTotal : null;
+  const trimmedNotes = clientNotes.trim();
+  const hasClientRemarks = trimmedNotes.length > 0 || !!referencePhotoFile;
 
   const handlePay = async () => {
     if (!clientEmail.trim()) {
@@ -131,6 +149,11 @@ export function WebBookingPayPanel({
         isHomeService,
         clientBookingSubtotalDollars: Number(clientSubtotalDollars.toFixed(2)),
         services: [serviceLine],
+        assignmentMode,
+        ...(trimmedNotes ? { clientNotes: trimmedNotes } : {}),
+        ...(assignmentMode === "SPECIFIC_EMPLOYEE" && employeeId
+          ? { employeeId }
+          : {}),
         ...(isHomeService &&
           homeServiceAddress && {
             serviceAddress: {
@@ -162,6 +185,19 @@ export function WebBookingPayPanel({
       }
 
       const bookingId = bookingPayload.data.id;
+
+      if (referencePhotoFile) {
+        const photoRes = await uploadBookingPhotoApi(
+          bookingId,
+          referencePhotoFile,
+        );
+        const photoPayload = photoRes as { success?: boolean };
+        if (!photoPayload?.success) {
+          console.error(
+            "❌ Upload photo de référence échoué, poursuite du paiement",
+          );
+        }
+      }
 
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
@@ -225,6 +261,28 @@ export function WebBookingPayPanel({
               : "Au salon"}
           </span>
         </p>
+        {hasClientRemarks && (
+          <div className="rounded-lg border border-[#53745D]/20 bg-[#F0F4F1]/60 p-3 space-y-2">
+            <p className="text-xs font-semibold text-[#3a5a47] uppercase tracking-wide">
+              Remarques pour la coiffeuse
+            </p>
+            {trimmedNotes && (
+              <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                {trimmedNotes}
+              </p>
+            )}
+            {referencePhotoPreview && (
+              <Image
+                src={referencePhotoPreview}
+                alt="Photo de référence"
+                width={320}
+                height={160}
+                unoptimized
+                className="w-full max-w-[200px] h-24 object-cover rounded-lg border border-slate-200"
+              />
+            )}
+          </div>
+        )}
         <div className="border-t border-slate-200 pt-2 mt-2 space-y-1">
           <div className="flex justify-between">
             <span>Prestation</span>

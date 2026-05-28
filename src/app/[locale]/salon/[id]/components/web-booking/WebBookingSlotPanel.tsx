@@ -24,8 +24,10 @@ import { getBookingLocationMode } from "./bookingLocation";
 import type {
   SalonBookingAvailabilityPayload,
   SalonBookingTimeSlot,
+  WebBookingAssignmentMode,
   WebBookingServiceOption,
   WebBookingServicePayload,
+  WebBookingStaffMember,
 } from "./types";
 import {
   formatSalonPriceDollars,
@@ -42,6 +44,12 @@ interface WebBookingSlotPanelProps {
   onSelectOption: (optionId: string) => void;
   selectedSlot: SalonBookingTimeSlot | null;
   onSelectSlot: (slot: SalonBookingTimeSlot | null) => void;
+  hasEmployees: boolean;
+  staffOptions: WebBookingStaffMember[];
+  assignmentMode: WebBookingAssignmentMode;
+  onAssignmentModeChange: (mode: WebBookingAssignmentMode) => void;
+  employeeId: string | undefined;
+  onEmployeeIdChange: (id: string | undefined) => void;
   isHomeService: boolean;
   onIsHomeServiceChange: (value: boolean) => void;
   homeServiceAddress: AddressData | null;
@@ -80,6 +88,12 @@ export function WebBookingSlotPanel({
   onSelectOption,
   selectedSlot,
   onSelectSlot,
+  hasEmployees,
+  staffOptions,
+  assignmentMode,
+  onAssignmentModeChange,
+  employeeId,
+  onEmployeeIdChange,
   isHomeService,
   onIsHomeServiceChange,
   homeServiceAddress,
@@ -112,18 +126,41 @@ export function WebBookingSlotPanel({
     ? service.options
     : [];
 
+  const availabilityEmployeeId =
+    assignmentMode === "SPECIFIC_EMPLOYEE" ? employeeId : undefined;
+  const availabilityAssignmentMode: WebBookingAssignmentMode =
+    assignmentMode === "SPECIFIC_EMPLOYEE"
+      ? "SPECIFIC_EMPLOYEE"
+      : "FIRST_AVAILABLE";
+
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ["web-booking-availability", salonId, date, durationMin],
+    queryKey: [
+      "web-booking-availability",
+      salonId,
+      date,
+      durationMin,
+      availabilityAssignmentMode,
+      availabilityEmployeeId ?? "",
+    ],
     queryFn: async (): Promise<SalonBookingAvailabilityPayload | null> => {
       const res = await getSalonBookingAvailabilityApi(
         salonId,
         date,
         durationMin,
+        {
+          employeeId: availabilityEmployeeId,
+          assignmentMode: availabilityAssignmentMode,
+        },
       );
       if (!res?.success || !res?.data) return null;
       return res.data as SalonBookingAvailabilityPayload;
     },
-    enabled: !!salonId && !!date && durationMin > 0 && options.length > 0,
+    enabled:
+      !!salonId &&
+      !!date &&
+      durationMin > 0 &&
+      options.length > 0 &&
+      (assignmentMode === "FIRST_AVAILABLE" || !!employeeId),
     staleTime: 60_000,
   });
 
@@ -138,7 +175,12 @@ export function WebBookingSlotPanel({
       !!homeServiceAddress?.city &&
       !!homeServiceAddress?.formattedAddress);
 
-  const canContinue = !!selectedOptionId && !!selectedSlot && homeAddressOk;
+  const canContinue =
+    !!selectedOptionId &&
+    !!selectedSlot &&
+    homeAddressOk &&
+    (assignmentMode === "FIRST_AVAILABLE" ||
+      (assignmentMode === "SPECIFIC_EMPLOYEE" && !!employeeId));
 
   if (options.length === 0) {
     return (
@@ -301,6 +343,73 @@ export function WebBookingSlotPanel({
         </div>
       )}
 
+      {hasEmployees && (
+        <div>
+          <Label className="text-base font-semibold">
+            Choix du professionnel
+          </Label>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                onSelectSlot(null);
+                onAssignmentModeChange("FIRST_AVAILABLE");
+                onEmployeeIdChange(undefined);
+              }}
+              className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                assignmentMode === "FIRST_AVAILABLE"
+                  ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40"
+              }`}
+            >
+              Premier disponible
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const first = staffOptions[0];
+                if (!first?.id) return;
+                onSelectSlot(null);
+                onAssignmentModeChange("SPECIFIC_EMPLOYEE");
+                onEmployeeIdChange(first.id);
+              }}
+              className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                assignmentMode === "SPECIFIC_EMPLOYEE"
+                  ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40"
+              }`}
+            >
+              Choisir un professionnel
+            </button>
+          </div>
+          {assignmentMode === "SPECIFIC_EMPLOYEE" && staffOptions.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {staffOptions.map((s) => {
+                const active = s.id === employeeId;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectSlot(null);
+                      onAssignmentModeChange("SPECIFIC_EMPLOYEE");
+                      onEmployeeIdChange(s.id);
+                    }}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40"
+                    }`}
+                  >
+                    {s.firstName} {s.lastName?.charAt(0)}.
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      )}
+
       <div>
         <Label htmlFor="wb-date" className="text-base font-semibold">
           Date
@@ -423,7 +532,7 @@ export function WebBookingSlotPanel({
         disabled={!canContinue}
         onClick={onContinue}
       >
-        Continuer vers le paiement
+        Continuer vers les remarques
       </Button>
     </div>
   );

@@ -1,20 +1,29 @@
 "use client";
 
 import { useGetPlatformConfig } from "@/app/data/hooks";
+import { getSalonApi } from "@/app/data/services";
 import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Check, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getBookingLocationMode } from "./bookingLocation";
 import { ClientQuickAuthPanel } from "./ClientQuickAuthPanel";
+import {
+  buildWebBookingStaffOptions,
+  parseSalonDetailPayload,
+  salonHasTeamEmployees,
+} from "./salonStaff";
+import { WebBookingNotesPanel } from "./WebBookingNotesPanel";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
 import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
 import type {
   SalonBookingTimeSlot,
+  WebBookingAssignmentMode,
   WebBookingServicePayload,
   WebBookingStep,
 } from "./types";
@@ -63,12 +72,88 @@ export function SalonWebBookingFlow({
   const [homeServiceAddress, setHomeServiceAddress] =
     useState<AddressData | null>(null);
   const [slotPanelSessionKey, setSlotPanelSessionKey] = useState(0);
+  const [assignmentMode, setAssignmentMode] =
+    useState<WebBookingAssignmentMode>("FIRST_AVAILABLE");
+  const [employeeId, setEmployeeId] = useState<string | undefined>();
+  const [clientNotes, setClientNotes] = useState("");
+  const [referencePhotoFile, setReferencePhotoFile] = useState<File | null>(
+    null,
+  );
+  const [referencePhotoPreview, setReferencePhotoPreview] = useState<
+    string | null
+  >(null);
 
   const wasDialogOpenRef = useRef(false);
   const lastPageServiceIdRef = useRef<string | null>(null);
 
   const authenticated = status === "authenticated" && !!session?.user;
   const active = variant === "page" || !!open;
+
+  const { data: salonDetailRaw } = useQuery({
+    queryKey: ["web-booking-salon-detail", salonId],
+    queryFn: () => getSalonApi(salonId),
+    enabled: !!salonId && active,
+    staleTime: 5 * 60_000,
+  });
+
+  const salonDetail = useMemo(
+    () => parseSalonDetailPayload(salonDetailRaw),
+    [salonDetailRaw],
+  );
+
+  const staffOptions = useMemo(
+    () => buildWebBookingStaffOptions(salonDetail),
+    [salonDetail],
+  );
+
+  const hasEmployees = useMemo(
+    () => salonHasTeamEmployees(salonDetail),
+    [salonDetail],
+  );
+
+  const resetClientNotesState = () => {
+    if (referencePhotoPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(referencePhotoPreview);
+    }
+    setClientNotes("");
+    setReferencePhotoFile(null);
+    setReferencePhotoPreview(null);
+  };
+
+  const handlePhotoSelect = (file: File, previewUrl: string) => {
+    if (referencePhotoPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(referencePhotoPreview);
+    }
+    setReferencePhotoFile(file);
+    setReferencePhotoPreview(previewUrl);
+  };
+
+  const handlePhotoRemove = () => {
+    if (referencePhotoPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(referencePhotoPreview);
+    }
+    setReferencePhotoFile(null);
+    setReferencePhotoPreview(null);
+  };
+
+  useEffect(() => {
+    if (!hasEmployees && assignmentMode !== "FIRST_AVAILABLE") {
+      setAssignmentMode("FIRST_AVAILABLE");
+      setEmployeeId(undefined);
+      setSelectedSlot(null);
+    }
+  }, [hasEmployees, assignmentMode]);
+
+  useEffect(() => {
+    if (
+      hasEmployees &&
+      assignmentMode === "SPECIFIC_EMPLOYEE" &&
+      !employeeId &&
+      staffOptions.length > 0
+    ) {
+      setEmployeeId(staffOptions[0].id);
+    }
+  }, [hasEmployees, assignmentMode, employeeId, staffOptions]);
 
   useEffect(() => {
     if (variant === "modal") {
@@ -80,6 +165,9 @@ export function SalonWebBookingFlow({
         setSlotPanelSessionKey((k) => k + 1);
         setSelectedSlot(null);
         setHomeServiceAddress(null);
+        setAssignmentMode("FIRST_AVAILABLE");
+        setEmployeeId(undefined);
+        resetClientNotesState();
         setStep(authenticated ? "slot" : "auth");
         wasDialogOpenRef.current = true;
         return;
@@ -99,6 +187,9 @@ export function SalonWebBookingFlow({
       setSlotPanelSessionKey((k) => k + 1);
       setSelectedSlot(null);
       setHomeServiceAddress(null);
+      setAssignmentMode("FIRST_AVAILABLE");
+      setEmployeeId(undefined);
+      resetClientNotesState();
       setStep(authenticated ? "slot" : "auth");
       return;
     }
@@ -149,11 +240,20 @@ export function SalonWebBookingFlow({
       ? "Votre compte"
       : step === "slot"
         ? "Option et créneau"
-        : "Paiement de l'acompte";
+        : step === "notes"
+          ? "Remarques pour la coiffeuse"
+          : "Paiement de l'acompte";
 
-  const stepIndex = step === "auth" ? 0 : step === "slot" ? 1 : 2;
+  const stepIndex =
+    step === "auth"
+      ? 0
+      : step === "slot"
+        ? 1
+        : step === "notes"
+          ? 2
+          : 3;
 
-  const stepLabels = ["Compte", "Créneau", "Paiement"];
+  const stepLabels = ["Compte", "Créneau", "Remarques", "Paiement"];
 
   if (variant === "modal" && !open) return null;
   if (!servicePayload) return null;
@@ -249,13 +349,44 @@ export function SalonWebBookingFlow({
           onSelectOption={setSelectedOptionId}
           selectedSlot={selectedSlot}
           onSelectSlot={setSelectedSlot}
+          hasEmployees={hasEmployees}
+          staffOptions={staffOptions}
+          assignmentMode={assignmentMode}
+          onAssignmentModeChange={setAssignmentMode}
+          employeeId={employeeId}
+          onEmployeeIdChange={setEmployeeId}
           isHomeService={isHomeService}
           onIsHomeServiceChange={setIsHomeService}
           homeServiceAddress={homeServiceAddress}
           onHomeServiceAddressChange={setHomeServiceAddress}
-          onContinue={() => setStep("pay")}
+          onContinue={() => setStep("notes")}
           layoutVariant={variant}
         />
+      )}
+
+      {step === "notes" && authenticated && selectedSlot && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
+            onClick={() => setStep("slot")}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Créneau
+          </Button>
+          <WebBookingNotesPanel
+            clientNotes={clientNotes}
+            onClientNotesChange={setClientNotes}
+            referencePhotoFile={referencePhotoFile}
+            referencePhotoPreview={referencePhotoPreview}
+            onPhotoSelect={handlePhotoSelect}
+            onPhotoRemove={handlePhotoRemove}
+            onContinue={() => setStep("pay")}
+            onBack={() => setStep("slot")}
+          />
+        </>
       )}
 
       {step === "pay" &&
@@ -269,10 +400,10 @@ export function SalonWebBookingFlow({
               variant="ghost"
               size="sm"
               className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-              onClick={() => setStep("slot")}
+              onClick={() => setStep("notes")}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Créneau
+              Remarques
             </Button>
             <WebBookingPayPanel
               salonId={salonId}
@@ -284,10 +415,17 @@ export function SalonWebBookingFlow({
               service={payload}
               selectedOptionId={selectedOptionId}
               selectedSlot={selectedSlot}
+              assignmentMode={assignmentMode}
+              employeeId={
+                assignmentMode === "SPECIFIC_EMPLOYEE" ? employeeId : undefined
+              }
               commissionRate={commissionRate}
               isHomeService={isHomeService}
               homeServiceAddress={homeServiceAddress}
-              onBack={() => setStep("slot")}
+              clientNotes={clientNotes}
+              referencePhotoFile={referencePhotoFile}
+              referencePhotoPreview={referencePhotoPreview}
+              onBack={() => setStep("notes")}
             />
           </>
         )}

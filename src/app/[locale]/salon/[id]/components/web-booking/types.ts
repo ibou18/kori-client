@@ -1,4 +1,14 @@
-export type WebBookingStep = "auth" | "slot" | "pay";
+export type WebBookingStep = "auth" | "slot" | "notes" | "pay";
+
+export type WebBookingAssignmentMode =
+  | "FIRST_AVAILABLE"
+  | "SPECIFIC_EMPLOYEE";
+
+export interface WebBookingStaffMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
 
 export interface WebBookingServiceOption {
   id: string;
@@ -26,6 +36,12 @@ export interface SalonBookingTimeSlot {
   endDateTime: string;
   duration: number;
   available: boolean;
+  suggestedEmployee?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string | null;
+  };
 }
 
 export interface SalonBookingDay {
