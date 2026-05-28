@@ -102,6 +102,7 @@ import {
   getSalonBookingAvailabilityApi,
   getSalonBookingsApi,
   getSalonDashboardStatsApi,
+  getSalonPopularServicesApi,
   // Salon Holidays
   getSalonHolidaysApi,
   getSalonMonthlyRevenueApi,
@@ -762,6 +763,7 @@ export const useGetSalonBookings = (
     endDate?: string;
     limit?: number;
     offset?: number;
+    employeeIds?: string; // CSV "id1,id2" attendu par le serveur
   },
 ) => {
   return useQuery({
@@ -1383,6 +1385,15 @@ export const useGetSalonMonthlyRevenue = (
     queryFn: () => getSalonMonthlyRevenueApi(salonId, params),
     enabled: !!salonId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useGetSalonPopularServices = (salonId: string, limit = 5) => {
+  return useQuery({
+    queryKey: [GET_SALON_DASHBOARD_STATS, salonId, "popular-services", limit],
+    queryFn: () => getSalonPopularServicesApi(salonId, limit),
+    enabled: !!salonId,
+    staleTime: 1000 * 60 * 5,
   });
 };
 

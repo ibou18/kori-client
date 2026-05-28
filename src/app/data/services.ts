@@ -764,6 +764,7 @@ export const getSalonBookingsApi = async (
     endDate?: string;
     limit?: number;
     offset?: number;
+    employeeIds?: string; // CSV "id1,id2" attendu par le serveur
   }
 ) => {
   try {
@@ -1420,6 +1421,22 @@ export const getRevenueEvolutionApi = async (params?: {
       error,
       "Erreur lors de la récupération de l'évolution des revenus"
     );
+    return null;
+  }
+};
+
+export const getSalonPopularServicesApi = async (
+  salonId: string,
+  limit = 5
+) => {
+  try {
+    const response = await requestWrapper.get(
+      `/stats/salon/${salonId}/popular-services`,
+      { params: { limit } }
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des services populaires");
     return null;
   }
 };
