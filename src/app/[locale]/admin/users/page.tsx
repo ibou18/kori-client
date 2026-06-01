@@ -105,6 +105,15 @@ export default function UsersPage() {
   const { mutate: updateSalon } = useUpdateSalon();
   const { data: userSalonData } = useGetUserSalon(selectedUserId);
 
+  const exportParams = useMemo(
+    () => ({
+      ...(roleFilter !== "all" ? { role: roleFilter } : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
+    }),
+    [roleFilter, statusFilter, searchQuery],
+  );
+
   if (!session) {
     return (
       <p className="text-center mt-10">
@@ -419,15 +428,6 @@ export default function UsersPage() {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
   };
-
-  const exportParams = useMemo(
-    () => ({
-      ...(roleFilter !== "all" ? { role: roleFilter } : {}),
-      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
-    }),
-    [roleFilter, statusFilter, searchQuery]
-  );
 
   const filterComponent = (
     <div className="flex flex-wrap gap-4">

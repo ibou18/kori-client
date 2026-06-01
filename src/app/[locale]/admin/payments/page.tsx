@@ -58,6 +58,14 @@ export default function PaymentsPage() {
 
   const { data: bookingsData, isLoading } = useGetBookings(bookingParams);
 
+  const exportParams = useMemo(
+    () => ({
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(bookingParams?.salonId ? { salonId: bookingParams.salonId } : {}),
+    }),
+    [statusFilter, bookingParams?.salonId],
+  );
+
   if (!session) {
     return (
       <p className="text-center mt-10">
@@ -220,14 +228,6 @@ export default function PaymentsPage() {
     //   ),
     // },
   ];
-
-  const exportParams = useMemo(
-    () => ({
-      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
-      ...(bookingParams?.salonId ? { salonId: bookingParams.salonId } : {}),
-    }),
-    [statusFilter, bookingParams?.salonId]
-  );
 
   const filterComponent = (
     <Select value={statusFilter} onValueChange={setStatusFilter}>

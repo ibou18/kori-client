@@ -137,6 +137,21 @@ export default function SalonsPage() {
   const { data, isLoading } = useGetSalons(apiParams);
   const { mutate: deleteSalon } = useDeleteSalon();
 
+  const exportParams = useMemo(() => {
+    const params: Record<string, string | boolean> = {};
+    if (cityFilter) params.city = cityFilter;
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (statusFilter === "active") {
+      params.isActive = true;
+      params.isVerified = true;
+    } else if (statusFilter === "inactive") {
+      params.isActive = false;
+    } else if (statusFilter === "unverified") {
+      params.isVerified = false;
+    }
+    return params;
+  }, [cityFilter, debouncedSearch, statusFilter]);
+
   if (!session) {
     return (
       <p className="text-center mt-10">
@@ -234,21 +249,6 @@ export default function SalonsPage() {
       ),
     },
   ];
-
-  const exportParams = useMemo(() => {
-    const params: Record<string, string | boolean> = {};
-    if (cityFilter) params.city = cityFilter;
-    if (debouncedSearch) params.search = debouncedSearch;
-    if (statusFilter === "active") {
-      params.isActive = true;
-      params.isVerified = true;
-    } else if (statusFilter === "inactive") {
-      params.isActive = false;
-    } else if (statusFilter === "unverified") {
-      params.isVerified = false;
-    }
-    return params;
-  }, [cityFilter, debouncedSearch, statusFilter]);
 
   const filterComponent = (
     <>
