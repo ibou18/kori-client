@@ -72,6 +72,24 @@ export async function middleware(request: NextRequest) {
     }
 
     const jwtSalonId = (token as { salonId?: string }).salonId;
+
+    // Employés : accès limité au planning (calendrier) + leur compte.
+    // Toute autre page du back-office redirige vers le calendrier.
+    if (token.role === "EMPLOYEE") {
+      const employeeAllowedPrefixes = ["/admin/calendrier", "/admin/account"];
+      const isAllowed = employeeAllowedPrefixes.some(
+        (prefix) =>
+          normalizedPathname === prefix ||
+          normalizedPathname.startsWith(`${prefix}/`)
+      );
+      if (!isAllowed) {
+        return NextResponse.redirect(
+          new URL(`/${locale}/admin/calendrier`, request.url)
+        );
+      }
+      return response;
+    }
+
     if (token.role === "OWNER" || token.role === "EMPLOYEE") {
       const proBlockedPrefixes = [
         "/admin/users",
@@ -129,6 +147,11 @@ export async function middleware(request: NextRequest) {
     if (token.role === "CLIENT") {
       return NextResponse.redirect(
         new URL(`/${locale}/mes-rendez-vous`, request.url)
+      );
+    }
+    if (token.role === "EMPLOYEE") {
+      return NextResponse.redirect(
+        new URL(`/${locale}/admin/calendrier`, request.url)
       );
     }
     return NextResponse.redirect(

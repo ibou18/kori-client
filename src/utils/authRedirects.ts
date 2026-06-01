@@ -18,9 +18,11 @@ export function getPostAuthRedirectPath(
   switch (role) {
     case CLIENT:
       return `${prefix}/mes-rendez-vous`;
+    case EMPLOYEE:
+      // Les employés n'ont accès qu'au planning
+      return `${prefix}/admin/calendrier`;
     case ADMIN:
     case OWNER:
-    case EMPLOYEE:
       return `${prefix}/admin/dashboard`;
     case USER:
       return `${prefix}/admin/trips`;

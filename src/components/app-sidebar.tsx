@@ -105,7 +105,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (role === ADMIN) {
       return adminNavMain;
     }
-    if (role === OWNER || role === EMPLOYEE) {
+    // Employé : accès limité au planning uniquement
+    if (role === EMPLOYEE) {
+      return [
+        {
+          title: "Calendrier",
+          url: "/admin/calendrier",
+          icon: Calendar,
+        },
+      ];
+    }
+    if (role === OWNER) {
       const salonPath = salonId
         ? `/admin/salons/${salonId}`
         : "/admin/salons";
@@ -148,6 +158,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const shellLabel =
     role === ADMIN ? "Administration" : "Espace professionnel";
 
+  // Page d'accueil du shell selon le rôle (employé → planning uniquement)
+  const homeUrl = role === EMPLOYEE ? "/admin/calendrier" : "/admin/dashboard";
+
   const data = {
     user: {
       name: session?.user?.firstName + " " + session?.user?.lastName,
@@ -162,7 +175,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/admin/dashboard">
+              <Link href={homeUrl}>
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#F0F4F1]">
                   <Image src={LOGO_BLACK} alt="Kori" width={32} height={32} />
                 </div>
