@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
+import ButtonExport from "@/app/components/ButtonExport";
 import { useGetBookings } from "@/app/data/hooks";
 import {
   Select,
@@ -220,6 +221,14 @@ export default function PaymentsPage() {
     // },
   ];
 
+  const exportParams = useMemo(
+    () => ({
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(bookingParams?.salonId ? { salonId: bookingParams.salonId } : {}),
+    }),
+    [statusFilter, bookingParams?.salonId]
+  );
+
   const filterComponent = (
     <Select value={statusFilter} onValueChange={setStatusFilter}>
       <SelectTrigger className="w-[200px]">
@@ -246,6 +255,13 @@ export default function PaymentsPage() {
       onView={handleView}
       emptyMessage="Aucun paiement trouvé"
       filterComponent={filterComponent}
+      headerActions={
+        <ButtonExport
+          endpoint="bookings/payments"
+          exportParams={exportParams}
+          fileNamePrefix="paiements"
+        />
+      }
     />
   );
 }

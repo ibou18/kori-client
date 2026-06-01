@@ -875,9 +875,11 @@ export const getSalonServicesListApi = async (params?: {
   }
 };
 
-export const getSalonServiceApi = async (serviceId: string) => {
+export const getSalonServiceApi = async (salonId: string, serviceId: string) => {
   try {
-    const response = await requestWrapper.get(`/salon-services/${serviceId}`);
+    const response = await requestWrapper.get(
+      `/salons/${salonId}/services/${serviceId}`
+    );
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la récupération du service");
@@ -885,9 +887,14 @@ export const getSalonServiceApi = async (serviceId: string) => {
   }
 };
 
-export const createSalonServiceApi = async (data: any) => {
+export const createSalonServiceApi = async (data: { salonId: string } & Record<string, any>) => {
   try {
-    const response = await requestWrapper.post("/salon-services", data);
+    // salonId fait partie de l'URL côté serveur (/salons/:salonId/services)
+    const { salonId, ...body } = data;
+    const response = await requestWrapper.post(
+      `/salons/${salonId}/services`,
+      body
+    );
     return response.data;
   } catch (error) {
     handleError(error, "Erreur lors de la création du service");
@@ -896,12 +903,13 @@ export const createSalonServiceApi = async (data: any) => {
 };
 
 export const updateSalonServiceApi = async (data: {
+  salonId: string;
   serviceId: string;
   data: any;
 }) => {
   try {
     const response = await requestWrapper.patch(
-      `/salon-services/${data.serviceId}`,
+      `/salons/${data.salonId}/services/${data.serviceId}`,
       data.data
     );
     return response.data;
@@ -911,10 +919,13 @@ export const updateSalonServiceApi = async (data: {
   }
 };
 
-export const reactivateSalonServiceApi = async (serviceId: string) => {
+export const reactivateSalonServiceApi = async (data: {
+  salonId: string;
+  serviceId: string;
+}) => {
   try {
     const response = await requestWrapper.patch(
-      `/salon-services/${serviceId}/reactivate`
+      `/salons/${data.salonId}/services/${data.serviceId}/reactivate`
     );
     return response.data;
   } catch (error) {
@@ -923,10 +934,13 @@ export const reactivateSalonServiceApi = async (serviceId: string) => {
   }
 };
 
-export const deleteSalonServiceApi = async (serviceId: string) => {
+export const deleteSalonServiceApi = async (data: {
+  salonId: string;
+  serviceId: string;
+}) => {
   try {
     const response = await requestWrapper.delete(
-      `/salon-services/${serviceId}`
+      `/salons/${data.salonId}/services/${data.serviceId}`
     );
     return response.data;
   } catch (error) {

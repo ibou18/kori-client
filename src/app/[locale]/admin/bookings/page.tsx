@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
+import ButtonExport from "@/app/components/ButtonExport";
 import { BookingDetailsModal } from "@/app/components/BookingDetailsModal";
 import { GenericModal } from "@/app/components/GenericModal";
 import { useGetBookings } from "@/app/data/hooks";
@@ -208,6 +209,14 @@ export default function BookingsPage() {
     },
   ];
 
+  const exportParams = useMemo(
+    () => ({
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(bookingParams?.salonId ? { salonId: bookingParams.salonId } : {}),
+    }),
+    [statusFilter, bookingParams?.salonId]
+  );
+
   const filterComponent = (
     <Select value={statusFilter} onValueChange={setStatusFilter}>
       <SelectTrigger className="w-[200px]">
@@ -239,6 +248,13 @@ export default function BookingsPage() {
         onDelete={handleDelete}
         emptyMessage="Aucune réservation trouvée"
         filterComponent={filterComponent}
+        headerActions={
+          <ButtonExport
+            endpoint="bookings"
+            exportParams={exportParams}
+            fileNamePrefix="reservations"
+          />
+        }
       />
       <GenericModal
         open={isModalOpen}

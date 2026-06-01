@@ -35,7 +35,8 @@ import { Building2, Mail, Phone, Trash2, User as UserIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import ButtonExport from "@/app/components/ButtonExport";
+import { useEffect, useMemo, useState } from "react";
 
 interface User {
   id: string;
@@ -419,6 +420,15 @@ export default function UsersPage() {
     setSearchQuery(value);
   };
 
+  const exportParams = useMemo(
+    () => ({
+      ...(roleFilter !== "all" ? { role: roleFilter } : {}),
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
+    }),
+    [roleFilter, statusFilter, searchQuery]
+  );
+
   const filterComponent = (
     <div className="flex flex-wrap gap-4">
       <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
@@ -470,6 +480,13 @@ export default function UsersPage() {
               Inviter un propriétaire
             </Button>
           </div>
+        }
+        headerActions={
+          <ButtonExport
+            endpoint="user"
+            exportParams={exportParams}
+            fileNamePrefix="utilisateurs"
+          />
         }
       />
       <UserModal
