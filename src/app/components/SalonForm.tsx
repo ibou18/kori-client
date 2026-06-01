@@ -12,6 +12,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AddressData,
+  GoogleAddressAutocomplete,
+} from "@/components/ui/GoogleAddressAutocomplete";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -108,7 +112,8 @@ const salonFormSchema = z.object({
   salonTypes: z
     .array(z.string())
     .min(1, "Au moins un type de salon est requis"),
-  timezone: z.string().min(1, "Le fuseau horaire est requis"),
+  // "auto" (ou vide) ⇒ le serveur déduit le fuseau depuis l'adresse (geo-tz)
+  timezone: z.string().optional(),
   offersHomeService: z.boolean().default(false),
   isActive: z.boolean().default(true),
   isVerified: z.boolean().default(false),
@@ -118,6 +123,8 @@ const salonFormSchema = z.object({
     postalCode: z.string().optional(),
     province: z.string().optional(),
     country: z.string().min(1, "Le pays est requis"),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
   }),
   // Pré-normalise les créneaux (RHF peut fusionner parent null + sous-champs vides → objets invalides).
   openingHours: z.preprocess(
@@ -156,7 +163,7 @@ export function SalonForm({
       email: "",
       website: "",
       salonTypes: [],
-      timezone: "America/Toronto",
+      timezone: "auto",
       offersHomeService: false,
       isActive: true,
       isVerified: false,
@@ -166,6 +173,8 @@ export function SalonForm({
         postalCode: "",
         province: "",
         country: "Canada",
+        latitude: undefined,
+        longitude: undefined,
       },
       openingHours: emptyOpeningHours(),
     },
@@ -182,7 +191,8 @@ export function SalonForm({
       email: salon.email || "",
       website: salon.website || "",
       salonTypes: salon.salonTypes || [],
-      timezone: salon.timezone || "America/Toronto",
+      // Par défaut "auto" : le fuseau est re-déduit de l'adresse à l'enregistrement
+      timezone: "auto",
       offersHomeService: salon.offersHomeService || false,
       isActive: salon.isActive !== undefined ? salon.isActive : true,
       isVerified: salon.isVerified !== undefined ? salon.isVerified : false,
@@ -192,6 +202,8 @@ export function SalonForm({
         postalCode: salon.address?.postalCode || "",
         province: salon.address?.province || "",
         country: salon.address?.country || "Canada",
+        latitude: salon.address?.latitude ?? undefined,
+        longitude: salon.address?.longitude ?? undefined,
       },
       openingHours: normalizeOpeningHoursFromApi(salon.openingHours),
     });
@@ -206,6 +218,8 @@ export function SalonForm({
       ...values,
       website: values.website || undefined,
       description: values.description || undefined,
+      // "auto" ⇒ chaîne vide : le serveur déduit le fuseau depuis l'adresse (geo-tz)
+      timezone: values.timezone === "auto" ? "" : values.timezone,
       address: {
         ...values.address,
         province: values.address.province || undefined,
@@ -380,6 +394,33 @@ export function SalonForm({
             <CardTitle>Adresse</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Recherche d'adresse (Google Places) : capture les coordonnées GPS
+                pour déterminer automatiquement le bon fuseau horaire côté serveur. */}
+            <GoogleAddressAutocomplete
+              id="salon-address-search"
+              label="Rechercher l'adresse"
+              placeholder="Commencez à taper l'adresse du salon…"
+              value={form.watch("address.street")}
+              onAddressSelect={(addr: AddressData) => {
+                form.setValue("address.street", addr.street, {
+                  shouldValidate: true,
+                });
+                form.setValue("address.city", addr.city, {
+                  shouldValidate: true,
+                });
+                form.setValue("address.postalCode", addr.postalCode);
+                form.setValue("address.country", addr.country, {
+                  shouldValidate: true,
+                });
+                form.setValue("address.latitude", addr.latitude);
+                form.setValue("address.longitude", addr.longitude);
+              }}
+            />
+            <FormDescription>
+              Sélectionnez une suggestion pour renseigner l'adresse et localiser
+              le salon (fuseau horaire déterminé automatiquement).
+            </FormDescription>
+
             <FormField
               control={form.control}
               name="address.street"
@@ -424,31 +465,32 @@ export function SalonForm({
               />
             </div>
 
-            {/* Coordonnées géographiques (lecture seule) */}
-            {salon?.address?.latitude && salon?.address?.longitude && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormItem>
-                  <FormLabel>Latitude</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={salon.address.latitude}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                  </FormControl>
-                </FormItem>
-                <FormItem>
-                  <FormLabel>Longitude</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={salon.address.longitude}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                  </FormControl>
-                </FormItem>
-              </div>
-            )}
+            {/* Coordonnées géographiques (lecture seule, issues de la recherche) */}
+            {form.watch("address.latitude") != null &&
+              form.watch("address.longitude") != null && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormItem>
+                    <FormLabel>Latitude</FormLabel>
+                    <FormControl>
+                      <Input
+                        value={form.watch("address.latitude") ?? ""}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </FormControl>
+                  </FormItem>
+                  <FormItem>
+                    <FormLabel>Longitude</FormLabel>
+                    <FormControl>
+                      <Input
+                        value={form.watch("address.longitude") ?? ""}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                    </FormControl>
+                  </FormItem>
+                </div>
+              )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -573,7 +615,7 @@ export function SalonForm({
               name="timezone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fuseau horaire *</FormLabel>
+                  <FormLabel>Fuseau horaire</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -581,10 +623,13 @@ export function SalonForm({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                        <SelectValue placeholder="Automatique (selon l'adresse)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="auto">
+                        Automatique (selon l'adresse)
+                      </SelectItem>
                       {TIMEZONES.map((tz) => (
                         <SelectItem key={tz.value} value={tz.value}>
                           {tz.label}
@@ -592,6 +637,11 @@ export function SalonForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormDescription>
+                    {salon?.timezone
+                      ? `Déterminé automatiquement depuis l'adresse. Fuseau actuel : ${salon.timezone}. Choisissez une valeur pour forcer un fuseau.`
+                      : "Déterminé automatiquement depuis l'adresse du salon. Choisissez une valeur pour forcer un fuseau."}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
