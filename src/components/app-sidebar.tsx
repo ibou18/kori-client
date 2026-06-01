@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Link2,
   MapIcon,
+  Scissors,
   Settings,
   Store,
   UserPlus,
@@ -120,9 +121,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: Store,
         },
         {
+          title: "Calendrier",
+          url: "/admin/calendrier",
+          icon: Calendar,
+        },
+        {
           title: "Réservations",
           url: "/admin/bookings",
           icon: Calendar,
+        },
+        {
+          title: "Mes services",
+          url: "/admin/mes-services",
+          icon: Scissors,
         },
         {
           title: "Paiements",

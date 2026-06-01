@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
 interface GenericModalProps {
@@ -40,9 +41,13 @@ export function GenericModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`${sizeClasses[size]} ${className || ""}`}
+        className={cn(
+          sizeClasses[size],
+          "flex max-h-[min(90vh,100dvh-2rem)] flex-col gap-0 overflow-hidden p-0",
+          className,
+        )}
       >
-        <DialogHeader>
+        <DialogHeader className="shrink-0 space-y-1.5 px-6 pb-2 pt-6 pr-12">
           <DialogTitle className="text-2xl font-bold text-gray-900">
             {title}
           </DialogTitle>
@@ -52,7 +57,9 @@ export function GenericModal({
             </DialogDescription>
           )}
         </DialogHeader>
-        <div className="mt-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-6 pb-6">
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );

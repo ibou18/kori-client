@@ -60,6 +60,14 @@ iframe {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 150 10% 20%;
+    --sidebar-primary: 150 20% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 150 15% 95%;
+    --sidebar-accent-foreground: 150 10% 20%;
+    --sidebar-border: 240 5.9% 90%;
+    --sidebar-ring: 150 20% 35%;
   }
 
   .dark {
@@ -87,6 +95,14 @@ iframe {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 150 20% 40%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 150 20% 40%;
   }
 }
 

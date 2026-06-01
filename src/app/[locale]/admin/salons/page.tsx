@@ -9,7 +9,8 @@ import { message } from "antd";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import ButtonExport from "@/app/components/ButtonExport";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -135,6 +136,21 @@ export default function SalonsPage() {
 
   const { data, isLoading } = useGetSalons(apiParams);
   const { mutate: deleteSalon } = useDeleteSalon();
+
+  const exportParams = useMemo(() => {
+    const params: Record<string, string | boolean> = {};
+    if (cityFilter) params.city = cityFilter;
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (statusFilter === "active") {
+      params.isActive = true;
+      params.isVerified = true;
+    } else if (statusFilter === "inactive") {
+      params.isActive = false;
+    } else if (statusFilter === "unverified") {
+      params.isVerified = false;
+    }
+    return params;
+  }, [cityFilter, debouncedSearch, statusFilter]);
 
   if (!session) {
     return (
@@ -296,6 +312,13 @@ export default function SalonsPage() {
         // Scroll vers le haut lors du changement de page
         window.scrollTo({ top: 0, behavior: "smooth" });
       }}
+      headerActions={
+        <ButtonExport
+          endpoint="salons"
+          exportParams={exportParams}
+          fileNamePrefix="salons"
+        />
+      }
     />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
+import ButtonExport from "@/app/components/ButtonExport";
 import { BookingDetailsModal } from "@/app/components/BookingDetailsModal";
 import { GenericModal } from "@/app/components/GenericModal";
 import { useGetBookings } from "@/app/data/hooks";
@@ -85,6 +86,14 @@ export default function BookingsPage() {
   }, [user?.role, user?.salonId, isSalonPro]);
 
   const { data, isLoading } = useGetBookings(bookingParams);
+
+  const exportParams = useMemo(
+    () => ({
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(bookingParams?.salonId ? { salonId: bookingParams.salonId } : {}),
+    }),
+    [statusFilter, bookingParams?.salonId],
+  );
 
   if (!session) {
     return (
@@ -239,6 +248,13 @@ export default function BookingsPage() {
         onDelete={handleDelete}
         emptyMessage="Aucune réservation trouvée"
         filterComponent={filterComponent}
+        headerActions={
+          <ButtonExport
+            endpoint="bookings"
+            exportParams={exportParams}
+            fileNamePrefix="reservations"
+          />
+        }
       />
       <GenericModal
         open={isModalOpen}

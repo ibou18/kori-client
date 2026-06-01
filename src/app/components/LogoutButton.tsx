@@ -46,11 +46,11 @@ const LogoutButton = ({
       type="button"
       className={cn(
         "text-slate-800 py-0 px-2 rounded-lg mt-2 flex gap-1 justify-center items-center align-middle",
-        className
+        className,
       )}
       onClick={handleLogout}
     >
-      <LogOutIcon height={20} />
+      <LogOutIcon height={20} /> <span>Déconnexion</span>
       {children}
     </button>
   );

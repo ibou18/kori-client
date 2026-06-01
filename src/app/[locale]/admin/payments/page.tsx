@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminListLayout } from "@/app/components/AdminListLayout";
+import ButtonExport from "@/app/components/ButtonExport";
 import { useGetBookings } from "@/app/data/hooks";
 import {
   Select,
@@ -56,6 +57,14 @@ export default function PaymentsPage() {
   }, [user?.role, user?.salonId, isSalonPro]);
 
   const { data: bookingsData, isLoading } = useGetBookings(bookingParams);
+
+  const exportParams = useMemo(
+    () => ({
+      ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      ...(bookingParams?.salonId ? { salonId: bookingParams.salonId } : {}),
+    }),
+    [statusFilter, bookingParams?.salonId],
+  );
 
   if (!session) {
     return (
@@ -246,6 +255,13 @@ export default function PaymentsPage() {
       onView={handleView}
       emptyMessage="Aucun paiement trouvé"
       filterComponent={filterComponent}
+      headerActions={
+        <ButtonExport
+          endpoint="bookings/payments"
+          exportParams={exportParams}
+          fileNamePrefix="paiements"
+        />
+      }
     />
   );
 }

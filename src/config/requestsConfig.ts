@@ -3,7 +3,10 @@ import axios from "axios";
 import { getSession } from "next-auth/react";
 
 // URL de base de l'API avec valeur par défaut
-const API_BASE_URL = process.env.NEXT_API_URL || "http://localhost:2020";
+const API_BASE_URL =
+  process.env.NEXT_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:2020/api";
 
 // Request wrapper
 export const requestWrapper = axios.create({

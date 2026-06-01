@@ -82,6 +82,8 @@ interface AdminListLayoutProps<T> {
   searchPlaceholder?: string;
   /** Callback appelé quand la recherche interne change (pour sync URL en mode client-side). */
   onSearchChange?: (value: string) => void;
+  /** Actions affichées à côté du bouton d’ajout (ex. export CSV). */
+  headerActions?: React.ReactNode;
 }
 
 export function AdminListLayout<T extends { id: string }>({
@@ -107,6 +109,7 @@ export function AdminListLayout<T extends { id: string }>({
   initialSearchQuery,
   searchPlaceholder,
   onSearchChange,
+  headerActions,
 }: AdminListLayoutProps<T>) {
   const [deleteItem, setDeleteItem] = useState<T | null>(null);
 
@@ -197,6 +200,7 @@ export function AdminListLayout<T extends { id: string }>({
       buttonTitle={onAdd ? addButtonLabel : undefined}
       handleClick={onAdd}
       icon={<Plus className="h-4 w-4" />}
+      actions={headerActions}
     >
       {/* Filtres et Recherche */}
       <div className="mb-6 space-y-4">
