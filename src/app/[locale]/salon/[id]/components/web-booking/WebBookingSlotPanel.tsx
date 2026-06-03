@@ -24,6 +24,7 @@ import type {
   WebBookingStaffMember,
 } from "./types";
 import { getServiceDurationMinutes } from "./pricing";
+import { WebBookingStepActions } from "./WebBookingStepActions";
 
 interface WebBookingSlotPanelProps {
   salonId: string;
@@ -38,6 +39,8 @@ interface WebBookingSlotPanelProps {
   employeeId: string | undefined;
   onEmployeeIdChange: (id: string | undefined) => void;
   onContinue: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   layoutVariant?: "modal" | "page";
 }
 
@@ -76,6 +79,8 @@ export function WebBookingSlotPanel({
   employeeId,
   onEmployeeIdChange,
   onContinue,
+  onBack,
+  backLabel,
   layoutVariant = "modal",
 }: WebBookingSlotPanelProps) {
   const [date, setDate] = useState(() => todayISODate());
@@ -336,14 +341,16 @@ export function WebBookingSlotPanel({
         )}
       </div>
 
-      <Button
-        type="button"
-        className="w-full bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100"
-        disabled={!canContinue}
-        onClick={onContinue}
-      >
-        Continuer vers les remarques
-      </Button>
+      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
+        <Button
+          type="button"
+          className="flex-1 bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100"
+          disabled={!canContinue}
+          onClick={onContinue}
+        >
+          Continuer vers les remarques
+        </Button>
+      </WebBookingStepActions>
     </div>
   );
 }

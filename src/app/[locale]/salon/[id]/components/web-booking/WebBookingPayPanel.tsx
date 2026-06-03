@@ -23,6 +23,7 @@ import {
   getOptionPriceDollars,
   getServiceDurationMinutes,
 } from "./pricing";
+import { WebBookingStepActions } from "./WebBookingStepActions";
 
 interface WebBookingPayPanelProps {
   salonId: string;
@@ -42,7 +43,8 @@ interface WebBookingPayPanelProps {
   clientNotes?: string;
   referencePhotoFile?: File | null;
   referencePhotoPreview?: string | null;
-  onBack: () => void;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export function WebBookingPayPanel({
@@ -64,6 +66,7 @@ export function WebBookingPayPanel({
   referencePhotoFile = null,
   referencePhotoPreview = null,
   onBack,
+  backLabel,
 }: WebBookingPayPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -343,16 +346,7 @@ export function WebBookingPayPanel({
         </p>
       )}
 
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1"
-          disabled={loading}
-          onClick={onBack}
-        >
-          Retour
-        </Button>
+      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
         <Button
           type="button"
           className="flex-1"
@@ -365,7 +359,7 @@ export function WebBookingPayPanel({
             "Payer l'acompte"
           )}
         </Button>
-      </div>
+      </WebBookingStepActions>
     </div>
   );
 }

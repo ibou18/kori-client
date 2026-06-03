@@ -16,8 +16,12 @@ import { getSession, signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
+import { WebBookingStepActions } from "./WebBookingStepActions";
+
 interface ClientQuickAuthPanelProps {
   onAuthenticated: () => void;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 const phoneSelectClassName =
@@ -25,6 +29,8 @@ const phoneSelectClassName =
 
 export function ClientQuickAuthPanel({
   onAuthenticated,
+  onBack,
+  backLabel,
 }: ClientQuickAuthPanelProps) {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -366,6 +372,12 @@ export function ClientQuickAuthPanel({
         </TabsContent>
       </Tabs>
       )}
+
+      <WebBookingStepActions
+        onBack={onBack}
+        backLabel={backLabel}
+        className="mt-4"
+      />
     </div>
   );
 }

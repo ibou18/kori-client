@@ -10,6 +10,7 @@ import type {
   WebBookingServicePayload,
 } from "./types";
 import { WebBookingServiceInfo } from "./WebBookingServiceInfo";
+import { WebBookingStepActions } from "./WebBookingStepActions";
 
 interface WebBookingServicePanelProps {
   service: WebBookingServicePayload;
@@ -17,6 +18,8 @@ interface WebBookingServicePanelProps {
   onSelectOption: (optionId: string) => void;
   onContinue: () => void;
   continueLabel: string;
+  onBack?: () => void;
+  backLabel?: string;
   layoutVariant?: "modal" | "page";
 }
 
@@ -26,6 +29,8 @@ export function WebBookingServicePanel({
   onSelectOption,
   onContinue,
   continueLabel,
+  onBack,
+  backLabel,
   layoutVariant = "modal",
 }: WebBookingServicePanelProps) {
   const options: WebBookingServiceOption[] = service.options?.length
@@ -103,14 +108,16 @@ export function WebBookingServicePanel({
         particularities={service.particularities}
       />
 
-      <Button
-        type="button"
-        className="w-full bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50"
-        disabled={!canContinue}
-        onClick={onContinue}
-      >
-        {continueLabel}
-      </Button>
+      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
+        <Button
+          type="button"
+          className="flex-1 bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50"
+          disabled={!canContinue}
+          onClick={onContinue}
+        >
+          {continueLabel}
+        </Button>
+      </WebBookingStepActions>
     </div>
   );
 }

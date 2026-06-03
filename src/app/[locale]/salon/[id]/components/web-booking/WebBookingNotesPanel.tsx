@@ -6,6 +6,8 @@ import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
+import { WebBookingStepActions } from "./WebBookingStepActions";
+
 const MAX_NOTES_LENGTH = 500;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -18,7 +20,8 @@ interface WebBookingNotesPanelProps {
   onPhotoSelect: (file: File, previewUrl: string) => void;
   onPhotoRemove: () => void;
   onContinue: () => void;
-  onBack: () => void;
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 export function WebBookingNotesPanel({
@@ -30,6 +33,7 @@ export function WebBookingNotesPanel({
   onPhotoRemove,
   onContinue,
   onBack,
+  backLabel,
 }: WebBookingNotesPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -137,14 +141,11 @@ export function WebBookingNotesPanel({
         )}
       </div>
 
-      <div className="flex gap-2 pt-1">
-        <Button type="button" variant="outline" className="flex-1" onClick={onBack}>
-          Retour
-        </Button>
+      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
         <Button type="button" className="flex-1" onClick={onContinue}>
           {hasContent ? "Continuer" : "Passer cette étape"}
         </Button>
-      </div>
+      </WebBookingStepActions>
     </div>
   );
 }

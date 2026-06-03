@@ -2,13 +2,10 @@
 
 import { useGetPlatformConfig } from "@/app/data/hooks";
 import { getSalonApi } from "@/app/data/services";
-import { Button } from "@/components/ui/button";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -18,7 +15,6 @@ import {
   getNextWebBookingStep,
   getPreviousWebBookingStep,
   getPreviousWebBookingStepLabel,
-  getWebBookingStepLabel,
   getWebBookingStepTitle,
   showWebBookingLocationStep,
 } from "./bookingSteps";
@@ -28,6 +24,8 @@ import {
   parseSalonDetailPayload,
   salonHasTeamEmployees,
 } from "./salonStaff";
+import { WebBookingStepProgress } from "./WebBookingStepProgress";
+import { WebBookingTopNav } from "./WebBookingTopNav";
 import { WebBookingLocationPanel } from "./WebBookingLocationPanel";
 import { WebBookingNotesPanel } from "./WebBookingNotesPanel";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
@@ -253,13 +251,7 @@ export function SalonWebBookingFlow({
     [salonOffersHomeService, servicePayload, authenticated],
   );
 
-  const stepLabels = useMemo(
-    () => bookingSteps.map((s) => getWebBookingStepLabel(s)),
-    [bookingSteps],
-  );
-
   const title = getWebBookingStepTitle(step);
-  const stepIndex = Math.max(0, bookingSteps.indexOf(step));
 
   const needsLocationStep = showWebBookingLocationStep(
     salonOffersHomeService,
@@ -328,36 +320,17 @@ export function SalonWebBookingFlow({
     authenticated,
   );
 
-  const renderBackControl = (className = "mb-4") => {
-    if (previousStepLabel) {
-      return (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className={`inline-flex h-auto items-center gap-2 px-0 text-sm font-medium text-[#53745D] hover:bg-transparent hover:underline ${className}`}
-          onClick={() => goBack(step)}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {previousStepLabel}
-        </Button>
-      );
+  const goBackSalon = () => {
+    if (backHref) {
+      router.push(backHref);
     }
-
-    if (step === "service" && backHref) {
-      return (
-        <Link
-          href={backHref}
-          className={`inline-flex items-center gap-2 text-sm text-[#53745D] font-medium hover:underline ${className}`}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Retour au salon
-        </Link>
-      );
-    }
-
-    return null;
   };
+
+  const stepBackHandler =
+    step === "service" ? undefined : () => goBack(step);
+  const stepBackLabel = step === "service" ? undefined : "Retour";
+  const serviceBackHandler = backHref ? goBackSalon : undefined;
+  const serviceBackLabel = backHref ? "Retour au salon" : undefined;
 
   const serviceContinueLabel = needsLocationStep
     ? "Continuer vers le lieu"
@@ -412,62 +385,48 @@ export function SalonWebBookingFlow({
   if (!servicePayload) return null;
   const payload = servicePayload;
 
+  const topNav = (
+    <WebBookingTopNav
+      previousStepLabel={previousStepLabel}
+      onBackPrevious={
+        previousStepLabel ? () => goBack(step) : undefined
+      }
+      backHref={backHref}
+      className={variant === "modal" ? "-mt-1" : undefined}
+    />
+  );
+
+  const stepProgress = (
+    <WebBookingStepProgress
+      steps={bookingSteps}
+      currentStep={step}
+      className="mt-4"
+    />
+  );
+
   const headerBlock =
     variant === "modal" ? (
       <DialogHeader>
-        {renderBackControl("-mt-1 mb-2")}
+        {topNav}
         <DialogTitle className="text-left pr-8">{title}</DialogTitle>
         <p className="text-sm text-slate-500 font-normal text-left">
           {salonName} — {payload.name}
         </p>
+        {stepProgress}
       </DialogHeader>
     ) : (
       <header className="mb-8">
-        {renderBackControl()}
+        {topNav}
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
           Réservation en ligne
         </h1>
         <p className="text-slate-600 mt-1">
           {salonName} — {payload.name}
         </p>
-        <p className="text-sm font-semibold text-slate-800 mt-6 mb-3">
+        <p className="text-sm font-semibold text-slate-800 mt-6">
           {title}
         </p>
-        <ol className="flex flex-wrap gap-2 md:gap-4" aria-label="Étapes">
-          {stepLabels.map((label, i) => {
-            const done = i < stepIndex;
-            const current = i === stepIndex;
-            return (
-              <li
-                key={label}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium border ${
-                  current
-                    ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
-                    : done
-                      ? "border-[#53745D]/40 bg-white text-[#53745D]"
-                      : "border-slate-200 bg-slate-50 text-slate-500"
-                }`}
-              >
-                <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                    current
-                      ? "bg-[#53745D] text-white"
-                      : done
-                        ? "bg-[#53745D]/20 text-[#53745D]"
-                        : "bg-slate-200 text-slate-600"
-                  }`}
-                >
-                  {done ? (
-                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                  ) : (
-                    i + 1
-                  )}
-                </span>
-                {label}
-              </li>
-            );
-          })}
-        </ol>
+        {stepProgress}
       </header>
     );
 
@@ -485,6 +444,8 @@ export function SalonWebBookingFlow({
           }}
           onContinue={() => goNext("service")}
           continueLabel={serviceContinueLabel}
+          onBack={serviceBackHandler}
+          backLabel={serviceBackLabel}
           layoutVariant={variant}
         />
       )}
@@ -502,6 +463,8 @@ export function SalonWebBookingFlow({
             homeServiceAddress={homeServiceAddress}
             onHomeServiceAddressChange={setHomeServiceAddress}
             onContinue={() => goNext("location")}
+            onBack={stepBackHandler}
+            backLabel={stepBackLabel}
             layoutVariant={variant}
           />
         </>
@@ -523,6 +486,8 @@ export function SalonWebBookingFlow({
             employeeId={employeeId}
             onEmployeeIdChange={setEmployeeId}
             onContinue={() => goNext("slot")}
+            onBack={stepBackHandler}
+            backLabel={stepBackLabel}
             layoutVariant={variant}
           />
         </>
@@ -538,7 +503,8 @@ export function SalonWebBookingFlow({
             onPhotoSelect={handlePhotoSelect}
             onPhotoRemove={handlePhotoRemove}
             onContinue={() => goNext("notes")}
-            onBack={() => goBack("notes")}
+            onBack={stepBackHandler}
+            backLabel={stepBackLabel}
           />
         </>
       )}
@@ -546,6 +512,8 @@ export function SalonWebBookingFlow({
       {step === "auth" && selectedSlot && !authenticated && (
         <>
           <ClientQuickAuthPanel
+            onBack={stepBackHandler}
+            backLabel={stepBackLabel}
             onAuthenticated={() => {
               setStep("pay");
               pushPageHistoryStep("pay");
@@ -580,7 +548,8 @@ export function SalonWebBookingFlow({
               clientNotes={clientNotes}
               referencePhotoFile={referencePhotoFile}
               referencePhotoPreview={referencePhotoPreview}
-              onBack={() => goBack("pay")}
+              onBack={stepBackHandler}
+              backLabel={stepBackLabel}
             />
           </>
         )}

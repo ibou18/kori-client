@@ -15,6 +15,7 @@ import {
   getEffectiveHomeTravelFeeDollars,
 } from "./pricing";
 import type { WebBookingServicePayload } from "./types";
+import { WebBookingStepActions } from "./WebBookingStepActions";
 
 interface WebBookingLocationPanelProps {
   salonOffersHomeService: boolean;
@@ -24,6 +25,8 @@ interface WebBookingLocationPanelProps {
   homeServiceAddress: AddressData | null;
   onHomeServiceAddressChange: (value: AddressData | null) => void;
   onContinue: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   layoutVariant?: "modal" | "page";
 }
 
@@ -35,6 +38,8 @@ export function WebBookingLocationPanel({
   homeServiceAddress,
   onHomeServiceAddressChange,
   onContinue,
+  onBack,
+  backLabel,
   layoutVariant = "modal",
 }: WebBookingLocationPanelProps) {
   const locationMode = getBookingLocationMode(
@@ -158,14 +163,16 @@ export function WebBookingLocationPanel({
         )}
       </div>
 
-      <Button
-        type="button"
-        className="w-full bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50"
-        disabled={!homeAddressOk}
-        onClick={onContinue}
-      >
-        Continuer vers le créneau
-      </Button>
+      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
+        <Button
+          type="button"
+          className="flex-1 bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50"
+          disabled={!homeAddressOk}
+          onClick={onContinue}
+        >
+          Continuer vers le créneau
+        </Button>
+      </WebBookingStepActions>
     </div>
   );
 }

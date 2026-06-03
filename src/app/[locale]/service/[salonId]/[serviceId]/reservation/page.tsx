@@ -138,7 +138,7 @@ export default function ServiceReservationPage() {
   const displaySalonName = salonName || service.salon?.name || "Salon";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F0F4F1]/50 to-slate-50">
+    <div className="min-h-screen">
       <div className="max-w-2xl mx-auto px-0 py-8 md:py-12">
         <div className="bg-white rounded-2xl border border-[#53745D]/15 shadow-md p-4 md:p-10">
           <SalonWebBookingFlow
