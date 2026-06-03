@@ -15,7 +15,7 @@ const STEP_TITLES: Record<WebBookingStep, string> = {
   service: "Prestation",
   location: "Lieu du rendez-vous",
   slot: "Date et créneau",
-  notes: "Remarques pour la coiffeuse",
+  notes: "Remarques pour la prestation",
   pay: "Paiement de l'acompte",
 };
 

@@ -264,7 +264,7 @@ export function WebBookingPayPanel({
         {hasClientRemarks && (
           <div className="rounded-lg border border-[#53745D]/20 bg-[#F0F4F1]/60 p-3 space-y-2">
             <p className="text-xs font-semibold text-[#3a5a47] uppercase tracking-wide">
-              Remarques pour la coiffeuse
+              Remarques pour la prestation
             </p>
             {trimmedNotes && (
               <p className="text-sm text-slate-700 whitespace-pre-wrap">
