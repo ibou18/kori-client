@@ -89,3 +89,18 @@ export function getPreviousWebBookingStep(
   if (i <= 0) return null;
   return steps[i - 1];
 }
+
+export function getPreviousWebBookingStepLabel(
+  current: WebBookingStep,
+  salonOffersHomeService: boolean,
+  service: WebBookingServicePayload | null,
+  authenticated = false,
+): string | null {
+  const previous = getPreviousWebBookingStep(
+    current,
+    salonOffersHomeService,
+    service,
+    authenticated,
+  );
+  return previous ? getWebBookingStepLabel(previous) : null;
+}

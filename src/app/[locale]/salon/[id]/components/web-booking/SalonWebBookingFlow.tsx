@@ -7,15 +7,17 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Check, ChevronLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getBookingLocationMode } from "./bookingLocation";
 import {
   buildWebBookingSteps,
   getNextWebBookingStep,
   getPreviousWebBookingStep,
+  getPreviousWebBookingStepLabel,
   getWebBookingStepLabel,
   getWebBookingStepTitle,
   showWebBookingLocationStep,
@@ -63,6 +65,7 @@ export function SalonWebBookingFlow({
   service,
   backHref,
 }: SalonWebBookingFlowProps) {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const sessionUser = session?.user as
     | { id?: string; email?: string | null }
@@ -95,6 +98,7 @@ export function SalonWebBookingFlow({
 
   const wasDialogOpenRef = useRef(false);
   const lastPageServiceIdRef = useRef<string | null>(null);
+  const pageHistoryInitializedRef = useRef(false);
 
   const authenticated = status === "authenticated" && !!session?.user;
   const active = variant === "page" || !!open;
@@ -189,6 +193,7 @@ export function SalonWebBookingFlow({
     if (!service?.id) return;
     if (lastPageServiceIdRef.current !== service.id) {
       lastPageServiceIdRef.current = service.id;
+      pageHistoryInitializedRef.current = false;
       setSlotPanelSessionKey((k) => k + 1);
       setSelectedSlot(null);
       setHomeServiceAddress(null);
@@ -261,24 +266,97 @@ export function SalonWebBookingFlow({
     servicePayload,
   );
 
-  const goNext = (from: WebBookingStep) => {
-    const next = getNextWebBookingStep(
-      from,
-      salonOffersHomeService,
-      servicePayload,
-      authenticated,
-    );
-    if (next) setStep(next);
-  };
+  const pushPageHistoryStep = useCallback((nextStep: WebBookingStep) => {
+    if (variant !== "page") return;
+    window.history.pushState({ webBookingStep: nextStep }, "");
+  }, [variant]);
 
-  const goBack = (from: WebBookingStep) => {
-    const prev = getPreviousWebBookingStep(
-      from,
+  const goNext = useCallback(
+    (from: WebBookingStep) => {
+      const next = getNextWebBookingStep(
+        from,
+        salonOffersHomeService,
+        servicePayload,
+        authenticated,
+      );
+      if (!next) return;
+      setStep(next);
+      pushPageHistoryStep(next);
+    },
+    [
+      authenticated,
+      pushPageHistoryStep,
       salonOffersHomeService,
       servicePayload,
+    ],
+  );
+
+  const goBack = useCallback(
+    (from: WebBookingStep) => {
+      const prev = getPreviousWebBookingStep(
+        from,
+        salonOffersHomeService,
+        servicePayload,
+        authenticated,
+      );
+      if (prev) {
+        if (variant === "page") {
+          window.history.back();
+          return;
+        }
+        setStep(prev);
+        return;
+      }
+      if (backHref) {
+        router.push(backHref);
+      }
+    },
+    [
       authenticated,
-    );
-    if (prev) setStep(prev);
+      backHref,
+      router,
+      salonOffersHomeService,
+      servicePayload,
+      variant,
+    ],
+  );
+
+  const previousStepLabel = getPreviousWebBookingStepLabel(
+    step,
+    salonOffersHomeService,
+    servicePayload,
+    authenticated,
+  );
+
+  const renderBackControl = (className = "mb-4") => {
+    if (previousStepLabel) {
+      return (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className={`inline-flex h-auto items-center gap-2 px-0 text-sm font-medium text-[#53745D] hover:bg-transparent hover:underline ${className}`}
+          onClick={() => goBack(step)}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {previousStepLabel}
+        </Button>
+      );
+    }
+
+    if (step === "service" && backHref) {
+      return (
+        <Link
+          href={backHref}
+          className={`inline-flex items-center gap-2 text-sm text-[#53745D] font-medium hover:underline ${className}`}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Retour au salon
+        </Link>
+      );
+    }
+
+    return null;
   };
 
   const serviceContinueLabel = needsLocationStep
@@ -288,13 +366,41 @@ export function SalonWebBookingFlow({
   useEffect(() => {
     if (!active || step !== "location" || needsLocationStep) return;
     setStep("slot");
-  }, [active, step, needsLocationStep]);
+    pushPageHistoryStep("slot");
+  }, [active, needsLocationStep, pushPageHistoryStep, step]);
+
+  useEffect(() => {
+    if (variant !== "page" || !active) return;
+
+    const onPopState = (event: PopStateEvent) => {
+      const historyStep = (
+        event.state as { webBookingStep?: WebBookingStep } | null
+      )?.webBookingStep;
+
+      if (historyStep && bookingSteps.includes(historyStep)) {
+        setStep(historyStep);
+      }
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [active, backHref, bookingSteps, router, variant]);
+
+  useEffect(() => {
+    if (variant !== "page" || !active || pageHistoryInitializedRef.current) {
+      return;
+    }
+
+    window.history.replaceState({ webBookingStep: "service" }, "");
+    pageHistoryInitializedRef.current = true;
+  }, [active, variant]);
 
   useEffect(() => {
     if (step === "auth" && authenticated) {
       setStep("pay");
+      pushPageHistoryStep("pay");
     }
-  }, [step, authenticated]);
+  }, [authenticated, pushPageHistoryStep, step]);
 
   useEffect(() => {
     if (step === "pay" && !authenticated) {
@@ -309,6 +415,7 @@ export function SalonWebBookingFlow({
   const headerBlock =
     variant === "modal" ? (
       <DialogHeader>
+        {renderBackControl("-mt-1 mb-2")}
         <DialogTitle className="text-left pr-8">{title}</DialogTitle>
         <p className="text-sm text-slate-500 font-normal text-left">
           {salonName} — {payload.name}
@@ -316,15 +423,7 @@ export function SalonWebBookingFlow({
       </DialogHeader>
     ) : (
       <header className="mb-8">
-        {backHref ? (
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-2 text-sm text-[#53745D] font-medium hover:underline mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour au salon
-          </Link>
-        ) : null}
+        {renderBackControl()}
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
           Réservation en ligne
         </h1>
@@ -392,16 +491,6 @@ export function SalonWebBookingFlow({
 
       {step === "location" && selectedOptionId && (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-            onClick={() => goBack("location")}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Prestation
-          </Button>
           <WebBookingLocationPanel
             salonOffersHomeService={salonOffersHomeService}
             service={payload}
@@ -420,16 +509,6 @@ export function SalonWebBookingFlow({
 
       {step === "slot" && selectedOptionId && (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-            onClick={() => goBack("slot")}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            {needsLocationStep ? "Lieu" : "Prestation"}
-          </Button>
           <WebBookingSlotPanel
             key={slotPanelSessionKey}
             salonId={salonId}
@@ -451,16 +530,6 @@ export function SalonWebBookingFlow({
 
       {step === "notes" && selectedSlot && (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-            onClick={() => goBack("notes")}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Créneau
-          </Button>
           <WebBookingNotesPanel
             clientNotes={clientNotes}
             onClientNotesChange={setClientNotes}
@@ -476,17 +545,12 @@ export function SalonWebBookingFlow({
 
       {step === "auth" && selectedSlot && !authenticated && (
         <>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-            onClick={() => goBack("auth")}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Remarques
-          </Button>
-          <ClientQuickAuthPanel onAuthenticated={() => setStep("pay")} />
+          <ClientQuickAuthPanel
+            onAuthenticated={() => {
+              setStep("pay");
+              pushPageHistoryStep("pay");
+            }}
+          />
         </>
       )}
 
@@ -496,16 +560,6 @@ export function SalonWebBookingFlow({
         selectedOptionId &&
         selectedSlot && (
           <>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-              onClick={() => goBack("pay")}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Remarques
-            </Button>
             <WebBookingPayPanel
               salonId={salonId}
               salonOffersHomeService={salonOffersHomeService}
