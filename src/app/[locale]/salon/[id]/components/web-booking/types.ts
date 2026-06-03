@@ -1,4 +1,10 @@
-export type WebBookingStep = "auth" | "slot" | "notes" | "pay";
+export type WebBookingStep =
+  | "auth"
+  | "service"
+  | "location"
+  | "slot"
+  | "notes"
+  | "pay";
 
 export type WebBookingAssignmentMode =
   | "FIRST_AVAILABLE"
@@ -20,6 +26,8 @@ export interface WebBookingServiceOption {
 export interface WebBookingServicePayload {
   id: string;
   name: string;
+  description?: string;
+  particularities?: string;
   duration?: number;
   photos?: Array<{ url: string; alt?: string }>;
   options?: WebBookingServiceOption[];

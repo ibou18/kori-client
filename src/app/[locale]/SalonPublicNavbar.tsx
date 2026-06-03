@@ -22,7 +22,10 @@ type SalonPublicNavbarProps = {
   pathname: string;
 };
 
-export function SalonPublicNavbar({ locale, pathname }: SalonPublicNavbarProps) {
+export function SalonPublicNavbar({
+  locale,
+  pathname,
+}: SalonPublicNavbarProps) {
   const { data: session, status } = useSession();
   const user = session?.user as
     | { role?: string; firstName?: string; email?: string | null }
@@ -84,7 +87,10 @@ export function SalonPublicNavbar({ locale, pathname }: SalonPublicNavbarProps) 
                 size="sm"
                 className="bg-[#53745D] hover:bg-[#4A6854] text-white"
               >
-                <Link href={signInHref} className="inline-flex items-center gap-2">
+                <Link
+                  href={signInHref}
+                  className="inline-flex items-center gap-2"
+                >
                   <LogIn className="size-4" />
                   Se connecter
                 </Link>
@@ -95,9 +101,7 @@ export function SalonPublicNavbar({ locale, pathname }: SalonPublicNavbarProps) 
                 <span className="text-sm text-slate-600 max-w-[10rem] truncate">
                   {user?.firstName || user?.email}
                 </span>
-                <LogoutButton>
-                  <span className="text-sm">Déconnexion</span>
-                </LogoutButton>
+                <LogoutButton className="mt-0 py-1 px-2 text-sm font-medium text-muted-foreground hover:text-foreground" />
               </div>
             )}
           </nav>
@@ -157,9 +161,7 @@ export function SalonPublicNavbar({ locale, pathname }: SalonPublicNavbarProps) 
                       </Button>
                     </SheetClose>
                   ) : (
-                    <LogoutButton>
-                      <span className="text-sm">Déconnexion</span>
-                    </LogoutButton>
+                    <LogoutButton className="mt-0 py-1 px-2 text-sm font-medium text-muted-foreground hover:text-foreground" />
                   )}
                 </div>
               </SheetContent>

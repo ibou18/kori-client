@@ -365,9 +365,7 @@ export default function Navbar({ children }: { children: React.ReactNode }) {
                         Mon espace
                       </Link>
                     )}
-                    <LogoutButton className="mt-0 py-1 px-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-                      <span>Déconnexion</span>
-                    </LogoutButton>
+                    <LogoutButton className="mt-0 py-1 px-2 text-sm font-medium text-muted-foreground hover:text-foreground" />
                   </div>
                 ) : (
                   <Button asChild variant="default" size="sm">

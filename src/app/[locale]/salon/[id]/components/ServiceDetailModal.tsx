@@ -5,6 +5,7 @@ import {
   formatSalonPriceDollars,
 } from "./web-booking/pricing";
 import { calculateTaxesApi, getSalonServiceByIdApi } from "@/app/data/services";
+import { WebBookingServiceInfo } from "./web-booking/WebBookingServiceInfo";
 import { useGetPlatformConfig } from "@/app/data/hooks";
 import { Download, Globe, Loader2, Smartphone, X } from "lucide-react";
 import Image from "next/image";
@@ -312,6 +313,12 @@ export function ServiceDetailModal({
                 Durée indicative : {Math.round(service.duration / 60)}&nbsp;h
               </p>
             )}
+            <div className="mt-4 text-left">
+              <WebBookingServiceInfo
+                description={service.description}
+                particularities={service.particularities}
+              />
+            </div>
           </div>
 
           {service.options &&

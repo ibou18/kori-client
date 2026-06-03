@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 interface ServiceData {
   id: string;
   name: string;
+  description?: string;
+  particularities?: string;
   duration?: number;
   photos?: Array<{ url: string; alt?: string }>;
   options?: Array<{
@@ -124,6 +126,8 @@ export default function ServiceReservationPage() {
   const servicePayload = {
     id: service.id,
     name: service.name,
+    description: service.description,
+    particularities: service.particularities,
     duration: service.duration,
     photos: service.photos,
     options: service.options,

@@ -12,14 +12,24 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getBookingLocationMode } from "./bookingLocation";
+import {
+  buildWebBookingSteps,
+  getNextWebBookingStep,
+  getPreviousWebBookingStep,
+  getWebBookingStepLabel,
+  getWebBookingStepTitle,
+  showWebBookingLocationStep,
+} from "./bookingSteps";
 import { ClientQuickAuthPanel } from "./ClientQuickAuthPanel";
 import {
   buildWebBookingStaffOptions,
   parseSalonDetailPayload,
   salonHasTeamEmployees,
 } from "./salonStaff";
+import { WebBookingLocationPanel } from "./WebBookingLocationPanel";
 import { WebBookingNotesPanel } from "./WebBookingNotesPanel";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
+import { WebBookingServicePanel } from "./WebBookingServicePanel";
 import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
 import type {
   SalonBookingTimeSlot,
@@ -63,7 +73,7 @@ export function SalonWebBookingFlow({
     platformConfigData?.defaultCommissionRate ??
     0.06;
 
-  const [step, setStep] = useState<WebBookingStep>("auth");
+  const [step, setStep] = useState<WebBookingStep>("service");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<SalonBookingTimeSlot | null>(
     null,
@@ -168,14 +178,9 @@ export function SalonWebBookingFlow({
         setAssignmentMode("FIRST_AVAILABLE");
         setEmployeeId(undefined);
         resetClientNotesState();
-        setStep(authenticated ? "slot" : "auth");
+        setStep("service");
         wasDialogOpenRef.current = true;
         return;
-      }
-      if (authenticated) {
-        setStep((s) => (s === "auth" ? "slot" : s));
-      } else {
-        setStep("auth");
       }
       return;
     }
@@ -190,15 +195,9 @@ export function SalonWebBookingFlow({
       setAssignmentMode("FIRST_AVAILABLE");
       setEmployeeId(undefined);
       resetClientNotesState();
-      setStep(authenticated ? "slot" : "auth");
-      return;
+      setStep("service");
     }
-    if (authenticated) {
-      setStep((s) => (s === "auth" ? "slot" : s));
-    } else {
-      setStep("auth");
-    }
-  }, [variant, open, authenticated, service?.id]);
+  }, [variant, open, service?.id]);
 
   useEffect(() => {
     if (!active || !service?.options?.length) return;
@@ -230,30 +229,78 @@ export function SalonWebBookingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, service?.id, salonOffersHomeService, serviceLocationsKey]);
 
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [selectedOptionId, isHomeService, homeServiceAddress?.formattedAddress]);
+
   const servicePayload = useMemo((): WebBookingServicePayload | null => {
     if (!service) return null;
     return service;
   }, [service]);
 
-  const title =
-    step === "auth"
-      ? "Votre compte"
-      : step === "slot"
-        ? "Option et créneau"
-        : step === "notes"
-          ? "Remarques pour la coiffeuse"
-          : "Paiement de l'acompte";
+  const bookingSteps = useMemo(
+    () =>
+      buildWebBookingSteps(
+        salonOffersHomeService,
+        servicePayload,
+        authenticated,
+      ),
+    [salonOffersHomeService, servicePayload, authenticated],
+  );
 
-  const stepIndex =
-    step === "auth"
-      ? 0
-      : step === "slot"
-        ? 1
-        : step === "notes"
-          ? 2
-          : 3;
+  const stepLabels = useMemo(
+    () => bookingSteps.map((s) => getWebBookingStepLabel(s)),
+    [bookingSteps],
+  );
 
-  const stepLabels = ["Compte", "Créneau", "Remarques", "Paiement"];
+  const title = getWebBookingStepTitle(step);
+  const stepIndex = Math.max(0, bookingSteps.indexOf(step));
+
+  const needsLocationStep = showWebBookingLocationStep(
+    salonOffersHomeService,
+    servicePayload,
+  );
+
+  const goNext = (from: WebBookingStep) => {
+    const next = getNextWebBookingStep(
+      from,
+      salonOffersHomeService,
+      servicePayload,
+      authenticated,
+    );
+    if (next) setStep(next);
+  };
+
+  const goBack = (from: WebBookingStep) => {
+    const prev = getPreviousWebBookingStep(
+      from,
+      salonOffersHomeService,
+      servicePayload,
+      authenticated,
+    );
+    if (prev) setStep(prev);
+  };
+
+  const serviceContinueLabel = needsLocationStep
+    ? "Continuer vers le lieu"
+    : "Continuer vers le créneau";
+
+  useEffect(() => {
+    if (!active || step !== "location" || needsLocationStep) return;
+    setStep("slot");
+  }, [active, step, needsLocationStep]);
+
+  useEffect(() => {
+    if (step === "auth" && authenticated) {
+      setStep("pay");
+    }
+  }, [step, authenticated]);
+
+  useEffect(() => {
+    if (step === "pay" && !authenticated) {
+      setStep("auth");
+    }
+  }, [step, authenticated]);
 
   if (variant === "modal" && !open) return null;
   if (!servicePayload) return null;
@@ -289,7 +336,7 @@ export function SalonWebBookingFlow({
         </p>
         <ol className="flex flex-wrap gap-2 md:gap-4" aria-label="Étapes">
           {stepLabels.map((label, i) => {
-            const done = authenticated && i < stepIndex;
+            const done = i < stepIndex;
             const current = i === stepIndex;
             return (
               <li
@@ -329,49 +376,87 @@ export function SalonWebBookingFlow({
     <>
       {headerBlock}
 
-      {step !== "auth" && !authenticated && (
-        <p className="text-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2 mb-4">
-          Session expirée. Reconnectez-vous pour continuer.
-        </p>
-      )}
-
-      {step === "auth" && (
-        <ClientQuickAuthPanel onAuthenticated={() => setStep("slot")} />
-      )}
-
-      {step === "slot" && authenticated && (
-        <WebBookingSlotPanel
-          key={slotPanelSessionKey}
-          salonId={salonId}
-          salonOffersHomeService={salonOffersHomeService}
+      {step === "service" && (
+        <WebBookingServicePanel
           service={payload}
           selectedOptionId={selectedOptionId}
-          onSelectOption={setSelectedOptionId}
-          selectedSlot={selectedSlot}
-          onSelectSlot={setSelectedSlot}
-          hasEmployees={hasEmployees}
-          staffOptions={staffOptions}
-          assignmentMode={assignmentMode}
-          onAssignmentModeChange={setAssignmentMode}
-          employeeId={employeeId}
-          onEmployeeIdChange={setEmployeeId}
-          isHomeService={isHomeService}
-          onIsHomeServiceChange={setIsHomeService}
-          homeServiceAddress={homeServiceAddress}
-          onHomeServiceAddressChange={setHomeServiceAddress}
-          onContinue={() => setStep("notes")}
+          onSelectOption={(id) => {
+            setSelectedOptionId(id);
+            setSelectedSlot(null);
+          }}
+          onContinue={() => goNext("service")}
+          continueLabel={serviceContinueLabel}
           layoutVariant={variant}
         />
       )}
 
-      {step === "notes" && authenticated && selectedSlot && (
+      {step === "location" && selectedOptionId && (
         <>
           <Button
             type="button"
             variant="ghost"
             size="sm"
             className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-            onClick={() => setStep("slot")}
+            onClick={() => goBack("location")}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Prestation
+          </Button>
+          <WebBookingLocationPanel
+            salonOffersHomeService={salonOffersHomeService}
+            service={payload}
+            isHomeService={isHomeService}
+            onIsHomeServiceChange={(v) => {
+              setIsHomeService(v);
+              setSelectedSlot(null);
+            }}
+            homeServiceAddress={homeServiceAddress}
+            onHomeServiceAddressChange={setHomeServiceAddress}
+            onContinue={() => goNext("location")}
+            layoutVariant={variant}
+          />
+        </>
+      )}
+
+      {step === "slot" && selectedOptionId && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
+            onClick={() => goBack("slot")}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            {needsLocationStep ? "Lieu" : "Prestation"}
+          </Button>
+          <WebBookingSlotPanel
+            key={slotPanelSessionKey}
+            salonId={salonId}
+            service={payload}
+            selectedOptionId={selectedOptionId}
+            selectedSlot={selectedSlot}
+            onSelectSlot={setSelectedSlot}
+            hasEmployees={hasEmployees}
+            staffOptions={staffOptions}
+            assignmentMode={assignmentMode}
+            onAssignmentModeChange={setAssignmentMode}
+            employeeId={employeeId}
+            onEmployeeIdChange={setEmployeeId}
+            onContinue={() => goNext("slot")}
+            layoutVariant={variant}
+          />
+        </>
+      )}
+
+      {step === "notes" && selectedSlot && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
+            onClick={() => goBack("notes")}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Créneau
@@ -383,9 +468,25 @@ export function SalonWebBookingFlow({
             referencePhotoPreview={referencePhotoPreview}
             onPhotoSelect={handlePhotoSelect}
             onPhotoRemove={handlePhotoRemove}
-            onContinue={() => setStep("pay")}
-            onBack={() => setStep("slot")}
+            onContinue={() => goNext("notes")}
+            onBack={() => goBack("notes")}
           />
+        </>
+      )}
+
+      {step === "auth" && selectedSlot && !authenticated && (
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
+            onClick={() => goBack("auth")}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Remarques
+          </Button>
+          <ClientQuickAuthPanel onAuthenticated={() => setStep("pay")} />
         </>
       )}
 
@@ -400,7 +501,7 @@ export function SalonWebBookingFlow({
               variant="ghost"
               size="sm"
               className={`w-fit px-0 text-slate-600 ${variant === "modal" ? "-mt-2 -mb-2" : "mb-2"}`}
-              onClick={() => setStep("notes")}
+              onClick={() => goBack("pay")}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Remarques
@@ -425,7 +526,7 @@ export function SalonWebBookingFlow({
               clientNotes={clientNotes}
               referencePhotoFile={referencePhotoFile}
               referencePhotoPreview={referencePhotoPreview}
-              onBack={() => setStep("notes")}
+              onBack={() => goBack("pay")}
             />
           </>
         )}
