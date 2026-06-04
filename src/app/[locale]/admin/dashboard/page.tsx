@@ -18,8 +18,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import PageWrapper from "@/app/components/block/PageWrapper";
-import { useGetAdminStats } from "@/app/data/hooks";
-import { useGetSalons, useGetUsers } from "@/app/data/hooks";
+import {
+  useGetAdminStats,
+  useGetRevenueEvolution,
+  useGetSalons,
+  useGetUsers,
+} from "@/app/data/hooks";
+import dayjs from "dayjs";
 import { EMPLOYEE, OWNER } from "@/shared/constantes";
 import {
   Select,
@@ -100,6 +105,32 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const getEvolutionDateParams = (range: EvolutionRange) => {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (Number(range) - 1));
+  return {
+    startDate: start.toISOString().split("T")[0],
+    endDate: end.toISOString().split("T")[0],
+  };
+};
+
+const formatEvolutionDateLabel = (value: string) => {
+  if (/^\d{4}-\d{2}$/.test(value)) {
+    const [year, month] = value.split("-");
+    return new Intl.DateTimeFormat("fr-CA", {
+      month: "short",
+      year: "2-digit",
+    }).format(new Date(Number(year), Number(month) - 1, 1));
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return dayjs(value).format("DD MMM");
+  }
+  return value;
+};
+
 export default function Dashboard() {
   const { data: session } = useSession();
   const salonUser = session?.user as
@@ -109,6 +140,9 @@ export default function Dashboard() {
   const [stats, setStats] = useState<IStats[]>([]);
   const [evolutionRange, setEvolutionRange] = useState<EvolutionRange>("30");
   const { data: adminStats, isLoading: statsLoading } = useGetAdminStats();
+  const evolutionDateParams = getEvolutionDateParams(evolutionRange);
+  const { data: evolutionData, isLoading: bookingEvolutionLoading } =
+    useGetRevenueEvolution(evolutionDateParams);
   const { data: usersResponse, isLoading: usersLoading } = useGetUsers();
   const { data: salonsResponse, isLoading: salonsLoading } = useGetSalons({
     limit: 10000,
@@ -304,6 +338,15 @@ export default function Dashboard() {
     nouveauxSalons: row.newCount,
     nouveauxClients: clientEvolutionData[i]?.newCount ?? 0,
   }));
+
+  const bookingEvolutionRaw = evolutionData?.data || evolutionData || [];
+  const bookingEvolutionSeries = (
+    Array.isArray(bookingEvolutionRaw) ? bookingEvolutionRaw : []
+  ).map((item: { date: string; bookings: number; platformFees: number }) => ({
+    ...item,
+    label: formatEvolutionDateLabel(item.date),
+  }));
+  const hasBookingEvolutionData = bookingEvolutionSeries.length > 0;
 
   return (
     <PageWrapper title="Dashboard Admin">
@@ -504,7 +547,8 @@ export default function Dashboard() {
                   Période des graphiques d'inscriptions
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Filtre appliqué aux évolutions salons et clients
+                  Filtre appliqué aux graphiques d&apos;inscriptions,
+                  réservations et frais Korí
                 </p>
               </div>
               <div className="w-full md:w-[240px]">
@@ -597,6 +641,122 @@ export default function Dashboard() {
                       dataKey="total"
                       stroke="#53745D"
                       fill="#B8CFBC"
+                      fillOpacity={0.45}
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-[#53745D]" />
+              Évolution des réservations
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Nombre de réservations créées sur les{" "}
+              {getRangeLabel(evolutionRange)}
+            </p>
+            {bookingEvolutionLoading ? (
+              <Skeleton className="h-72 w-full" />
+            ) : !hasBookingEvolutionData ? (
+              <p className="text-sm text-gray-500 py-16 text-center">
+                Aucune réservation sur cette période.
+              </p>
+            ) : (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={bookingEvolutionSeries}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ECECEC" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        `${value}`,
+                        "Réservations",
+                      ]}
+                      labelFormatter={(_label: string, payload) =>
+                        payload?.[0]?.payload?.date
+                          ? formatEvolutionDateLabel(
+                              String(payload[0].payload.date),
+                            )
+                          : _label
+                      }
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="bookings"
+                      stroke="#53745D"
+                      fill="#B8CFBC"
+                      fillOpacity={0.45}
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center">
+              <DollarSign className="w-5 h-5 mr-2 text-[#4A6854]" />
+              Frais de réservation Korí
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Commissions perçues (réservations payées) sur les{" "}
+              {getRangeLabel(evolutionRange)}
+            </p>
+            {bookingEvolutionLoading ? (
+              <Skeleton className="h-72 w-full" />
+            ) : !hasBookingEvolutionData ? (
+              <p className="text-sm text-gray-500 py-16 text-center">
+                Aucun frais sur cette période.
+              </p>
+            ) : (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={bookingEvolutionSeries}
+                    margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ECECEC" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                    <YAxis
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(v) =>
+                        new Intl.NumberFormat("fr-CA", {
+                          notation: "compact",
+                          maximumFractionDigits: 1,
+                        }).format(v)
+                      }
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [
+                        formatCurrency(value),
+                        "Frais Korí",
+                      ]}
+                      labelFormatter={(_label: string, payload) =>
+                        payload?.[0]?.payload?.date
+                          ? formatEvolutionDateLabel(
+                              String(payload[0].payload.date),
+                            )
+                          : _label
+                      }
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="platformFees"
+                      stroke="#4A6854"
+                      fill="#D6E3D8"
                       fillOpacity={0.45}
                       strokeWidth={3}
                       dot={{ r: 3 }}
