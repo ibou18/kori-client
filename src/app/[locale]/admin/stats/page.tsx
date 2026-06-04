@@ -93,23 +93,22 @@ export default function StatsPage() {
   const router = useRouter();
 
   const { data: statsData, isLoading } = useGetAdminStats(
-    dateParams || undefined
+    dateParams || undefined,
   );
   const { data: topServicesData } = useGetTopServices(
-    dateParams ? { ...dateParams, limit: 10 } : undefined
+    dateParams ? { ...dateParams, limit: 10 } : undefined,
   );
   const { data: topSalonsData } = useGetTopSalons(
-    dateParams ? { ...dateParams, limit: 10 } : undefined
+    dateParams ? { ...dateParams, limit: 10 } : undefined,
   );
-  const { data: evolutionData } = useGetRevenueEvolution(
-    dateParams || undefined
-  );
+  const { data: evolutionData, isLoading: evolutionLoading } =
+    useGetRevenueEvolution(dateParams || undefined);
 
   const stats = statsData?.data || statsData;
   const topServices = topServicesData?.data || topServicesData || [];
   const topSalons = topSalonsData?.data || topSalonsData || [];
   const evolution = evolutionData?.data || evolutionData || [];
-  const hasEvolutionData = evolution.length > 0;
+  const hasEvolutionData = Array.isArray(evolution) && evolution.length > 0;
   const evolutionSeries = hasEvolutionData
     ? evolution
     : [
@@ -117,9 +116,35 @@ export default function StatsPage() {
           date: dayjs().format("YYYY-MM-DD"),
           revenue: 0,
           bookings: 0,
+          platformFees: 0,
         },
       ];
-  console.log("topSalons", topSalons);
+
+  const formatEvolutionDateLabel = (value: string) => {
+    if (/^\d{4}-\d{2}$/.test(value)) {
+      const [year, month] = value.split("-");
+      return new Intl.DateTimeFormat("fr-CA", {
+        month: "short",
+        year: "2-digit",
+      }).format(new Date(Number(year), Number(month) - 1, 1));
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return dayjs(value).format("DD MMM");
+    }
+    return value;
+  };
+
+  const totalBookingsEvolution = evolutionSeries.reduce(
+    (sum: number, item: { bookings?: number }) => sum + (item.bookings || 0),
+    0,
+  );
+  const totalPlatformFeesEvolution = evolutionSeries.reduce(
+    (sum: number, item: { platformFees?: number }) =>
+      sum + (item.platformFees || 0),
+    0,
+  );
+  const formatCurrency = (amount: number) =>
+    amount.toLocaleString("fr-CA", { style: "currency", currency: "CAD" });
   const StatCard = ({
     title,
     value,
@@ -235,7 +260,7 @@ export default function StatsPage() {
                     {
                       style: "currency",
                       currency: "CAD",
-                    }
+                    },
                   )}`}
                   icon={DollarSign}
                 />
@@ -246,13 +271,13 @@ export default function StatsPage() {
                     {
                       style: "currency",
                       currency: "CAD",
-                    }
+                    },
                   )}`}
                   icon={TrendingUp}
                   subtitle={
                     dateParams
                       ? `Du ${dayjs(dateParams.startDate).format(
-                          "DD MMM"
+                          "DD MMM",
                         )} au ${dayjs(dateParams.endDate).format("DD MMM")}`
                       : ""
                   }
@@ -260,254 +285,384 @@ export default function StatsPage() {
               </div>
             </div>
 
-            {/* Graphique d'évolution du chiffre d'affaires */}
+            {/* Évolution CA, réservations et frais Korí */}
             <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Évolution du chiffre d'affaires
-                </h2>
-                {!hasEvolutionData && (
-                  <p className="text-sm text-gray-500 mb-4">
-                    Aucune donnée d'évolution sur la période sélectionnée.
-                  </p>
-                )}
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {/* Graphique en aires pour le CA */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        Chiffre d'affaires
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={evolutionSeries}>
-                            <defs>
-                              <linearGradient
-                                id="colorRevenue"
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="1"
-                              >
-                                <stop
-                                  offset="5%"
-                                  stopColor="#53745D"
-                                  stopOpacity={0.8}
-                                />
-                                <stop
-                                  offset="95%"
-                                  stopColor="#53745D"
-                                  stopOpacity={0.1}
-                                />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="date"
-                              tickFormatter={(value) => {
-                                if (value.includes("-")) {
-                                  return dayjs(value).format("DD MMM");
-                                }
-                                return value;
-                              }}
-                            />
-                            <YAxis
-                              tickFormatter={(value) =>
-                                `$${value.toLocaleString("fr-CA")}`
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Évolution sur la période
+              </h2>
+              {!hasEvolutionData && !evolutionLoading && (
+                <p className="text-sm text-gray-500 mb-4">
+                  Aucune donnée d&apos;évolution sur la période sélectionnée.
+                </p>
+              )}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
+                <StatCard
+                  title="Réservations (période)"
+                  value={totalBookingsEvolution}
+                  icon={Calendar}
+                  subtitle={
+                    dateParams
+                      ? `Créées du ${dayjs(dateParams.startDate).format("DD MMM")} au ${dayjs(dateParams.endDate).format("DD MMM")}`
+                      : ""
+                  }
+                />
+                <StatCard
+                  title="Frais Korí (période)"
+                  value={formatCurrency(totalPlatformFeesEvolution)}
+                  icon={DollarSign}
+                  subtitle="Commissions sur réservations payées"
+                />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
+                {/* Graphique en aires pour le CA */}
+                {/* <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">
+                      Chiffre d'affaires
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={evolutionSeries}>
+                          <defs>
+                            <linearGradient
+                              id="colorRevenue"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="#53745D"
+                                stopOpacity={0.8}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="#53745D"
+                                stopOpacity={0.1}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={(value) => {
+                              if (value.includes("-")) {
+                                return dayjs(value).format("DD MMM");
                               }
-                            />
-                            <Tooltip
-                              formatter={(value: any) => [
-                                `${Number(value).toLocaleString("fr-CA", {
-                                  style: "currency",
-                                  currency: "CAD",
-                                })}`,
-                                "Chiffre d'affaires",
-                              ]}
-                              labelFormatter={(value) =>
-                                dayjs(value).format("DD MMM YYYY")
-                              }
-                              contentStyle={{
-                                backgroundColor: "white",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "8px",
-                              }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="revenue"
-                              stroke="#53745D"
-                              strokeWidth={3}
-                              fill="url(#colorRevenue)"
-                              name="Chiffre d'affaires (CAD)"
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                      {/* Statistiques résumées */}
-                      <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
-                        <div>
-                          <p className="text-xs text-gray-500">Total CA</p>
-                          <p className="text-lg font-semibold text-[#53745D]">
-                            {evolutionSeries
-                              .reduce(
-                                (sum: number, item: any) =>
-                                  sum + (item.revenue || 0),
-                                0
-                              )
-                              .toLocaleString("fr-CA", {
+                              return value;
+                            }}
+                          />
+                          <YAxis
+                            tickFormatter={(value) =>
+                              `$${value.toLocaleString("fr-CA")}`
+                            }
+                          />
+                          <Tooltip
+                            formatter={(value: any) => [
+                              `${Number(value).toLocaleString("fr-CA", {
                                 style: "currency",
                                 currency: "CAD",
-                              })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Moyenne/jour</p>
-                          <p className="text-lg font-semibold">
-                            {evolutionSeries.length > 0
-                              ? (
-                                  evolutionSeries.reduce(
-                                    (sum: number, item: any) =>
-                                      sum + (item.revenue || 0),
-                                    0
-                                  ) / evolutionSeries.length
-                                ).toLocaleString("fr-CA", {
-                                  style: "currency",
-                                  currency: "CAD",
-                                })
-                              : "$0.00"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Pic</p>
-                          <p className="text-lg font-semibold">
-                            {Math.max(
-                              ...evolutionSeries.map(
-                                (item: any) => item.revenue || 0
-                              )
-                            ).toLocaleString("fr-CA", {
+                              })}`,
+                              "Chiffre d'affaires",
+                            ]}
+                            labelFormatter={(value) =>
+                              dayjs(value).format("DD MMM YYYY")
+                            }
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="#53745D"
+                            strokeWidth={3}
+                            fill="url(#colorRevenue)"
+                            name="Chiffre d'affaires (CAD)"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
+                      <div>
+                        <p className="text-xs text-gray-500">Total CA</p>
+                        <p className="text-lg font-semibold text-[#53745D]">
+                          {evolutionSeries
+                            .reduce(
+                              (sum: number, item: any) =>
+                                sum + (item.revenue || 0),
+                              0,
+                            )
+                            .toLocaleString("fr-CA", {
                               style: "currency",
                               currency: "CAD",
                             })}
-                          </p>
-                        </div>
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div>
+                        <p className="text-xs text-gray-500">Moyenne/jour</p>
+                        <p className="text-lg font-semibold">
+                          {evolutionSeries.length > 0
+                            ? (
+                                evolutionSeries.reduce(
+                                  (sum: number, item: any) =>
+                                    sum + (item.revenue || 0),
+                                  0,
+                                ) / evolutionSeries.length
+                              ).toLocaleString("fr-CA", {
+                                style: "currency",
+                                currency: "CAD",
+                              })
+                            : "$0.00"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Pic</p>
+                        <p className="text-lg font-semibold">
+                          {Math.max(
+                            ...evolutionSeries.map(
+                              (item: any) => item.revenue || 0,
+                            ),
+                          ).toLocaleString("fr-CA", {
+                            style: "currency",
+                            currency: "CAD",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card> */}
 
-                  {/* Graphique des réservations */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        Nombre de réservations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={evolutionSeries}>
-                            <defs>
-                              <linearGradient
-                                id="colorBookings"
-                                x1="0"
-                                y1="0"
-                                x2="0"
-                                y2="1"
-                              >
-                                <stop
-                                  offset="5%"
-                                  stopColor="#8884d8"
-                                  stopOpacity={0.7}
-                                />
-                                <stop
-                                  offset="95%"
-                                  stopColor="#8884d8"
-                                  stopOpacity={0.12}
-                                />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis
-                              dataKey="date"
-                              tickFormatter={(value) => {
-                                if (value.includes("-")) {
-                                  return dayjs(value).format("DD MMM");
+                {/* Graphique des réservations */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-[#53745D]" />
+                      Évolution des réservations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {evolutionLoading ? (
+                      <Skeleton className="h-80 w-full" />
+                    ) : (
+                      <>
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={evolutionSeries}>
+                              <defs>
+                                <linearGradient
+                                  id="colorBookings"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor="#53745D"
+                                    stopOpacity={0.7}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor="#53745D"
+                                    stopOpacity={0.12}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="date"
+                                tickFormatter={formatEvolutionDateLabel}
+                              />
+                              <YAxis allowDecimals={false} />
+                              <Tooltip
+                                formatter={(value: number) => [
+                                  value,
+                                  "Réservations",
+                                ]}
+                                labelFormatter={(value) =>
+                                  formatEvolutionDateLabel(String(value))
                                 }
-                                return value;
-                              }}
-                            />
-                            <YAxis />
-                            <Tooltip
-                              formatter={(value: any) => [
-                                value,
-                                "Réservations",
-                              ]}
-                              labelFormatter={(value) =>
-                                dayjs(value).format("DD MMM YYYY")
-                              }
-                              contentStyle={{
-                                backgroundColor: "white",
-                                border: "1px solid #e5e7eb",
-                                borderRadius: "8px",
-                              }}
-                            />
-                            <Area
-                              type="monotone"
-                              dataKey="bookings"
-                              stroke="#8884d8"
-                              strokeWidth={3}
-                              fill="url(#colorBookings)"
-                              name="Réservations"
-                              dot={{ r: 4 }}
-                              activeDot={{ r: 6 }}
-                            />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                      {/* Statistiques résumées */}
-                      <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
-                        <div>
-                          <p className="text-xs text-gray-500">Total</p>
-                          <p className="text-lg font-semibold text-[#8884d8]">
-                            {evolutionSeries
-                              .reduce(
-                                (sum: number, item: any) =>
-                                  sum + (item.bookings || 0),
-                                0
-                              )
-                              .toLocaleString("fr-CA")}
-                          </p>
+                                contentStyle={{
+                                  backgroundColor: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "8px",
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="bookings"
+                                stroke="#53745D"
+                                strokeWidth={3}
+                                fill="url(#colorBookings)"
+                                name="Réservations"
+                                dot={{ r: 4 }}
+                                activeDot={{ r: 6 }}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
                         </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Moyenne/jour</p>
-                          <p className="text-lg font-semibold">
-                            {evolutionSeries.length > 0
-                              ? Math.round(
-                                  evolutionSeries.reduce(
-                                    (sum: number, item: any) =>
-                                      sum + (item.bookings || 0),
-                                    0
-                                  ) / evolutionSeries.length
-                                )
-                              : 0}
-                          </p>
+                        <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
+                          <div>
+                            <p className="text-xs text-gray-500">Total</p>
+                            <p className="text-lg font-semibold text-[#53745D]">
+                              {totalBookingsEvolution.toLocaleString("fr-CA")}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">
+                              Moyenne/intervalle
+                            </p>
+                            <p className="text-lg font-semibold">
+                              {evolutionSeries.length > 0
+                                ? Math.round(
+                                    totalBookingsEvolution /
+                                      evolutionSeries.length,
+                                  )
+                                : 0}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Pic</p>
+                            <p className="text-lg font-semibold">
+                              {Math.max(
+                                ...evolutionSeries.map(
+                                  (item: { bookings?: number }) =>
+                                    item.bookings || 0,
+                                ),
+                                0,
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Pic</p>
-                          <p className="text-lg font-semibold">
-                            {Math.max(
-                              ...evolutionSeries.map(
-                                (item: any) => item.bookings || 0
-                              )
-                            )}
-                          </p>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Frais de réservation Korí */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-[#4A6854]" />
+                      Frais de réservation Korí
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    {evolutionLoading ? (
+                      <Skeleton className="h-80 w-full" />
+                    ) : (
+                      <>
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={evolutionSeries}>
+                              <defs>
+                                <linearGradient
+                                  id="colorPlatformFees"
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor="#4A6854"
+                                    stopOpacity={0.8}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor="#4A6854"
+                                    stopOpacity={0.1}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis
+                                dataKey="date"
+                                tickFormatter={formatEvolutionDateLabel}
+                              />
+                              <YAxis
+                                tickFormatter={(value) =>
+                                  new Intl.NumberFormat("fr-CA", {
+                                    notation: "compact",
+                                    maximumFractionDigits: 1,
+                                  }).format(value)
+                                }
+                              />
+                              <Tooltip
+                                formatter={(value: number) => [
+                                  formatCurrency(value),
+                                  "Frais Korí",
+                                ]}
+                                labelFormatter={(value) =>
+                                  formatEvolutionDateLabel(String(value))
+                                }
+                                contentStyle={{
+                                  backgroundColor: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "8px",
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="platformFees"
+                                stroke="#4A6854"
+                                strokeWidth={3}
+                                fill="url(#colorPlatformFees)"
+                                name="Frais Korí (CAD)"
+                                dot={{ r: 4 }}
+                                activeDot={{ r: 6 }}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                        <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
+                          <div>
+                            <p className="text-xs text-gray-500">Total</p>
+                            <p className="text-lg font-semibold text-[#4A6854]">
+                              {formatCurrency(totalPlatformFeesEvolution)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">
+                              Moyenne/intervalle
+                            </p>
+                            <p className="text-lg font-semibold">
+                              {evolutionSeries.length > 0
+                                ? formatCurrency(
+                                    totalPlatformFeesEvolution /
+                                      evolutionSeries.length,
+                                  )
+                                : formatCurrency(0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">Pic</p>
+                            <p className="text-lg font-semibold">
+                              {formatCurrency(
+                                Math.max(
+                                  ...evolutionSeries.map(
+                                    (item: { platformFees?: number }) =>
+                                      item.platformFees || 0,
+                                  ),
+                                  0,
+                                ),
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             {/* Services les plus commandés */}
@@ -803,7 +958,7 @@ export default function StatsPage() {
                   subtitle={
                     dateParams
                       ? `Du ${dayjs(dateParams.startDate).format(
-                          "DD MMM"
+                          "DD MMM",
                         )} au ${dayjs(dateParams.endDate).format("DD MMM")}`
                       : ""
                   }
