@@ -183,7 +183,7 @@ export default function Dashboard() {
           color: "bg-[#F0F4F1]",
         },
         {
-          name: "Revenus Ce Mois",
+          name: "Revenus payés ce mois",
           stat: formatCurrency(statsData.revenue?.thisMonth || 0),
           href: "/admin/payments",
           icon: <TrendingUp className="w-4 h-4 text-[#4A6854]" />,
@@ -519,7 +519,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Ce mois</span>
+                <span className="text-sm text-gray-600">Payés ce mois</span>
                 <span className="font-semibold text-[#4A6854]">
                   {formatCurrency(adminStats.data.revenue?.thisMonth || 0)}
                 </span>
