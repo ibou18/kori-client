@@ -111,10 +111,38 @@ function InviteFlow({
 }) {
   const [device, setDevice] = useState<Device>("other");
   const [accepted, setAccepted] = useState(false);
+  // "checking" : on tente d'ouvrir l'app installée ; "form" : on affiche le formulaire.
+  const [phase, setPhase] = useState<"checking" | "form">("form");
 
   useEffect(() => {
-    setDevice(detectDevice());
-  }, []);
+    const d = detectDevice();
+    setDevice(d);
+
+    // Desktop : le deep link n'ouvrira rien → on va directement au formulaire.
+    if (d === "other") {
+      setPhase("form");
+      return;
+    }
+
+    // Mobile : on tente d'ouvrir l'app sur l'écran d'invitation. Si la page passe
+    // en arrière-plan, l'app s'est ouverte. Sinon (app non installée), on bascule
+    // sur le formulaire après un court délai. Aucune invitation n'est consommée ici.
+    setPhase("checking");
+    let appOpened = false;
+    const onVisibility = () => {
+      if (document.hidden) appOpened = true;
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    tryOpenApp(token);
+    const timeout = setTimeout(() => {
+      if (!appOpened) setPhase("form");
+    }, 2000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearTimeout(timeout);
+    };
+  }, [token]);
 
   const { mutate: accept, isPending } = useAcceptEmployeeInvitation(token);
 
@@ -172,6 +200,39 @@ function InviteFlow({
     );
   }
 
+  // Tentative d'ouverture de l'app installée (écran d'invitation).
+  if (phase === "checking") {
+    return (
+      <CenteredShell>
+        <div className="w-full max-w-sm text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <h1 className="mt-4 text-lg font-semibold text-foreground">
+            Ouverture de l&apos;application korí…
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Si l&apos;application est installée, elle s&apos;ouvre sur
+            l&apos;écran d&apos;invitation.
+          </p>
+          <Button
+            type="button"
+            className="mt-6 w-full"
+            onClick={() => tryOpenApp(token)}
+          >
+            <Smartphone className="mr-2 h-4 w-4" />
+            Ouvrir dans l&apos;application korí
+          </Button>
+          <button
+            type="button"
+            onClick={() => setPhase("form")}
+            className="mt-4 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Je n&apos;ai pas l&apos;application — accepter ici
+          </button>
+        </div>
+      </CenteredShell>
+    );
+  }
+
   return (
     <CenteredShell>
       <div className="w-full max-w-md space-y-5">
@@ -218,8 +279,8 @@ function InviteFlow({
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Prénom et nom : toujours affichés et obligatoires. */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Prénom et nom : toujours obligatoires ; empilés sur mobile. */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="firstName">
                     Prénom <span className="text-red-500">*</span>
