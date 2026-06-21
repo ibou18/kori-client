@@ -80,6 +80,8 @@ import {
   getMySalonApi,
   getNearestSalonsApi,
   getOwnerInvitationByTokenApi,
+  getEmployeeInvitationByTokenApi,
+  acceptEmployeeInvitationApi,
   // App Config (versions, maintenance, support)
   clearConfigCacheApi,
   getAppConfigApi,
@@ -442,6 +444,35 @@ export const useGetOwnerInvitationByToken = (token: string | null) => {
     queryFn: () => getOwnerInvitationByTokenApi(token!),
     enabled: !!token,
     retry: false,
+  });
+};
+
+export const useGetEmployeeInvitationByToken = (token: string | null) => {
+  return useQuery({
+    queryKey: ["employee-invitation", token],
+    queryFn: () => getEmployeeInvitationByTokenApi(token!),
+    enabled: !!token,
+    retry: false,
+  });
+};
+
+export const useAcceptEmployeeInvitation = (token: string) => {
+  return useMutation({
+    mutationFn: (body: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      indicatif?: string;
+      password?: string;
+    }) => acceptEmployeeInvitationApi(token, body),
+    onError: (error: any) => {
+      const errorMessage =
+        error?.formattedMessage ||
+        error?.errorDetails?.message ||
+        error?.message ||
+        "Erreur lors de l'acceptation de l'invitation";
+      toast.error(errorMessage);
+    },
   });
 };
 

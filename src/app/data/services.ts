@@ -450,6 +450,70 @@ export const getOwnerInvitationByTokenApi = async (token: string) => {
 };
 
 // ============================================================================
+// INVITATION EMPLOYÉ
+// ============================================================================
+
+export interface EmployeeInvitationPreview {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  salonName: string;
+  salonId: string;
+  expiresAt: string;
+  valid: boolean;
+  linkMode:
+    | "new"
+    | "client"
+    | "employee_rejoin"
+    | "employee_same_salon"
+    | "blocked";
+  requiresPassword: boolean;
+  requiresProfileForm: boolean;
+  blockedMessage: string | null;
+  prefillPhone: string | null;
+  prefillIndicatif: string | null;
+}
+
+/** Aperçu public d'une invitation employé (GET /api/employee-invitations/token/:token). */
+export const getEmployeeInvitationByTokenApi = async (token: string) => {
+  try {
+    const response = await requestWrapper.get(
+      `/employee-invitations/token/${token}`
+    );
+    return response.data as {
+      success: boolean;
+      data: EmployeeInvitationPreview;
+    };
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de l'invitation");
+    throw error;
+  }
+};
+
+/** Accepte l'invitation employé (POST /api/employee-invitations/token/:token/accept). */
+export const acceptEmployeeInvitationApi = async (
+  token: string,
+  body: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    indicatif?: string;
+    password?: string;
+  }
+) => {
+  try {
+    const response = await requestWrapper.post(
+      `/employee-invitations/token/${token}/accept`,
+      body
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de l'acceptation de l'invitation");
+    throw error;
+  }
+};
+
+// ============================================================================
 // SALONS
 // ============================================================================
 
