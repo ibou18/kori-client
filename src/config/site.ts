@@ -1,6 +1,6 @@
 export const siteConfig = {
   name: "korí",
-  description: "Plateforme de réservation de services de beauté afro",
+  description: "Plateforme de réservation de services de beauté",
   url: process.env.NEXT_PUBLIC_APP_URL || "https://korí.app",
   ogImage: "/og-images/default.jpg",
   links: {

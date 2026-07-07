@@ -53,12 +53,12 @@ const staggerChildren = {
   },
 };
 
-// Données de l'application korí - Services de beauté afro
+// Données de l'application korí - Services de beauté
 const features = [
   {
     name: "Recherche de prestataires",
     description:
-      "Trouvez les meilleurs coiffeurs, barbiers et salons spécialisés en beauté afro près de chez vous.",
+      "Trouvez les meilleurs coiffeurs, barbiers et salons spécialisés en beauté près de chez vous.",
     icon: MapPin,
     color: KoriEmailColors.primary[500],
     detail: "Géolocalisation précise, profils détaillés et avis authentiques.",
@@ -66,7 +66,7 @@ const features = [
   {
     name: "Réservation en ligne",
     description:
-      "Réservez vos prestations de beauté afro en toute simplicité, 24h/24 et 7j/7.",
+      "Réservez vos prestations de beauté en toute simplicité, 24h/24 et 7j/7.",
     icon: Calendar,
     color: KoriEmailColors.primary[600],
     detail:
@@ -75,7 +75,7 @@ const features = [
   {
     name: "Services spécialisés",
     description:
-      "Tresses, coupes, coiffures et soins capillaires adaptés aux cheveux afro.",
+      "Tresses, coupes, coiffures et soins capillaires adaptés aux cheveux.",
     icon: Scissors,
     color: KoriEmailColors.primary[700],
     detail: "Expertise reconnue, techniques spécialisées et produits adaptés.",
@@ -107,7 +107,7 @@ const testimonials = [
   },
   {
     quote:
-      "J'ai réservé ma coupe afro en 2 minutes. Le salon était exactement comme décrit et le service parfait !",
+      "J'ai réservé ma coupe en 2 minutes. Le salon était exactement comme décrit et le service parfait !",
     author: "Fatima Ouali",
     role: "Utilisatrice",
     avatar: `https://ui-avatars.com/api/?name=Fatima+Ouali&background=FF6B6B&color=fff&size=100`,
@@ -116,7 +116,7 @@ const testimonials = [
 
 const faqs = [
   {
-    question: "Comment réserver un service de beauté afro ?",
+    question: "Comment réserver un service de beauté ?",
     answer:
       "Recherchez un prestataire près de chez vous, choisissez votre service et votre créneau, puis confirmez votre réservation. C'est simple et rapide !",
   },
@@ -143,7 +143,7 @@ const faqs = [
 ];
 
 /**
- * Landing page korí – plateforme de réservation de services de beauté afro.
+ * Landing page korí – plateforme de réservation de services de beauté.
  */
 export default function HomePageClient(): JSX.Element {
   const { data: session } = useSession();
@@ -209,7 +209,7 @@ export default function HomePageClient(): JSX.Element {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">
-            La beauté afro à portée de main,
+            La beauté à portée de main,
             <motion.span className="relative inline-block">
               <span className="relative">
                 réservez vos prestations
@@ -220,9 +220,9 @@ export default function HomePageClient(): JSX.Element {
         </motion.div>
 
         <motion.p className="mt-8 text-pretty mx-auto max-w-2xl text-lg font-medium text-gray-600 sm:text-xl/8">
-          Réservez vos prestations de beauté afro en toute simplicité. Trouvez
-          les meilleurs coiffeurs, barbiers et salons spécialisés près de chez
-          vous. Simple, rapide et de confiance.
+          Réservez vos prestations de beauté en toute simplicité. Trouvez les
+          meilleurs coiffeurs, barbiers et salons spécialisés près de chez vous.
+          Simple, rapide et de confiance.
         </motion.p>
 
         <motion.div
@@ -329,11 +329,11 @@ export default function HomePageClient(): JSX.Element {
               Fonctionnalités
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Une plateforme dédiée à la beauté afro
+              Une plateforme dédiée à la beauté
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               korí connecte les clients aux meilleurs prestataires spécialisés
-              en beauté afro. Réservations sécurisées, avis authentiques et
+              en beauté. Réservations sécurisées, avis authentiques et
               expérience personnalisée.
             </p>
           </motion.div>
@@ -634,8 +634,8 @@ export default function HomePageClient(): JSX.Element {
               Rejoignez la communauté korí dès aujourd'hui
             </h2>
             <p className="text-xl text-white/90 max-w-2xl mx-auto mb-10">
-              Découvrez les meilleurs prestataires de beauté afro et réservez
-              vos prestations en toute simplicité.
+              Découvrez les meilleurs prestataires de beauté et réservez vos
+              prestations en toute simplicité.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -673,7 +673,7 @@ export default function HomePageClient(): JSX.Element {
               <div>
                 <h3 className="text-2xl font-bold mb-4">korí</h3>
                 <p className="text-gray-300 mb-4">
-                  La plateforme de réservation de services de beauté afro qui
+                  La plateforme de réservation de services de beauté qui
                   connecte les clients aux meilleurs prestataires spécialisés.
                 </p>
                 <div className="flex space-x-4">
