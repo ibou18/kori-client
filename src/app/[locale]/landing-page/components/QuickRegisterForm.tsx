@@ -11,6 +11,10 @@ import { FormattedPhoneInput } from "@/components/ui/FormattedPhoneInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import {
+  getQuickRegisterErrorMessage,
+  validateQuickRegisterForm,
+} from "@/utils/quickRegisterValidation";
 import { motion } from "framer-motion";
 import { Check, CheckCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -75,25 +79,8 @@ export function QuickRegisterForm() {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData> = {};
-
-    if (!formData.email || !formData.email.includes("@")) {
-      newErrors.email = "Email invalide" as any;
-    }
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "Prénom requis" as any;
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Nom requis" as any;
-    }
-    if (!formData.phone || formData.phone.length < 8) {
-      newErrors.phone = "Numéro de téléphone invalide" as any;
-    }
-    if (formData.services.length === 0) {
-      newErrors.services = "Sélectionnez au moins un service" as any;
-    }
-
-    setErrors(newErrors);
+    const newErrors = validateQuickRegisterForm(formData);
+    setErrors(newErrors as Partial<FormData>);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -131,34 +118,12 @@ export function QuickRegisterForm() {
     } catch (error: any) {
       console.error("❌ Erreur inscription:", error);
       toast.error("Erreur lors de l'inscription", {
-        description: getErrorMessage(error),
+        description: getQuickRegisterErrorMessage(error),
         duration: 6000,
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getErrorMessage = (error: any): string => {
-    const errorCode = error?.response?.data?.errorCode || error?.errorCode;
-
-    const errorMessages: Record<string, string> = {
-      EMAIL_ALREADY_EXISTS:
-        "Cette adresse email est déjà enregistrée. Nous vous contacterons bientôt !",
-      VALIDATION_ERROR: "Veuillez vérifier les informations saisies.",
-      NETWORK_ERROR:
-        "Problème de connexion. Vérifiez votre connexion internet.",
-    };
-
-    if (errorCode && errorMessages[errorCode]) {
-      return errorMessages[errorCode];
-    }
-
-    return (
-      error?.response?.data?.message ||
-      error?.message ||
-      "Une erreur est survenue. Veuillez réessayer."
-    );
   };
 
   // Écran de succès

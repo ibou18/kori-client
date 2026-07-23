@@ -6,6 +6,10 @@ import { trackMetaConversion } from "@/components/MetaPixel";
 import { trackTikTokConversion } from "@/components/TikTokPixel";
 import icon from "@/assets/icon.png";
 import logo from "@/assets/logo-black.png";
+import {
+  getProviderRegisterErrorMessage,
+  transformFormDataToSalonPayload,
+} from "@/utils/providerRegisterValidation";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
@@ -37,6 +41,9 @@ interface FormData {
 
   // Étape 3: Offre supplémentaire
   extraOffer: "yes" | "no";
+
+  // Collecte d'acompte (opt-in ; effectif après onboarding Stripe Connect)
+  collectDeposit: "yes" | "no";
 
   // Étape 4: Nom du salon
   salonName: string;
@@ -111,6 +118,7 @@ export function ProviderRegisterForm() {
         ]
       : [],
     extraOffer: "no",
+    collectDeposit: "no",
     salonName: isDevMode ? "Test Salon" : "",
     salonDescription: isDevMode ? "Test Description" : "",
     salonHours: [
@@ -211,91 +219,6 @@ export function ProviderRegisterForm() {
     }
   };
 
-  const transformFormDataToSalonPayload = (data: FormData) => {
-    const getDayHours = (dayId: string) => {
-      const day = data.salonHours.find((d) => d.id === dayId);
-      if (!day?.enabled || !day.openingTime || !day.closingTime) {
-        return null;
-      }
-      return { open: day.openingTime, close: day.closingTime };
-    };
-
-    const openingHours = {
-      monday: getDayHours("monday"),
-      tuesday: getDayHours("tuesday"),
-      wednesday: getDayHours("wednesday"),
-      thursday: getDayHours("thursday"),
-      friday: getDayHours("friday"),
-      saturday: getDayHours("saturday"),
-      sunday: getDayHours("sunday"),
-    };
-
-    const getSalonTypes = (services: string[]): string[] => {
-      return services.filter((serviceId) =>
-        [
-          "HAIRDRESSER",
-          "BARBER",
-          "NAIL_SALON",
-          "MAQUILLAGE",
-          "CILS",
-          "BODY_CARE",
-        ].includes(serviceId),
-      );
-    };
-
-    const rawAddress = data.salonAddress;
-    const gps =
-      rawAddress &&
-      rawAddress.latitude != null &&
-      rawAddress.longitude != null &&
-      Number.isFinite(Number(rawAddress.latitude)) &&
-      Number.isFinite(Number(rawAddress.longitude))
-        ? {
-            latitude: Number(rawAddress.latitude),
-            longitude: Number(rawAddress.longitude),
-          }
-        : null;
-
-    const addressPayload =
-      rawAddress != null
-        ? {
-            street: rawAddress.street,
-            city: rawAddress.city,
-            postalCode: rawAddress.postalCode,
-            country: rawAddress.country,
-            apartment: rawAddress.apartment,
-            ...(gps ?? {}),
-          }
-        : {
-            street: "À définir",
-            city: "À définir",
-            postalCode: "À définir",
-            country: "Canada",
-          };
-
-    return {
-      user: {
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.countryCode + data.phone,
-        countryCode: data.countryCode,
-        password: data.password,
-      },
-      salon: {
-        name: data.salonName,
-        description: data.salonDescription,
-        address: addressPayload,
-        phone: data.countryCode + data.phone,
-        email: data.email,
-        salonTypes: getSalonTypes(data.services),
-        services: data.services,
-        extraOffer: data.extraOffer,
-      },
-      openingHours,
-    };
-  };
-
   // Fonction utilitaire pour convertir File en base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -388,7 +311,7 @@ export function ProviderRegisterForm() {
           setIsSubmitting(false);
 
           // Extraire le message d'erreur de manière intelligente
-          const errorMessage = getErrorMessage(error);
+          const errorMessage = getProviderRegisterErrorMessage(error);
 
           toast.error("Erreur lors de l'inscription", {
             description: errorMessage,
@@ -400,91 +323,12 @@ export function ProviderRegisterForm() {
       console.error("❌ Erreur:", error);
       setIsSubmitting(false);
 
-      const errorMessage = getErrorMessage(error);
+      const errorMessage = getProviderRegisterErrorMessage(error);
       toast.error("Erreur inattendue", {
         description: errorMessage,
         duration: 6000,
       });
     }
-  };
-
-  // Fonction pour extraire un message d'erreur lisible
-  const getErrorMessage = (error: any): string => {
-    // Vérifier les erreurs Prisma (contrainte unique)
-    // Vérifier dans plusieurs emplacements possibles
-    const prismaError =
-      error?.response?.data?.prismaError ||
-      error?.prismaError ||
-      (error?.code === "P2002" ? error : null);
-
-    if (prismaError?.code === "P2002") {
-      const target = prismaError?.meta?.target || [];
-      if (Array.isArray(target)) {
-        if (target.includes("phone")) {
-          return "Ce numéro de téléphone est déjà utilisé. Veuillez utiliser un autre numéro ou vous connecter si vous avez déjà un compte.";
-        }
-        if (target.includes("email")) {
-          return "Cette adresse email est déjà utilisée. Essayez de vous connecter si vous avez déjà un compte.";
-        }
-      }
-      // Erreur de contrainte unique générique
-      return "Ces informations sont déjà utilisées par un autre compte. Veuillez vérifier vos données ou vous connecter.";
-    }
-
-    // Messages d'erreur personnalisés selon le code d'erreur
-    const errorCode = error?.response?.data?.errorCode || error?.errorCode;
-
-    const errorMessages: Record<string, string> = {
-      EMAIL_ALREADY_EXISTS:
-        "Cette adresse email est déjà utilisée. Essayez de vous connecter.",
-      PHONE_ALREADY_EXISTS:
-        "Ce numéro de téléphone est déjà utilisé. Veuillez utiliser un autre numéro ou vous connecter si vous avez déjà un compte.",
-      SALON_EMAIL_ALREADY_EXISTS:
-        "L'email du salon est déjà utilisé par un autre établissement.",
-      INVALID_PASSWORD:
-        "Le mot de passe ne respecte pas les critères de sécurité.",
-      VALIDATION_ERROR: "Veuillez vérifier les informations saisies.",
-      USER_NOT_FOUND: "Utilisateur non trouvé.",
-      NETWORK_ERROR:
-        "Problème de connexion. Vérifiez votre connexion internet.",
-    };
-
-    if (errorCode && errorMessages[errorCode]) {
-      return errorMessages[errorCode];
-    }
-
-    // Vérifier si le message d'erreur contient des indices sur la contrainte unique
-    const errorMessage =
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.message ||
-      error?.errorDetails?.message ||
-      "";
-
-    if (errorMessage) {
-      // Détecter les erreurs de contrainte unique dans le message
-      if (
-        errorMessage.toLowerCase().includes("unique constraint") ||
-        errorMessage.toLowerCase().includes("already exists") ||
-        errorMessage.toLowerCase().includes("déjà utilisé")
-      ) {
-        if (
-          errorMessage.toLowerCase().includes("phone") ||
-          errorMessage.toLowerCase().includes("téléphone")
-        ) {
-          return "Ce numéro de téléphone est déjà utilisé. Veuillez utiliser un autre numéro ou vous connecter si vous avez déjà un compte.";
-        }
-        if (
-          errorMessage.toLowerCase().includes("email") ||
-          errorMessage.toLowerCase().includes("courriel")
-        ) {
-          return "Cette adresse email est déjà utilisée. Essayez de vous connecter si vous avez déjà un compte.";
-        }
-      }
-      return errorMessage;
-    }
-
-    return "Une erreur est survenue. Veuillez réessayer.";
   };
 
   const renderCurrentStep = () => {
