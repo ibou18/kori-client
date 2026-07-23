@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@ant-design/cssinjs": "1.24.0",
@@ -102,6 +103,7 @@
     "@types/react-dom": "^18.3.5",
     "@types/stripe": "^8.0.417",
     "@vitejs/plugin-react": "^6.0.4",
+    "@vitest/ui": "^4.1.10",
     "eslint": "^8",
     "eslint-config-next": "^15.5.7",
     "jsdom": "^29.1.1",
