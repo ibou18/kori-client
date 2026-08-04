@@ -747,6 +747,7 @@ export const useCreateBooking = () => {
     mutationFn: createBookingApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_DASHBOARD_STATS] });
       toast.success("Réservation créée avec succès !");
     },
     onError: (error: any) => {
@@ -761,6 +762,7 @@ export const useUpdateBooking = () => {
     mutationFn: updateBookingApi,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_DASHBOARD_STATS] });
       queryClient.invalidateQueries({ queryKey: [GET_BOOKING, variables.id] });
       toast.success("Réservation mise à jour avec succès !");
     },
@@ -852,6 +854,7 @@ export const useConfirmPayment = () => {
     mutationFn: confirmPaymentApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_DASHBOARD_STATS] });
       toast.success("Paiement confirmé avec succès !");
     },
     onError: (error: any) => {
@@ -1403,7 +1406,8 @@ export const useGetSalonDashboardStats = (salonId: string) => {
     queryKey: [GET_SALON_DASHBOARD_STATS, salonId],
     queryFn: () => getSalonDashboardStatsApi(salonId),
     enabled: !!salonId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 30, // 30 secondes
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -1415,7 +1419,8 @@ export const useGetSalonMonthlyRevenue = (
     queryKey: [GET_SALON_DASHBOARD_STATS, salonId, "revenue", params],
     queryFn: () => getSalonMonthlyRevenueApi(salonId, params),
     enabled: !!salonId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -1424,7 +1429,8 @@ export const useGetSalonPopularServices = (salonId: string, limit = 5) => {
     queryKey: [GET_SALON_DASHBOARD_STATS, salonId, "popular-services", limit],
     queryFn: () => getSalonPopularServicesApi(salonId, limit),
     enabled: !!salonId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -1439,6 +1445,7 @@ export const useCancelBooking = () => {
       cancelBookingApi(bookingId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_DASHBOARD_STATS] });
       queryClient.invalidateQueries({
         queryKey: [GET_BOOKING, variables.bookingId],
       });
@@ -1456,6 +1463,7 @@ export const useMarkBookingAsNoShow = () => {
     mutationFn: markBookingAsNoShowApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [GET_BOOKINGS] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_DASHBOARD_STATS] });
       toast.success("Réservation marquée comme no-show !");
     },
     onError: (error: any) => {
