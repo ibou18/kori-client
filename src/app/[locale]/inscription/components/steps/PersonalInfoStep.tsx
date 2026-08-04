@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FormattedPhoneInput, usePhoneValidation } from "@/components/ui/FormattedPhoneInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { validateProviderPersonalInfo } from "@/utils/providerRegisterValidation";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -43,36 +44,9 @@ export function PersonalInfoStep({
     usePhoneValidation(formData.phone, formData.countryCode);
 
   const handleValidate = () => {
-    if (!formData.email.trim()) {
-      alert("L'email est requis");
-      return;
-    }
-    if (!formData.lastName.trim()) {
-      alert("Le nom est requis");
-      return;
-    }
-    if (!formData.firstName.trim()) {
-      alert("Le prénom est requis");
-      return;
-    }
-    if (!formData.phone.trim()) {
-      alert("Le numéro de téléphone est requis");
-      return;
-    }
-    if (!isPhoneValid) {
-      alert(phoneError || "Format de téléphone invalide");
-      return;
-    }
-    if (!formData.password.trim() || formData.password.length < 6) {
-      alert("Le mot de passe doit contenir au moins 6 caractères");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      alert("Les mots de passe ne correspondent pas");
-      return;
-    }
-    if (!formData.acceptTerms) {
-      alert("Vous devez accepter les conditions d'utilisation");
+    const error = validateProviderPersonalInfo(formData);
+    if (error) {
+      alert(error);
       return;
     }
     onNext();

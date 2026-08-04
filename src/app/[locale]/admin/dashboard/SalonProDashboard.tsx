@@ -20,6 +20,7 @@ import {
   Loader2,
   Scissors,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -77,16 +78,36 @@ interface KpiCardProps {
   appointments: number;
   revenue: number;
   icon: React.ReactNode;
+  /** Carte cumul : mise en avant pour servir de repère « toutes mes réservations ». */
+  highlighted?: boolean;
 }
 
-function KpiCard({ label, appointments, revenue, icon }: KpiCardProps) {
+function KpiCard({
+  label,
+  appointments,
+  revenue,
+  icon,
+  highlighted = false,
+}: KpiCardProps) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm flex flex-col gap-3">
+    <div
+      className={`rounded-xl border p-5 shadow-sm flex flex-col gap-3 ${
+        highlighted
+          ? "border-[#53745D]/40 bg-[#F0F4F1]"
+          : "border-slate-200 bg-white"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
           {label}
         </p>
-        <div className="rounded-full bg-[#F0F4F1] p-2 text-[#53745D]">{icon}</div>
+        <div
+          className={`rounded-full p-2 text-[#53745D] ${
+            highlighted ? "bg-white" : "bg-[#F0F4F1]"
+          }`}
+        >
+          {icon}
+        </div>
       </div>
       <div className="flex items-end justify-between">
         <div>
@@ -133,6 +154,11 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
     ? (bookingsData as any).data
     : (bookingsData as any)?.data?.bookings ?? [];
 
+  // La liste est tronquée à 8 : afficher `recentBookings.length` dans le badge
+  // laisserait croire que le salon n'a que 8 réservations.
+  const totalBookings: number =
+    (bookingsData as any)?.pagination?.total ?? recentBookings.length;
+
   const todayBookings: any[] = Array.isArray((todayBookingsData as any)?.data)
     ? (todayBookingsData as any).data
     : (todayBookingsData as any)?.data?.bookings ?? [];
@@ -173,7 +199,14 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
   return (
     <PageWrapper title="Tableau de bord">
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <KpiCard
+          label="Total"
+          appointments={stats.total?.appointments ?? 0}
+          revenue={stats.total?.revenue ?? 0}
+          icon={<Users className="h-4 w-4" />}
+          highlighted
+        />
         <KpiCard
           label="Aujourd'hui"
           appointments={stats.today?.appointments ?? 0}
@@ -352,9 +385,9 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
         >
           <div className="flex items-center gap-3">
             <h3 className="font-semibold text-slate-900">Dernières réservations</h3>
-            {recentBookings.length > 0 && (
+            {totalBookings > 0 && (
               <span className="rounded-full bg-[#F0F4F1] px-2 py-0.5 text-xs font-semibold text-[#53745D]">
-                {recentBookings.length}
+                {totalBookings}
               </span>
             )}
           </div>

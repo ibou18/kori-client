@@ -4,6 +4,7 @@ import { GoogleAddressAutocomplete } from "@/components/ui/GoogleAddressAutocomp
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { validateSalonInfoStep } from "@/utils/providerRegisterValidation";
 import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ProgressIndicator } from "../ProgressIndicator";
 
@@ -12,6 +13,7 @@ interface FormData {
   salonDescription?: string;
   services: string[];
   extraOffer: "yes" | "no";
+  collectDeposit: "yes" | "no";
   salonImages: File[];
   salonAddress: {
     street: string;
@@ -79,32 +81,9 @@ export function SalonInfoStep({
   };
 
   const handleValidate = () => {
-    if (!formData.salonName?.trim()) {
-      alert("Veuillez indiquer le nom de votre salon");
-      return;
-    }
-    if (formData.services.length === 0) {
-      alert("Veuillez sélectionner au moins un service");
-      return;
-    }
-    if (!formData.salonAddress || !formData.salonAddress.street?.trim()) {
-      alert("L'adresse est requise");
-      return;
-    }
-    if (!formData.salonAddress.city?.trim()) {
-      alert("La ville est requise");
-      return;
-    }
-    if (!formData.salonAddress.postalCode?.trim()) {
-      alert("Le code postal est requis");
-      return;
-    }
-    if (!formData.extraOffer) {
-      alert("Veuillez indiquer si vous proposez des services à domicile");
-      return;
-    }
-    if (formData.salonImages.length === 0) {
-      alert("Veuillez ajouter au moins une photo de votre salon");
+    const error = validateSalonInfoStep(formData);
+    if (error) {
+      alert(error);
       return;
     }
     onNext();
@@ -375,6 +354,74 @@ export function SalonInfoStep({
         </div>
       </div>
 
+      {/* Section Collecte d'acompte */}
+      <div className="space-y-4 border-t pt-6">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Collecte d&apos;acompte
+          </h2>
+          <p className="text-gray-600">
+            Souhaitez-vous demander un acompte à vos clientes lors de la
+            réservation ?
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => updateFormData({ collectDeposit: "yes" })}
+            className={`w-full p-6 rounded-lg border-2 text-left transition-all ${
+              formData.collectDeposit === "yes"
+                ? "border-primary bg-primary/5"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Oui</h3>
+                <p className="text-sm text-gray-600">
+                  Je souhaite collecter un acompte à la réservation
+                </p>
+              </div>
+              {formData.collectDeposit === "yes" && (
+                <Check className="w-5 h-5 text-primary" />
+              )}
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => updateFormData({ collectDeposit: "no" })}
+            className={`w-full p-6 rounded-lg border-2 text-left transition-all ${
+              formData.collectDeposit === "no"
+                ? "border-primary bg-primary/5"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">Non</h3>
+                <p className="text-sm text-gray-600">
+                  Aucun acompte, paiement intégral sur place
+                </p>
+              </div>
+              {formData.collectDeposit === "no" && (
+                <Check className="w-5 h-5 text-primary" />
+              )}
+            </div>
+          </button>
+
+          {formData.collectDeposit === "yes" && (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+              Pour encaisser les acomptes, vous devrez finaliser la
+              configuration de vos paiements (Stripe Connect) depuis votre
+              espace après l&apos;inscription. En attendant, vous continuerez de
+              recevoir des réservations sans collecte d&apos;acompte.
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Upload des images - juste après offre supplémentaire */}
       <div className="space-y-4 border-t pt-6">
         <div>
@@ -453,6 +500,7 @@ export function SalonInfoStep({
             formData.services.length === 0 ||
             !formData.salonAddress ||
             !formData.extraOffer ||
+            !formData.collectDeposit ||
             formData.salonImages.length === 0
           }
         >

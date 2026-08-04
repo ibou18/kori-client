@@ -7,6 +7,10 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { getPostAuthRedirectPath } from "@/utils/authRedirects";
+import {
+  getLoginErrorMessage,
+  validateLoginCredentials,
+} from "@/utils/loginValidation";
 import { signIn } from "next-auth/react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -38,8 +42,15 @@ export function LoginForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    const validationError = validateLoginCredentials({ email, password });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const result = await signIn("credentials", {
@@ -49,7 +60,7 @@ export function LoginForm({
       });
 
       if (result?.error) {
-        setError(result.error);
+        setError(getLoginErrorMessage(result.error));
         setLoading(false);
       } else {
         // Authentification réussie
@@ -78,7 +89,7 @@ export function LoginForm({
         }, 800);
       }
     } catch (err) {
-      setError("Une erreur s'est produite. Veuillez réessayer.");
+      setError(getLoginErrorMessage(err));
       setLoading(false);
     }
   };
