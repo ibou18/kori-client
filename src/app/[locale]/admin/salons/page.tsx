@@ -238,20 +238,6 @@ export default function SalonsPage() {
       ),
     },
     {
-      key: "rating",
-      header: "Note",
-      render: (salon: Salon) => (
-        <div className="flex items-center gap-2">
-          <span className="font-medium">
-            {salon.rating?.toFixed(1) || "0.0"}
-          </span>
-          <span className="text-xs text-gray-500">
-            ({salon.reviewCount || 0} avis)
-          </span>
-        </div>
-      ),
-    },
-    {
       key: "status",
       header: "Statut",
       render: (salon: Salon) => (
