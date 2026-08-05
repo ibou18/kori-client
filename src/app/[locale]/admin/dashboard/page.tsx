@@ -8,6 +8,8 @@ import {
   CheckCircle,
   Clock,
   DollarSign,
+  Eye,
+  EyeOff,
   Store,
   TrendingUp,
   Users,
@@ -166,6 +168,17 @@ export default function Dashboard() {
           stat: statsData.salons?.total || 0,
           href: "/admin/salons",
           icon: <Store className="w-4 h-4 text-[#4A6854]" />,
+          color: "bg-[#D6E3D8]",
+        },
+        {
+          // Salons répondant aux critères d'affichage dans l'app :
+          // actif + au moins une photo + au moins un service
+          name: "Salons visibles dans l'app",
+          stat: `${statsData.salons?.visibleInApp || 0} (${
+            statsData.salons?.visibleInAppRate ?? 0
+          }%)`,
+          href: "/admin/salons",
+          icon: <Eye className="w-4 h-4 text-[#4A6854]" />,
           color: "bg-[#D6E3D8]",
         },
         {
@@ -444,6 +457,32 @@ export default function Dashboard() {
                   <span className="text-sm text-gray-600">Non vérifiés</span>
                   <span className="font-semibold text-yellow-600">
                     {adminStats.data.salons?.unverified || 0}
+                  </span>
+                </div>
+              </div>
+              {/* Visibilité réelle dans l'application :
+                  salon actif + ≥ 1 photo + ≥ 1 service */}
+              <div className="pt-3 border-t">
+                <div className="flex justify-between items-center">
+                  <span
+                    className="text-sm text-gray-600"
+                    title="Salons actifs ayant au moins une photo et un service"
+                  >
+                    Visibles dans l&apos;app
+                  </span>
+                  <span className="font-semibold text-[#53745D] flex items-center">
+                    <Eye className="w-4 h-4 mr-1" />
+                    {adminStats.data.salons?.visibleInApp || 0}
+                    <span className="ml-1 text-xs font-medium text-gray-500">
+                      ({adminStats.data.salons?.visibleInAppRate ?? 0}%)
+                    </span>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-sm text-gray-600">Non visibles</span>
+                  <span className="font-semibold text-gray-600 flex items-center">
+                    <EyeOff className="w-4 h-4 mr-1" />
+                    {adminStats.data.salons?.notVisibleInApp || 0}
                   </span>
                 </div>
               </div>

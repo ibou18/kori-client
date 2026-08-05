@@ -534,6 +534,7 @@ export const useGetSalons = (params?: {
   search?: string;
   isActive?: boolean;
   isVerified?: boolean;
+  visibleInApp?: boolean;
 }) => {
   return useQuery({
     queryKey: [GET_SALONS, params],

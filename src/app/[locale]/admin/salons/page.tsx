@@ -2,7 +2,11 @@
 
 import { useGetSalons, useDeleteSalon } from "@/app/data/hooks";
 import { AdminListLayout } from "@/app/components/AdminListLayout";
-import { SalonStatusBadge } from "@/utils/statusUtils";
+import {
+  SalonDepositBadge,
+  SalonStatusBadge,
+  SalonVisibilityBadge,
+} from "@/utils/statusUtils";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { message } from "antd";
@@ -31,6 +35,15 @@ interface Salon {
   rating: number;
   reviewCount: number;
   createdAt: string;
+  // Renvoyés par l'API : critères de visibilité dans l'application cliente
+  isVisibleInApp?: boolean;
+  activePhotoCount?: number;
+  activeServiceCount?: number;
+  // Renvoyés par l'API : collecte d'acompte (règle à 3 conditions)
+  collectsDeposit?: boolean;
+  depositEnabled?: boolean;
+  stripeChargesEnabled?: boolean;
+  platformDepositEnabled?: boolean;
   address?: {
     city?: string;
     street?: string;
@@ -111,6 +124,7 @@ export default function SalonsPage() {
     isVerified?: boolean;
     city?: string;
     search?: string;
+    visibleInApp?: boolean;
   } = {
     limit,
     offset,
@@ -132,6 +146,10 @@ export default function SalonsPage() {
     apiParams.isActive = false;
   } else if (statusFilter === "unverified") {
     apiParams.isVerified = false;
+  } else if (statusFilter === "visible") {
+    apiParams.visibleInApp = true;
+  } else if (statusFilter === "not-visible") {
+    apiParams.visibleInApp = false;
   }
 
   const { data, isLoading } = useGetSalons(apiParams);
@@ -148,6 +166,10 @@ export default function SalonsPage() {
       params.isActive = false;
     } else if (statusFilter === "unverified") {
       params.isVerified = false;
+    } else if (statusFilter === "visible") {
+      params.visibleInApp = true;
+    } else if (statusFilter === "not-visible") {
+      params.visibleInApp = false;
     }
     return params;
   }, [cityFilter, debouncedSearch, statusFilter]);
@@ -240,6 +262,30 @@ export default function SalonsPage() {
       ),
     },
     {
+      key: "visibility",
+      header: "Application",
+      render: (salon: Salon) => (
+        <SalonVisibilityBadge
+          isVisibleInApp={salon.isVisibleInApp}
+          isActive={salon.isActive}
+          activePhotoCount={salon.activePhotoCount}
+          activeServiceCount={salon.activeServiceCount}
+        />
+      ),
+    },
+    {
+      key: "deposit",
+      header: "Acompte",
+      render: (salon: Salon) => (
+        <SalonDepositBadge
+          collectsDeposit={salon.collectsDeposit}
+          depositEnabled={salon.depositEnabled}
+          stripeChargesEnabled={salon.stripeChargesEnabled}
+          platformDepositEnabled={salon.platformDepositEnabled}
+        />
+      ),
+    },
+    {
       key: "createdAt",
       header: "Créé le",
       render: (salon: Salon) => (
@@ -264,6 +310,10 @@ export default function SalonsPage() {
           <SelectItem value="active">Actifs</SelectItem>
           <SelectItem value="inactive">Inactifs</SelectItem>
           <SelectItem value="unverified">Non vérifiés</SelectItem>
+          <SelectItem value="visible">Visibles dans l&apos;app</SelectItem>
+          <SelectItem value="not-visible">
+            Non visibles dans l&apos;app
+          </SelectItem>
         </SelectContent>
       </Select>
       <div className="flex flex-row gap-1.5 min-w-[200px] items-center">

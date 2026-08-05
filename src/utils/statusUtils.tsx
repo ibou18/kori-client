@@ -11,6 +11,10 @@ import {
   PlayCircle,
   CheckCircle,
   Loader2,
+  Eye,
+  EyeOff,
+  HelpCircle,
+  Wallet,
 } from "lucide-react";
 
 // ===== BOOKING STATUS =====
@@ -161,26 +165,196 @@ export const getSalonStatusConfig = (isActive: boolean, isVerified: boolean) => 
   };
 };
 
+// ===== PASTILLE DE STATUT =====
+/**
+ * Badge texte + couleur partagé par les statuts salon. L'infobulle (`reason`)
+ * précise le pourquoi quand le libellé seul ne suffit pas.
+ */
+export const StatusPill = ({
+  config,
+}: {
+  config: { label: string; color: string; icon: any; reason?: string };
+}) => {
+  const Icon = config.icon;
+
+  return (
+    <Badge
+      variant="outline"
+      title={config.reason || config.label}
+      className={`${config.color} inline-flex w-fit items-center gap-1.5 whitespace-nowrap font-medium`}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      {config.label}
+    </Badge>
+  );
+};
+
 export const SalonStatusBadge = ({
   isActive,
   isVerified,
 }: {
   isActive: boolean;
   isVerified: boolean;
-}) => {
-  const config = getSalonStatusConfig(isActive, isVerified);
-  const Icon = config.icon;
+}) => <StatusPill config={getSalonStatusConfig(isActive, isVerified)} />;
 
-  return (
-    <Badge
-      variant="outline"
-      className={`${config.color} flex items-center gap-1.5 font-medium`}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      {config.label}
-    </Badge>
-  );
+// ===== SALON VISIBILITÉ APPLICATION =====
+// Un salon apparaît dans l'application cliente s'il est actif ET qu'il a au
+// moins une photo active et au moins un service actif (règle appliquée côté
+// serveur dans SalonService.getClientVisibleSalonFilter).
+export const getSalonVisibilityConfig = ({
+  isVisibleInApp,
+  isActive,
+  activePhotoCount,
+  activeServiceCount,
+}: {
+  // Valeur calculée par l'API ; à défaut on la déduit des compteurs
+  isVisibleInApp?: boolean;
+  isActive: boolean;
+  activePhotoCount?: number;
+  activeServiceCount?: number;
+}) => {
+  // L'API ne renvoie aucune des données de visibilité (version serveur trop
+  // ancienne, réponse en cache…) : ne rien affirmer plutôt que d'afficher à
+  // tort « Non visible » pour toute la liste.
+  if (
+    isVisibleInApp === undefined &&
+    (activePhotoCount === undefined || activeServiceCount === undefined)
+  ) {
+    return {
+      label: "—",
+      color: "bg-gray-50 text-gray-400 border-gray-200",
+      icon: HelpCircle,
+      reason: "Donnée de visibilité indisponible",
+    };
+  }
+
+  const isVisible =
+    isVisibleInApp ??
+    (isActive && (activePhotoCount ?? 0) > 0 && (activeServiceCount ?? 0) > 0);
+
+  if (isVisible) {
+    return {
+      label: "Visible",
+      color: "bg-[#F0F4F1] text-[#53745D] border-[#53745D]",
+      icon: Eye,
+      reason: "Ce salon apparaît dans l'application",
+    };
+  }
+
+  const missing: string[] = [];
+  if (!isActive) missing.push("salon inactif");
+  if (activePhotoCount === 0) missing.push("aucune photo");
+  if (activeServiceCount === 0) missing.push("aucun service");
+  if (missing.length === 0) missing.push("photo ou service manquant");
+
+  return {
+    label: "Non visible",
+    color: "bg-gray-100 text-gray-700 border-gray-300",
+    icon: EyeOff,
+    reason: missing.length
+      ? `Non visible dans l'application : ${missing.join(", ")}`
+      : "Non visible dans l'application",
+  };
 };
+
+export const SalonVisibilityBadge = ({
+  isVisibleInApp,
+  isActive,
+  activePhotoCount,
+  activeServiceCount,
+}: {
+  isVisibleInApp?: boolean;
+  isActive: boolean;
+  activePhotoCount?: number;
+  activeServiceCount?: number;
+}) => (
+  <StatusPill
+    config={getSalonVisibilityConfig({
+      isVisibleInApp,
+      isActive,
+      activePhotoCount,
+      activeServiceCount,
+    })}
+  />
+);
+
+// ===== SALON COLLECTE D'ACOMPTE =====
+// Un acompte n'est prélevé que si les 3 conditions sont réunies : flag
+// plateforme + opt-in du salon + compte Stripe capable d'encaisser.
+// Un salon qui a opté sans Stripe opérationnel reçoit ses réservations, mais
+// sans acompte (repli PLATFORM_FEE_ONLY) — d'où l'état intermédiaire.
+export const getSalonDepositConfig = ({
+  collectsDeposit,
+  depositEnabled,
+  stripeChargesEnabled,
+  platformDepositEnabled,
+}: {
+  collectsDeposit?: boolean;
+  depositEnabled?: boolean;
+  stripeChargesEnabled?: boolean;
+  platformDepositEnabled?: boolean;
+}) => {
+  if (collectsDeposit === undefined && depositEnabled === undefined) {
+    return {
+      label: "—",
+      color: "bg-gray-50 text-gray-400 border-gray-200",
+      icon: HelpCircle,
+      reason: "Donnée d'acompte indisponible",
+    };
+  }
+
+  if (collectsDeposit) {
+    return {
+      label: "Acompte",
+      color: "bg-[#F0F4F1] text-[#53745D] border-[#53745D]",
+      icon: Wallet,
+      reason: "Ce salon collecte un acompte sur ses réservations",
+    };
+  }
+
+  // Le salon a demandé la collecte mais elle ne s'applique pas encore.
+  if (depositEnabled) {
+    const blocker = !platformDepositEnabled
+      ? "la collecte d'acompte est désactivée au niveau de la plateforme"
+      : !stripeChargesEnabled
+        ? "son compte Stripe ne peut pas encore encaisser"
+        : "une condition n'est pas remplie";
+    return {
+      label: "En attente",
+      color: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      icon: AlertCircle,
+      reason: `Salon inscrit à la collecte d'acompte, mais ${blocker} — les réservations passent sans acompte`,
+    };
+  }
+
+  return {
+    label: "Sans acompte",
+    color: "bg-gray-100 text-gray-700 border-gray-300",
+    icon: Ban,
+    reason: "Ce salon n'a pas opté pour la collecte d'acompte",
+  };
+};
+
+export const SalonDepositBadge = ({
+  collectsDeposit,
+  depositEnabled,
+  stripeChargesEnabled,
+  platformDepositEnabled,
+}: {
+  collectsDeposit?: boolean;
+  depositEnabled?: boolean;
+  stripeChargesEnabled?: boolean;
+  platformDepositEnabled?: boolean;
+}) => (
+  <StatusPill
+    config={getSalonDepositConfig({
+      collectsDeposit,
+      depositEnabled,
+      stripeChargesEnabled,
+      platformDepositEnabled,
+    })}
+  />
+);
 
 // ===== USER STATUS =====
 export const getUserStatusConfig = (status: string | boolean) => {

@@ -525,6 +525,7 @@ export const getSalonsApi = async (params?: {
   search?: string;
   isActive?: boolean;
   isVerified?: boolean;
+  visibleInApp?: boolean;
 }) => {
   try {
     const response = await requestWrapper.get("/salons", { params });
