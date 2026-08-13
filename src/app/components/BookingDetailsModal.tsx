@@ -16,22 +16,28 @@ import {
   Building2,
   CreditCard,
   MessageSquare,
+  Hash,
 } from "lucide-react";
 import Image from "next/image";
+import { formatShortReference } from "@/utils/bookingReference";
 
 interface Booking {
   id: string;
+  clientId?: string;
+  salonId?: string;
   status: string;
   paymentStatus?: string;
   appointmentStartDateTime: string;
   appointmentEndDateTime: string;
   isHomeService: boolean;
   client?: {
+    id?: string;
     firstName: string;
     lastName: string;
     email: string;
   };
   salon?: {
+    id?: string;
     name: string;
     address?: {
       street?: string;
@@ -84,6 +90,9 @@ export function BookingDetailsModal({
 
   const hasClientRemarks =
     !!booking.clientNotes?.trim() || !!booking.referencePhoto?.url;
+  const clientId = booking.clientId || booking.client?.id;
+  const salonId = booking.salonId || booking.salon?.id;
+  const shortReference = formatShortReference(booking.id);
 
   return (
     <div className="space-y-6">
@@ -340,6 +349,42 @@ export function BookingDetailsModal({
           Créée le{" "}
           {formatDateFr(booking.createdAt, "D MMMM YYYY [à] HH:mm")}
         </p>
+      </div>
+
+      {/* Identifiants — en bas, pour recherche / support */}
+      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Hash className="h-4 w-4 text-[#53745D]" />
+          <h3 className="font-semibold text-gray-900">Identifiants</h3>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Réf. courte</p>
+            <p className="font-mono text-sm font-semibold text-[#53745D]">
+              {shortReference || "N/A"}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">ID réservation</p>
+              <p className="font-mono text-xs text-gray-700 break-all">
+                {booking.id}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">ID client</p>
+              <p className="font-mono text-xs text-gray-700 break-all">
+                {clientId || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">ID salon</p>
+              <p className="font-mono text-xs text-gray-700 break-all">
+                {salonId || "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

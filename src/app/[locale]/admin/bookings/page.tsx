@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatShortReference } from "@/utils/bookingReference";
 import { BookingStatusBadge, PaymentStatusBadge } from "@/utils/statusUtils";
 import { message } from "antd";
 import dayjs from "dayjs";
@@ -23,17 +24,21 @@ import { useMemo, useState } from "react";
 
 interface Booking {
   id: string;
+  clientId?: string;
+  salonId?: string;
   status: string;
   paymentStatus?: string;
   appointmentStartDateTime: string;
   appointmentEndDateTime: string;
   isHomeService: boolean;
   client?: {
+    id?: string;
     firstName: string;
     lastName: string;
     email: string;
   };
   salon?: {
+    id?: string;
     name: string;
     address?: {
       street?: string;
@@ -136,6 +141,15 @@ export default function BookingsPage() {
 
   const columns = [
     {
+      key: "reference",
+      header: "Réf.",
+      render: (booking: Booking) => (
+        <span className="font-mono text-sm font-semibold text-[#53745D]">
+          {formatShortReference(booking.id)}
+        </span>
+      ),
+    },
+    {
       key: "client",
       header: "Client",
       render: (booking: Booking) => (
@@ -156,14 +170,14 @@ export default function BookingsPage() {
     },
     {
       key: "date",
-      header: "Date & Heure",
+      header: "Date",
       render: (booking: Booking) => (
-        <div className="text-sm">
+        <div className="text-sm whitespace-nowrap tabular-nums">
           <div className="font-medium">
-            {dayjs(booking.appointmentStartDateTime).format("DD MMM YYYY")}
+            {dayjs(booking.appointmentStartDateTime).format("DD/MM/YY")}
           </div>
           <div className="text-gray-600">
-            {dayjs(booking.appointmentStartDateTime).format("HH:mm")} -{" "}
+            {dayjs(booking.appointmentStartDateTime).format("HH:mm")}–
             {dayjs(booking.appointmentEndDateTime).format("HH:mm")}
           </div>
         </div>
@@ -242,7 +256,18 @@ export default function BookingsPage() {
         data={filteredData}
         isLoading={isLoading}
         columns={columns}
-        searchKeys={["id", "status", "client", "salon"]}
+        searchKeys={[
+          "id",
+          "clientId",
+          "salonId",
+          "status",
+          "client.id",
+          "client.firstName",
+          "client.lastName",
+          "client.email",
+          "salon.id",
+          "salon.name",
+        ]}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDelete}
