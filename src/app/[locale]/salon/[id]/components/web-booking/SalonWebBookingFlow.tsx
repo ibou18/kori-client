@@ -28,6 +28,7 @@ import { WebBookingStepProgress } from "./WebBookingStepProgress";
 import { WebBookingTopNav } from "./WebBookingTopNav";
 import { WebBookingLocationPanel } from "./WebBookingLocationPanel";
 import { WebBookingNotesPanel } from "./WebBookingNotesPanel";
+import { WebBookingParticularitiesDialog } from "./WebBookingParticularitiesDialog";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
 import { WebBookingServicePanel } from "./WebBookingServicePanel";
 import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
@@ -87,6 +88,8 @@ export function SalonWebBookingFlow({
     useState<WebBookingAssignmentMode>("FIRST_AVAILABLE");
   const [employeeId, setEmployeeId] = useState<string | undefined>();
   const [clientNotes, setClientNotes] = useState("");
+  const [particularitiesDialogOpen, setParticularitiesDialogOpen] =
+    useState(false);
   const [referencePhotoFile, setReferencePhotoFile] = useState<File | null>(
     null,
   );
@@ -442,13 +445,29 @@ export function SalonWebBookingFlow({
             setSelectedOptionId(id);
             setSelectedSlot(null);
           }}
-          onContinue={() => goNext("service")}
+          onContinue={() => {
+            if (payload.particularities?.trim()) {
+              setParticularitiesDialogOpen(true);
+              return;
+            }
+            goNext("service");
+          }}
           continueLabel={serviceContinueLabel}
           onBack={serviceBackHandler}
           backLabel={serviceBackLabel}
           layoutVariant={variant}
         />
       )}
+
+      <WebBookingParticularitiesDialog
+        open={particularitiesDialogOpen}
+        particularities={payload.particularities?.trim() ?? ""}
+        onCancel={() => setParticularitiesDialogOpen(false)}
+        onConfirm={() => {
+          setParticularitiesDialogOpen(false);
+          goNext("service");
+        }}
+      />
 
       {step === "location" && selectedOptionId && (
         <>
