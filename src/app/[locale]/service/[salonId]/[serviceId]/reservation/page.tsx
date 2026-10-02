@@ -21,7 +21,8 @@ interface ServiceData {
     discountPrice?: number;
   }>;
   availableLocations?: string[];
-  homeTravelFeeDollars?: number;
+  /** Frais de déplacement (CAD) ; `null` = pas de domicile. */
+  travelFees?: number | null;
   salon?: { id: string; name: string };
 }
 
@@ -132,7 +133,7 @@ export default function ServiceReservationPage() {
     photos: service.photos,
     options: service.options,
     availableLocations: service.availableLocations,
-    homeTravelFeeDollars: service.homeTravelFeeDollars,
+    travelFees: service.travelFees ?? null,
   };
 
   const displaySalonName = salonName || service.salon?.name || "Salon";

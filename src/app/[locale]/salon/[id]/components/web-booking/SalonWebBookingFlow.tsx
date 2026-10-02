@@ -1,7 +1,7 @@
 "use client";
 
 import { useGetPlatformConfig } from "@/app/data/hooks";
-import { getSalonApi } from "@/app/data/services";
+import { getSalonApi, getSalonServicesApi } from "@/app/data/services";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
@@ -9,7 +9,15 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { getBookingLocationMode } from "./bookingLocation";
+import { getCombinedAvailableLocations } from "./bookingLocation";
+import {
+  canAddService,
+  formatSelectionLabel,
+  getTotalDurationMinutes as getTotalDurationMinutesForFlow,
+  lineFromService,
+  normalizeOrder,
+  servicesSignature,
+} from "./bookingSelection";
 import {
   buildWebBookingSteps,
   getNextWebBookingStep,
@@ -26,6 +34,7 @@ import {
 } from "./salonStaff";
 import { WebBookingStepProgress } from "./WebBookingStepProgress";
 import { WebBookingTopNav } from "./WebBookingTopNav";
+import { WebBookingAddServiceDialog } from "./WebBookingAddServiceDialog";
 import { WebBookingLocationPanel } from "./WebBookingLocationPanel";
 import { WebBookingNotesPanel } from "./WebBookingNotesPanel";
 import { WebBookingParticularitiesDialog } from "./WebBookingParticularitiesDialog";
@@ -35,9 +44,44 @@ import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
 import type {
   SalonBookingTimeSlot,
   WebBookingAssignmentMode,
+  WebBookingSelectedService,
   WebBookingServicePayload,
   WebBookingStep,
 } from "./types";
+
+/** Prestation de l'API `/salons/:id/services` → charge utile du flux. */
+function toWebBookingServicePayload(raw: unknown): WebBookingServicePayload | null {
+  const r = raw as Record<string, unknown> | null;
+  if (!r || typeof r.id !== "string" || typeof r.name !== "string") return null;
+  const options = Array.isArray(r.options)
+    ? (r.options as Record<string, unknown>[])
+        .filter((o) => o.isActive !== false && typeof o.id === "string")
+        .map((o) => ({
+          id: o.id as string,
+          name: String(o.name ?? ""),
+          price: Number(o.price ?? 0),
+          discountPrice:
+            o.discountPrice != null ? Number(o.discountPrice) : undefined,
+        }))
+    : [];
+  return {
+    id: r.id,
+    name: r.name,
+    description: typeof r.description === "string" ? r.description : undefined,
+    particularities:
+      typeof r.particularities === "string" ? r.particularities : undefined,
+    duration: typeof r.duration === "number" ? r.duration : undefined,
+    photos: Array.isArray(r.photos)
+      ? (r.photos as { url: string; alt?: string }[])
+      : undefined,
+    options,
+    availableLocations: Array.isArray(r.availableLocations)
+      ? (r.availableLocations as string[])
+      : undefined,
+    travelFees: typeof r.travelFees === "number" ? r.travelFees : null,
+    isActive: r.isActive !== false,
+  };
+}
 
 export interface SalonWebBookingFlowProps {
   variant: "modal" | "page";
@@ -77,6 +121,11 @@ export function SalonWebBookingFlow({
 
   const [step, setStep] = useState<WebBookingStep>("service");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  // Prestations ajoutées à la principale (2e à 4e), dans l'ordre de sélection
+  const [additionalLines, setAdditionalLines] = useState<
+    WebBookingSelectedService[]
+  >([]);
+  const [addServiceOpen, setAddServiceOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SalonBookingTimeSlot | null>(
     null,
   );
@@ -115,6 +164,26 @@ export function SalonWebBookingFlow({
     () => parseSalonDetailPayload(salonDetailRaw),
     [salonDetailRaw],
   );
+
+  // Prestations du salon, pour en ajouter d'autres à la réservation
+  const { data: salonServicesRaw } = useQuery({
+    queryKey: ["web-booking-salon-services", salonId],
+    queryFn: () => getSalonServicesApi(salonId),
+    enabled: !!salonId && active,
+    staleTime: 60_000,
+  });
+
+  const salonServices = useMemo((): WebBookingServicePayload[] => {
+    const raw = salonServicesRaw as { data?: unknown } | unknown[] | null;
+    const list = Array.isArray(raw)
+      ? raw
+      : Array.isArray((raw as { data?: unknown })?.data)
+        ? ((raw as { data: unknown[] }).data as unknown[])
+        : [];
+    return list
+      .map(toWebBookingServicePayload)
+      .filter((s): s is WebBookingServicePayload => s !== null);
+  }, [salonServicesRaw]);
 
   const staffOptions = useMemo(
     () => buildWebBookingStaffOptions(salonDetail),
@@ -179,6 +248,7 @@ export function SalonWebBookingFlow({
       if (!wasDialogOpenRef.current) {
         setSlotPanelSessionKey((k) => k + 1);
         setSelectedSlot(null);
+        setAdditionalLines([]);
         setHomeServiceAddress(null);
         setAssignmentMode("FIRST_AVAILABLE");
         setEmployeeId(undefined);
@@ -197,6 +267,7 @@ export function SalonWebBookingFlow({
       pageHistoryInitializedRef.current = false;
       setSlotPanelSessionKey((k) => k + 1);
       setSelectedSlot(null);
+      setAdditionalLines([]);
       setHomeServiceAddress(null);
       setAssignmentMode("FIRST_AVAILABLE");
       setEmployeeId(undefined);
@@ -215,50 +286,84 @@ export function SalonWebBookingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, service?.id, service?.options?.length]);
 
-  const serviceLocationsKey = service?.availableLocations?.join("|") ?? "";
-
-  useEffect(() => {
-    if (!active || !service?.id) return;
-    const mode = getBookingLocationMode(
-      salonOffersHomeService,
-      service.availableLocations,
-    );
-    if (mode === "home_only") {
-      setIsHomeService(true);
-    } else if (mode === "salon_only") {
-      setIsHomeService(false);
-      setHomeServiceAddress(null);
-    } else {
-      setIsHomeService(false);
-      setHomeServiceAddress(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, service?.id, salonOffersHomeService, serviceLocationsKey]);
-
-  useEffect(() => {
-    setSelectedSlot(null);
-  }, [selectedOptionId, isHomeService, homeServiceAddress?.formattedAddress]);
-
   const servicePayload = useMemo((): WebBookingServicePayload | null => {
     if (!service) return null;
     return service;
   }, [service]);
 
+  // Toutes les prestations choisies, principale en premier
+  const selectedServices = useMemo(
+    (): WebBookingServicePayload[] =>
+      servicePayload
+        ? [servicePayload, ...additionalLines.map((l) => l.service)]
+        : [],
+    [servicePayload, additionalLines],
+  );
+  const primaryOption = servicePayload?.options?.find(
+    (o) => o.id === selectedOptionId,
+  );
+  const selectedLines = useMemo(
+    (): WebBookingSelectedService[] =>
+      servicePayload && primaryOption
+        ? normalizeOrder([
+            lineFromService(servicePayload, primaryOption, 1),
+            ...additionalLines,
+          ])
+        : [],
+    [servicePayload, primaryOption, additionalLines],
+  );
+  const selectionKey = servicesSignature(selectedLines);
+  const selectionLabel =
+    selectedLines.length > 1
+      ? formatSelectionLabel(selectedLines, 3)
+      : servicePayload?.name ?? "";
+
+  const addServiceCheck = canAddService(selectedLines);
+  const addServiceHelp = !primaryOption
+    ? "Choisissez d'abord une option"
+    : addServiceCheck.ok
+      ? null
+      : addServiceCheck.message;
+
+  // Lieu : domicile seulement s'il est possible pour toutes les prestations
+  const combinedLocationsKey = getCombinedAvailableLocations(
+    selectedServices,
+  ).join("|");
+
+  useEffect(() => {
+    if (!active || !service?.id) return;
+    const combined = combinedLocationsKey.split("|").filter(Boolean);
+    const canHome = salonOffersHomeService && combined.includes("HOME_ONLY");
+    const canSalon = combined.includes("SALON_ONLY");
+    if (canHome && !canSalon) {
+      setIsHomeService(true);
+    } else {
+      setIsHomeService(false);
+      setHomeServiceAddress(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, service?.id, salonOffersHomeService, combinedLocationsKey]);
+
+  // Un créneau ne vaut que pour une sélection donnée (durée totale)
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [selectionKey, isHomeService, homeServiceAddress?.formattedAddress]);
+
   const bookingSteps = useMemo(
     () =>
       buildWebBookingSteps(
         salonOffersHomeService,
-        servicePayload,
+        selectedServices,
         authenticated,
       ),
-    [salonOffersHomeService, servicePayload, authenticated],
+    [salonOffersHomeService, selectedServices, authenticated],
   );
 
   const title = getWebBookingStepTitle(step);
 
   const needsLocationStep = showWebBookingLocationStep(
     salonOffersHomeService,
-    servicePayload,
+    selectedServices,
   );
 
   const pushPageHistoryStep = useCallback((nextStep: WebBookingStep) => {
@@ -271,7 +376,7 @@ export function SalonWebBookingFlow({
       const next = getNextWebBookingStep(
         from,
         salonOffersHomeService,
-        servicePayload,
+        selectedServices,
         authenticated,
       );
       if (!next) return;
@@ -282,7 +387,7 @@ export function SalonWebBookingFlow({
       authenticated,
       pushPageHistoryStep,
       salonOffersHomeService,
-      servicePayload,
+      selectedServices,
     ],
   );
 
@@ -291,7 +396,7 @@ export function SalonWebBookingFlow({
       const prev = getPreviousWebBookingStep(
         from,
         salonOffersHomeService,
-        servicePayload,
+        selectedServices,
         authenticated,
       );
       if (prev) {
@@ -311,7 +416,7 @@ export function SalonWebBookingFlow({
       backHref,
       router,
       salonOffersHomeService,
-      servicePayload,
+      selectedServices,
       variant,
     ],
   );
@@ -319,7 +424,7 @@ export function SalonWebBookingFlow({
   const previousStepLabel = getPreviousWebBookingStepLabel(
     step,
     salonOffersHomeService,
-    servicePayload,
+    selectedServices,
     authenticated,
   );
 
@@ -413,7 +518,7 @@ export function SalonWebBookingFlow({
         {topNav}
         <DialogTitle className="text-left pr-8">{title}</DialogTitle>
         <p className="text-sm text-slate-500 font-normal text-left">
-          {salonName} — {payload.name}
+          {salonName} — {selectionLabel}
         </p>
         {stepProgress}
       </DialogHeader>
@@ -424,7 +529,7 @@ export function SalonWebBookingFlow({
           Réservation en ligne
         </h1>
         <p className="text-slate-600 mt-1">
-          {salonName} — {payload.name}
+          {salonName} — {selectionLabel}
         </p>
         <p className="text-sm font-semibold text-slate-800 mt-6">
           {title}
@@ -445,6 +550,17 @@ export function SalonWebBookingFlow({
             setSelectedOptionId(id);
             setSelectedSlot(null);
           }}
+          selectedLines={selectedLines}
+          additionalLines={additionalLines}
+          onRemoveAdditional={(serviceId) =>
+            setAdditionalLines((current) =>
+              normalizeOrder(
+                current.filter((l) => l.service.id !== serviceId),
+              ),
+            )
+          }
+          onOpenAddService={() => setAddServiceOpen(true)}
+          addServiceHelp={addServiceHelp}
           onContinue={() => {
             if (payload.particularities?.trim()) {
               setParticularitiesDialogOpen(true);
@@ -458,6 +574,17 @@ export function SalonWebBookingFlow({
           layoutVariant={variant}
         />
       )}
+
+      <WebBookingAddServiceDialog
+        open={addServiceOpen}
+        onClose={() => setAddServiceOpen(false)}
+        services={salonServices}
+        selectedLines={selectedLines}
+        onAdd={(line) => {
+          setAdditionalLines((current) => normalizeOrder([...current, line]));
+          setAddServiceOpen(false);
+        }}
+      />
 
       <WebBookingParticularitiesDialog
         open={particularitiesDialogOpen}
@@ -473,7 +600,7 @@ export function SalonWebBookingFlow({
         <>
           <WebBookingLocationPanel
             salonOffersHomeService={salonOffersHomeService}
-            service={payload}
+            lines={selectedLines}
             isHomeService={isHomeService}
             onIsHomeServiceChange={(v) => {
               setIsHomeService(v);
@@ -494,7 +621,7 @@ export function SalonWebBookingFlow({
           <WebBookingSlotPanel
             key={slotPanelSessionKey}
             salonId={salonId}
-            service={payload}
+            durationMin={getTotalDurationMinutesForFlow(selectedLines)}
             selectedOptionId={selectedOptionId}
             selectedSlot={selectedSlot}
             onSelectSlot={setSelectedSlot}
@@ -554,8 +681,7 @@ export function SalonWebBookingFlow({
               clientId={sessionUser.id}
               clientEmail={sessionUser.email ?? ""}
               locale={locale}
-              service={payload}
-              selectedOptionId={selectedOptionId}
+              lines={selectedLines}
               selectedSlot={selectedSlot}
               assignmentMode={assignmentMode}
               employeeId={

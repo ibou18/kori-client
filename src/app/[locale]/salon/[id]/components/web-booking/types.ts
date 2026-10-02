@@ -33,8 +33,24 @@ export interface WebBookingServicePayload {
   options?: WebBookingServiceOption[];
   /** Ex. SALON_ONLY, HOME_ONLY, BOTH (catalogue admin). */
   availableLocations?: string[];
-  /** Supplément affiché pour l’intervention à domicile (CAD), si fourni par l’API. */
-  homeTravelFeeDollars?: number;
+  /**
+   * Frais de déplacement de la prestation (CAD), champ `travelFees` de l'API.
+   * `null`/absent = la prestation ne se fait pas à domicile (même règle que
+   * l'app mobile et que le serveur).
+   */
+  travelFees?: number | null;
+  /** Les prestations actives seulement sont réservables. */
+  isActive?: boolean;
+}
+
+/**
+ * Une prestation choisie dans la réservation (1 à 4, même salon), figée au
+ * moment du choix. `order` = ordre de sélection, qui fixe l'enchaînement.
+ */
+export interface WebBookingSelectedService {
+  service: WebBookingServicePayload;
+  option: WebBookingServiceOption;
+  order: number;
 }
 
 export interface SalonBookingTimeSlot {

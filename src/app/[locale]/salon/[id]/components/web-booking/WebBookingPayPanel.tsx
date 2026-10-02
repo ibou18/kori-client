@@ -15,15 +15,47 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   SalonBookingTimeSlot,
   WebBookingAssignmentMode,
-  WebBookingServicePayload,
+  WebBookingSelectedService,
 } from "./types";
 import {
-  computePlatformFeeDollars,
-  getEffectiveHomeTravelFeeDollars,
-  getOptionPriceDollars,
-  getServiceDurationMinutes,
-} from "./pricing";
+  buildBookingServicesPayload,
+  formatDurationMinutes,
+  formatServicesCount,
+  getBookingTravelFeeDollars,
+  getServicesTotalDollars,
+  getTotalDurationMinutes,
+  normalizeOrder,
+} from "./bookingSelection";
+import { computePlatformFeeDollars, getOptionPriceDollars } from "./pricing";
 import { WebBookingStepActions } from "./WebBookingStepActions";
+
+/** Motifs de refus de POST /bookings, en français (aligné app mobile). */
+const BOOKING_ERROR_MESSAGES: Record<string, string> = {
+  SLOT_NOT_AVAILABLE:
+    "Ce créneau n'est plus disponible. Revenez au choix du créneau.",
+  NO_STAFF_AVAILABLE:
+    "Plus aucune professionnelle n'est disponible sur ce créneau. Revenez au choix du créneau.",
+  STAFF_UNAVAILABLE_BLOCK:
+    "La professionnelle choisie n'est plus disponible sur ce créneau.",
+  BOOKING_OUTSIDE_HOURS:
+    "Ce créneau dépasse les horaires de la professionnelle. Revenez au choix du créneau.",
+  BOOKING_AMOUNT_MISMATCH:
+    "Les tarifs du salon ont changé depuis votre sélection. Revenez au choix des prestations.",
+  BOOKING_SERVICE_NOT_FOUND:
+    "Une des prestations choisies n'est plus proposée par ce salon.",
+  BOOKING_SERVICE_OPTION_INVALID:
+    "Une des options choisies n'est plus proposée par ce salon.",
+  BOOKING_SERVICE_OPTION_REQUIRED:
+    "Choisissez une option pour chaque prestation.",
+  BOOKING_TOO_MANY_SERVICES:
+    "Une réservation peut contenir 4 prestations au maximum.",
+  BOOKING_DUPLICATE_SERVICE:
+    "La même prestation ne peut pas être réservée deux fois.",
+  BOOKING_LOCATION_INCOMPATIBLE:
+    "Ces prestations ne peuvent pas être réalisées au même endroit.",
+  BOOKING_DURATION_TOO_LONG:
+    "La durée totale des prestations dépasse 8 heures.",
+};
 
 interface WebBookingPayPanelProps {
   salonId: string;
@@ -32,8 +64,8 @@ interface WebBookingPayPanelProps {
   clientId: string;
   clientEmail: string;
   locale: string;
-  service: WebBookingServicePayload;
-  selectedOptionId: string;
+  /** Toutes les prestations choisies, dans l'ordre d'enchaînement. */
+  lines: WebBookingSelectedService[];
   selectedSlot: SalonBookingTimeSlot;
   assignmentMode: WebBookingAssignmentMode;
   employeeId?: string;
@@ -54,8 +86,7 @@ export function WebBookingPayPanel({
   clientId,
   clientEmail,
   locale,
-  service,
-  selectedOptionId,
+  lines,
   selectedSlot,
   assignmentMode,
   employeeId,
@@ -73,16 +104,16 @@ export function WebBookingPayPanel({
   const [taxTotal, setTaxTotal] = useState<number | null>(null);
   const [taxLoading, setTaxLoading] = useState(true);
 
-  const option = service.options?.find((o) => o.id === selectedOptionId);
-  const servicePrice = option ? getOptionPriceDollars(option) : 0;
-  const travelFeeDollars = isHomeService
-    ? getEffectiveHomeTravelFeeDollars(
-        service.homeTravelFeeDollars,
-        salonOffersHomeService,
-      )
-    : 0;
-  const clientSubtotalDollars = servicePrice + travelFeeDollars;
-  const durationMin = getServiceDurationMinutes(service.duration);
+  const orderedLines = normalizeOrder(lines);
+  // Prestations (réduction incluse) + un seul déplacement, le plus élevé
+  const servicePrice = getServicesTotalDollars(orderedLines);
+  const travelFeeDollars = getBookingTravelFeeDollars(
+    orderedLines,
+    isHomeService && salonOffersHomeService,
+  );
+  const clientSubtotalDollars =
+    Math.round((servicePrice + travelFeeDollars) * 100) / 100;
+  const durationMin = getTotalDurationMinutes(orderedLines);
 
   const platformFee = useMemo(
     () => computePlatformFeeDollars(clientSubtotalDollars, commissionRate),
@@ -136,14 +167,6 @@ export function WebBookingPayPanel({
     setError(null);
     setLoading(true);
     try {
-      const serviceLine = {
-        serviceId: service.id,
-        serviceOptionId: selectedOptionId,
-        optionId: selectedOptionId,
-        quantity: 1,
-        discountPrice: servicePrice,
-      };
-
       const bookingRes = await createBookingApi({
         clientId,
         salonId,
@@ -151,7 +174,11 @@ export function WebBookingPayPanel({
         duration: durationMin,
         isHomeService,
         clientBookingSubtotalDollars: Number(clientSubtotalDollars.toFixed(2)),
-        services: [serviceLine],
+        // Une ligne par prestation, dans l'ordre ; déplacement sur la première
+        services: buildBookingServicesPayload(
+          orderedLines,
+          isHomeService && salonOffersHomeService,
+        ),
         assignmentMode,
         ...(trimmedNotes ? { clientNotes: trimmedNotes } : {}),
         ...(assignmentMode === "SPECIFIC_EMPLOYEE" && employeeId
@@ -231,10 +258,29 @@ export function WebBookingPayPanel({
 
       window.location.href = url;
     } catch (e: unknown) {
-      const msg =
-        (e as { message?: string })?.message ||
-        "Une erreur est survenue. Réessayez.";
-      setError(msg);
+      // handleError (requestsConfig) relance l'erreur axios enrichie de
+      // errorDetails.responseData = corps de la réponse serveur.
+      const details = (
+        e as {
+          errorDetails?: { responseData?: Record<string, unknown> };
+          formattedMessage?: string;
+          message?: string;
+        }
+      )?.errorDetails?.responseData;
+      const nested = details?.error as Record<string, unknown> | undefined;
+      const errorCode = (details?.errorCode ?? nested?.errorCode) as
+        | string
+        | undefined;
+      const serverMessage = (details?.message ?? nested?.message) as
+        | string
+        | undefined;
+      setError(
+        (errorCode && BOOKING_ERROR_MESSAGES[errorCode]) ||
+          serverMessage ||
+          (e as { formattedMessage?: string })?.formattedMessage ||
+          (e as { message?: string })?.message ||
+          "Une erreur est survenue. Réessayez.",
+      );
     } finally {
       setLoading(false);
     }
@@ -243,11 +289,28 @@ export function WebBookingPayPanel({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm space-y-2">
-        <p>
-          <span className="text-slate-500">Prestation</span>
-          <br />
-          <span className="font-semibold text-slate-900">{service.name}</span>
-        </p>
+        <div>
+          <span className="text-slate-500">
+            {orderedLines.length > 1 ? "Prestations" : "Prestation"}
+          </span>
+          <ul className="mt-0.5 space-y-0.5">
+            {orderedLines.map((line) => (
+              <li key={line.service.id} className="flex justify-between gap-3">
+                <span className="font-semibold text-slate-900">
+                  {line.service.name}
+                  <span className="font-normal text-slate-500">
+                    {" "}
+                    · {line.option.name} ·{" "}
+                    {formatDurationMinutes(line.service.duration ?? 0)}
+                  </span>
+                </span>
+                <span className="font-medium tabular-nums shrink-0">
+                  {getOptionPriceDollars(line.option).toFixed(2)} $
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
         <p>
           <span className="text-slate-500">Créneau</span>
           <br />
@@ -288,7 +351,10 @@ export function WebBookingPayPanel({
         )}
         <div className="border-t border-slate-200 pt-2 mt-2 space-y-1">
           <div className="flex justify-between">
-            <span>Prestation</span>
+            <span>
+              {formatServicesCount(orderedLines.length)} ·{" "}
+              {formatDurationMinutes(durationMin)}
+            </span>
             <span className="font-medium">{servicePrice.toFixed(2)} $</span>
           </div>
           {isHomeService && travelFeeDollars > 0 && (

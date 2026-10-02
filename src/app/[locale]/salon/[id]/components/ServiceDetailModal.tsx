@@ -26,7 +26,8 @@ interface ServiceData {
   }>;
   duration?: number;
   availableLocations?: string[];
-  homeTravelFeeDollars?: number;
+  /** Frais de déplacement (CAD) ; `null` = pas de domicile. */
+  travelFees?: number | null;
   salon?: { id: string; name: string };
   salonId?: string;
 }

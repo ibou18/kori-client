@@ -22,32 +22,51 @@ const salonOnlyService: WebBookingServicePayload = {
   availableLocations: ["SALON_ONLY"],
 };
 
-/** Service BOTH → étape location affichée */
+/** Service BOTH avec frais de déplacement → étape location affichée */
 const homeChoiceService: WebBookingServicePayload = {
   id: "s2",
   name: "Coiffure domicile",
   availableLocations: ["BOTH"],
+  travelFees: 10,
 };
 
-// Étape « Lieu » seulement si mode ≠ salon_only
+// Étape « Lieu » seulement si le domicile est possible pour toutes les prestations
 describe("showWebBookingLocationStep", () => {
   it("hides the location step without a service", () => {
-    expect(showWebBookingLocationStep(true, null)).toBe(false);
+    expect(showWebBookingLocationStep(true, [])).toBe(false);
   });
 
   it("hides the location step for salon only", () => {
-    expect(showWebBookingLocationStep(true, salonOnlyService)).toBe(false);
+    expect(showWebBookingLocationStep(true, [salonOnlyService])).toBe(false);
   });
 
   it("shows the location step when place is a choice", () => {
-    expect(showWebBookingLocationStep(true, homeChoiceService)).toBe(true);
+    expect(showWebBookingLocationStep(true, [homeChoiceService])).toBe(true);
+  });
+
+  it("hides the location step when the salon does not offer home service", () => {
+    expect(showWebBookingLocationStep(false, [homeChoiceService])).toBe(false);
+  });
+
+  it("hides the location step without a travel fee (no default fee)", () => {
+    expect(
+      showWebBookingLocationStep(true, [
+        { ...homeChoiceService, travelFees: null },
+      ]),
+    ).toBe(false);
+  });
+
+  it("hides the location step when one service is salon only", () => {
+    expect(
+      showWebBookingLocationStep(true, [homeChoiceService, salonOnlyService]),
+    ).toBe(false);
   });
 });
 
 // Ordre : service → location? → slot → notes → auth? → pay
 describe("buildWebBookingSteps", () => {
   it("builds base flow without location or auth when authenticated", () => {
-    expect(buildWebBookingSteps(false, salonOnlyService, true)).toEqual([
+    expect(buildWebBookingSteps(false, [salonOnlyService], true)).toEqual([
       "service",
       "slot",
       "notes",
@@ -56,7 +75,7 @@ describe("buildWebBookingSteps", () => {
   });
 
   it("includes location and auth for a guest with place choice", () => {
-    expect(buildWebBookingSteps(true, homeChoiceService, false)).toEqual([
+    expect(buildWebBookingSteps(true, [homeChoiceService], false)).toEqual([
       "service",
       "location",
       "slot",
@@ -79,25 +98,25 @@ describe("getWebBookingStepLabel / Title", () => {
 describe("getNextWebBookingStep / getPreviousWebBookingStep", () => {
   it("navigates to next and previous steps", () => {
     expect(
-      getNextWebBookingStep("service", true, homeChoiceService, false),
+      getNextWebBookingStep("service", true, [homeChoiceService], false),
     ).toBe("location");
     expect(
-      getPreviousWebBookingStep("slot", true, homeChoiceService, false),
+      getPreviousWebBookingStep("slot", true, [homeChoiceService], false),
     ).toBe("location");
   });
 
   it("returns null at the ends of the flow", () => {
     expect(
-      getPreviousWebBookingStep("service", false, salonOnlyService, true),
+      getPreviousWebBookingStep("service", false, [salonOnlyService], true),
     ).toBeNull();
     expect(
-      getNextWebBookingStep("pay", false, salonOnlyService, true),
+      getNextWebBookingStep("pay", false, [salonOnlyService], true),
     ).toBeNull();
   });
 
   it("returns the previous step label", () => {
     expect(
-      getPreviousWebBookingStepLabel("slot", true, homeChoiceService, false),
+      getPreviousWebBookingStepLabel("slot", true, [homeChoiceService], false),
     ).toBe("Lieu");
   });
 });
