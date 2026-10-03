@@ -1,7 +1,7 @@
 /**
  * Tests unitaires — sélection de plusieurs prestations (web-booking)
  * Couvre : totaux, durée, déplacement unique (le plus élevé), règles d'ajout
- * (4 max, 8 h, doublon, lieu), payload `services` et formats.
+ * (4 max, 12 h, doublon, lieu), payload `services` et formats.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -85,12 +85,12 @@ describe("canAddService", () => {
     });
   });
 
-  it("refuses beyond 480 minutes in total", () => {
-    const lines = [line(svc("a", { duration: 300 }), 1), line(svc("b", { duration: 150 }), 2)];
-    expect(canAddService(lines, svc("c", { duration: 60 }))).toMatchObject({
+  it("refuses beyond 720 minutes in total", () => {
+    const lines = [line(svc("a", { duration: 360 }), 1), line(svc("b", { duration: 240 }), 2)];
+    expect(canAddService(lines, svc("c", { duration: 150 }))).toMatchObject({
       reason: "MAX_DURATION",
     });
-    expect(canAddService(lines, svc("c", { duration: 30 }))).toEqual({ ok: true });
+    expect(canAddService(lines, svc("c", { duration: 120 }))).toEqual({ ok: true });
   });
 });
 

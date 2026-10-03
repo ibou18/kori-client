@@ -54,7 +54,7 @@ const BOOKING_ERROR_MESSAGES: Record<string, string> = {
   BOOKING_LOCATION_INCOMPATIBLE:
     "Ces prestations ne peuvent pas être réalisées au même endroit.",
   BOOKING_DURATION_TOO_LONG:
-    "La durée totale des prestations dépasse 8 heures.",
+    "La durée totale des prestations dépasse 12 heures.",
 };
 
 interface WebBookingPayPanelProps {

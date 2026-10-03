@@ -21,8 +21,8 @@ import type {
 
 export const MAX_SERVICES_PER_BOOKING = 4;
 
-/** Même plafond que GET /salons/:id/booking-availability côté serveur. */
-export const MAX_BOOKING_DURATION_MINUTES = 480;
+/** Même plafond que le serveur (12 h) ; l'horaire du salon borne le reste. */
+export const MAX_BOOKING_DURATION_MINUTES = 720;
 
 export function lineFromService(
   service: WebBookingServicePayload,
@@ -96,7 +96,7 @@ export type AddServiceRefusal =
 
 const REFUSAL_MESSAGES: Record<AddServiceRefusal, string> = {
   MAX_SERVICES: `${MAX_SERVICES_PER_BOOKING} prestations maximum par réservation`,
-  MAX_DURATION: "Durée maximale de 8 h atteinte",
+  MAX_DURATION: "Durée maximale de 12 h atteinte",
   DUPLICATE: "Prestation déjà sélectionnée",
   INCOMPATIBLE_LOCATION: "Pas réalisable au même endroit que votre sélection",
   NO_OPTION: "Aucune formule réservable en ligne",

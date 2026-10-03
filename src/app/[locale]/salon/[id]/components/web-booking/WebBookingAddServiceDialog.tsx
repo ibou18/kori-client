@@ -156,7 +156,7 @@ export function WebBookingAddServiceDialog({
                     {!check.ok && (
                       <p className="text-xs text-slate-500 italic mt-0.5">
                         {check.reason === "MAX_DURATION"
-                          ? "Dépasse la durée maximale de 8 h"
+                          ? "Dépasse la durée maximale de 12 h"
                           : check.message}
                       </p>
                     )}
