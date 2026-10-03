@@ -1,4 +1,4 @@
-import { getBookingLocationMode } from "./bookingLocation";
+import { getCombinedAvailableLocations } from "./bookingLocation";
 import type { WebBookingServicePayload, WebBookingStep } from "./types";
 
 const STEP_LABELS: Record<WebBookingStep, string> = {
@@ -19,27 +19,26 @@ const STEP_TITLES: Record<WebBookingStep, string> = {
   pay: "Paiement de l'acompte",
 };
 
+/**
+ * L'étape lieu n'a de sens que si le domicile est possible pour TOUTES les
+ * prestations choisies (et proposé par le salon).
+ */
 export function showWebBookingLocationStep(
   salonOffersHomeService: boolean,
-  service: WebBookingServicePayload | null,
+  services: WebBookingServicePayload[],
 ): boolean {
-  if (!service) return false;
-  return (
-    getBookingLocationMode(
-      salonOffersHomeService,
-      service.availableLocations,
-    ) !== "salon_only"
-  );
+  if (!salonOffersHomeService || services.length === 0) return false;
+  return getCombinedAvailableLocations(services).includes("HOME_ONLY");
 }
 
-/** Prestation → lieu? → créneau → remarques → compte? → paiement (auth skip si déjà connecté). */
+/** Prestations → lieu? → créneau → remarques → compte? → paiement (auth skip si déjà connecté). */
 export function buildWebBookingSteps(
   salonOffersHomeService: boolean,
-  service: WebBookingServicePayload | null,
+  services: WebBookingServicePayload[],
   authenticated = false,
 ): WebBookingStep[] {
   const steps: WebBookingStep[] = ["service"];
-  if (showWebBookingLocationStep(salonOffersHomeService, service)) {
+  if (showWebBookingLocationStep(salonOffersHomeService, services)) {
     steps.push("location");
   }
   steps.push("slot", "notes");
@@ -61,12 +60,12 @@ export function getWebBookingStepTitle(step: WebBookingStep): string {
 export function getNextWebBookingStep(
   current: WebBookingStep,
   salonOffersHomeService: boolean,
-  service: WebBookingServicePayload | null,
+  services: WebBookingServicePayload[],
   authenticated = false,
 ): WebBookingStep | null {
   const steps = buildWebBookingSteps(
     salonOffersHomeService,
-    service,
+    services,
     authenticated,
   );
   const i = steps.indexOf(current);
@@ -77,12 +76,12 @@ export function getNextWebBookingStep(
 export function getPreviousWebBookingStep(
   current: WebBookingStep,
   salonOffersHomeService: boolean,
-  service: WebBookingServicePayload | null,
+  services: WebBookingServicePayload[],
   authenticated = false,
 ): WebBookingStep | null {
   const steps = buildWebBookingSteps(
     salonOffersHomeService,
-    service,
+    services,
     authenticated,
   );
   const i = steps.indexOf(current);
@@ -93,13 +92,13 @@ export function getPreviousWebBookingStep(
 export function getPreviousWebBookingStepLabel(
   current: WebBookingStep,
   salonOffersHomeService: boolean,
-  service: WebBookingServicePayload | null,
+  services: WebBookingServicePayload[],
   authenticated = false,
 ): string | null {
   const previous = getPreviousWebBookingStep(
     current,
     salonOffersHomeService,
-    service,
+    services,
     authenticated,
   );
   return previous ? getWebBookingStepLabel(previous) : null;

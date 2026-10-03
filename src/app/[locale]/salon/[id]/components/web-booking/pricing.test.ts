@@ -1,14 +1,12 @@
 /**
  * Tests unitaires — pricing web-booking
- * Couvre : affichage prix, durée service (min/sec), arrondi cents,
- * commission plateforme et frais de déplacement à domicile.
+ * Couvre : affichage prix, durée service (min/sec), arrondi cents et
+ * commission plateforme. Le déplacement est couvert par bookingSelection.test.ts.
  */
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULT_HOME_TRAVEL_FEE_DOLLARS,
   computePlatformFeeDollars,
   formatSalonPriceDollars,
-  getEffectiveHomeTravelFeeDollars,
   getOptionPriceDollars,
   getServiceDurationMinutes,
   roundUpToCent,
@@ -68,25 +66,5 @@ describe("computePlatformFeeDollars", () => {
   it("computes platform fee rounded up to the cent", () => {
     expect(computePlatformFeeDollars(45, 0.1)).toBe(4.5);
     expect(computePlatformFeeDollars(33.33, 0.1)).toBe(3.34);
-  });
-});
-
-// Frais domicile : 0 si salon only, sinon montant service ou défaut 10$
-describe("getEffectiveHomeTravelFeeDollars", () => {
-  it("returns 0 when salon does not offer home service", () => {
-    expect(getEffectiveHomeTravelFeeDollars(15, false)).toBe(0);
-  });
-
-  it("uses the service travel fee when positive", () => {
-    expect(getEffectiveHomeTravelFeeDollars(15, true)).toBe(15);
-  });
-
-  it("applies the default $10 fee otherwise", () => {
-    expect(getEffectiveHomeTravelFeeDollars(undefined, true)).toBe(
-      DEFAULT_HOME_TRAVEL_FEE_DOLLARS,
-    );
-    expect(getEffectiveHomeTravelFeeDollars(0, true)).toBe(
-      DEFAULT_HOME_TRAVEL_FEE_DOLLARS,
-    );
   });
 });

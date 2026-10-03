@@ -4,7 +4,11 @@
  * du salon et availableLocations du service.
  */
 import { describe, expect, it } from "vitest";
-import { getBookingLocationMode } from "./bookingLocation";
+import {
+  getBookingLocationMode,
+  getCombinedAvailableLocations,
+  getServiceLocations,
+} from "./bookingLocation";
 
 describe("getBookingLocationMode", () => {
   it("forces salon_only when salon does not offer home service", () => {
@@ -26,5 +30,39 @@ describe("getBookingLocationMode", () => {
     expect(getBookingLocationMode(true, null)).toBe("salon_only");
     expect(getBookingLocationMode(true, [])).toBe("salon_only");
     expect(getBookingLocationMode(true, ["SALON_ONLY"])).toBe("salon_only");
+  });
+});
+
+// Lieux d'une prestation puis intersection sur plusieurs prestations
+describe("getServiceLocations / getCombinedAvailableLocations", () => {
+  it("drops home when the service has no travel fee", () => {
+    expect(
+      getServiceLocations({ availableLocations: ["BOTH"], travelFees: null }),
+    ).toEqual(["SALON_ONLY"]);
+    expect(
+      getServiceLocations({ availableLocations: ["BOTH"], travelFees: 10 }),
+    ).toEqual(["SALON_ONLY", "HOME_ONLY"]);
+  });
+
+  it("defaults to salon when locations are empty", () => {
+    expect(getServiceLocations({ availableLocations: [], travelFees: 10 })).toEqual([
+      "SALON_ONLY",
+    ]);
+  });
+
+  it("intersects locations across services", () => {
+    expect(
+      getCombinedAvailableLocations([
+        { availableLocations: ["SALON_ONLY", "HOME_ONLY"], travelFees: 10 },
+        { availableLocations: ["SALON_ONLY"], travelFees: null },
+      ]),
+    ).toEqual(["SALON_ONLY"]);
+    expect(
+      getCombinedAvailableLocations([
+        { availableLocations: ["HOME_ONLY"], travelFees: 10 },
+        { availableLocations: ["SALON_ONLY"], travelFees: null },
+      ]),
+    ).toEqual([]);
+    expect(getCombinedAvailableLocations([])).toEqual([]);
   });
 });

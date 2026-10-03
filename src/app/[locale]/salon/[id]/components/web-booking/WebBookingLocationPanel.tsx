@@ -9,17 +9,16 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Check, Plus } from "lucide-react";
 
-import { getBookingLocationMode } from "./bookingLocation";
-import {
-  formatSalonPriceDollars,
-  getEffectiveHomeTravelFeeDollars,
-} from "./pricing";
-import type { WebBookingServicePayload } from "./types";
+import { getCombinedAvailableLocations } from "./bookingLocation";
+import { getBookingTravelFeeDollars } from "./bookingSelection";
+import { formatSalonPriceDollars } from "./pricing";
+import type { WebBookingSelectedService } from "./types";
 import { WebBookingStepActions } from "./WebBookingStepActions";
 
 interface WebBookingLocationPanelProps {
   salonOffersHomeService: boolean;
-  service: WebBookingServicePayload;
+  /** Toutes les prestations choisies : le lieu doit convenir à chacune. */
+  lines: WebBookingSelectedService[];
   isHomeService: boolean;
   onIsHomeServiceChange: (value: boolean) => void;
   homeServiceAddress: AddressData | null;
@@ -32,7 +31,7 @@ interface WebBookingLocationPanelProps {
 
 export function WebBookingLocationPanel({
   salonOffersHomeService,
-  service,
+  lines,
   isHomeService,
   onIsHomeServiceChange,
   homeServiceAddress,
@@ -42,16 +41,20 @@ export function WebBookingLocationPanel({
   backLabel,
   layoutVariant = "modal",
 }: WebBookingLocationPanelProps) {
-  const locationMode = getBookingLocationMode(
-    salonOffersHomeService,
-    service.availableLocations,
-  );
-  const travelFee = getEffectiveHomeTravelFeeDollars(
-    service.homeTravelFeeDollars,
-    salonOffersHomeService,
-  );
+  // Lieux communs à toutes les prestations (domicile seulement si le salon le propose)
+  const combined = getCombinedAvailableLocations(lines.map((l) => l.service));
+  const canSalon = combined.includes("SALON_ONLY");
+  const canHome = salonOffersHomeService && combined.includes("HOME_ONLY");
+  const locationMode =
+    canHome && !canSalon ? "home_only" : canHome ? "choice" : "salon_only";
+  // Un seul déplacement par réservation : le plus élevé des prestations
+  const travelFee = getBookingTravelFeeDollars(lines, true);
   const travelFeeLabel =
-    travelFee > 0 ? `+ ${formatSalonPriceDollars(travelFee)} $` : "Gratuit";
+    travelFee > 0
+      ? `+ ${formatSalonPriceDollars(travelFee)} $${
+          lines.length > 1 ? " (une fois pour la réservation)" : ""
+        }`
+      : "Gratuit";
 
   const homeAddressOk =
     !isHomeService ||

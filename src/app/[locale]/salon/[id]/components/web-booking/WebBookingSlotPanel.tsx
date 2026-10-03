@@ -20,15 +20,14 @@ import type {
   SalonBookingAvailabilityPayload,
   SalonBookingTimeSlot,
   WebBookingAssignmentMode,
-  WebBookingServicePayload,
   WebBookingStaffMember,
 } from "./types";
-import { getServiceDurationMinutes } from "./pricing";
 import { WebBookingStepActions } from "./WebBookingStepActions";
 
 interface WebBookingSlotPanelProps {
   salonId: string;
-  service: WebBookingServicePayload;
+  /** Durée totale de toutes les prestations : le créneau doit les couvrir. */
+  durationMin: number;
   selectedOptionId: string | null;
   selectedSlot: SalonBookingTimeSlot | null;
   onSelectSlot: (slot: SalonBookingTimeSlot | null) => void;
@@ -68,7 +67,7 @@ function localDateToISO(d: Date): string {
 
 export function WebBookingSlotPanel({
   salonId,
-  service,
+  durationMin,
   selectedOptionId,
   selectedSlot,
   onSelectSlot,
@@ -85,7 +84,6 @@ export function WebBookingSlotPanel({
 }: WebBookingSlotPanelProps) {
   const [date, setDate] = useState(() => todayISODate());
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const durationMin = getServiceDurationMinutes(service.duration);
 
   const selectedCalendarDate = useMemo(
     () => parseISODateToLocal(date),
