@@ -6,6 +6,7 @@ import { Clock, MapPin, Smartphone, Star } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ServicePhotoLightbox } from "./components/ServicePhotoLightbox";
 import { formatSalonPriceDollars } from "./components/web-booking/pricing";
 
 // idsalon=cmipf1upw000j6fo8nni0kaes
@@ -115,6 +116,11 @@ export default function SalonSharePage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
   );
+  // Service gardé après la fermeture pour que l'animation de sortie
+  // affiche encore la photo.
+  const [photoLightboxService, setPhotoLightboxService] =
+    useState<SalonService | null>(null);
+  const [isPhotoLightboxOpen, setIsPhotoLightboxOpen] = useState(false);
   // Essayer d'ouvrir l'app automatiquement au chargement (avant de récupérer les données)
   useEffect(() => {
     if (!salonId || hasTriedDeepLink) return;
@@ -192,6 +198,11 @@ export default function SalonSharePage() {
 
     return () => clearInterval(interval);
   }, [salon?.photos]);
+
+  const openPhotoLightbox = (service: SalonService) => {
+    setPhotoLightboxService(service);
+    setIsPhotoLightboxOpen(true);
+  };
 
   const handleOpenApp = () => {
     console.log("👆 Bouton 'Ouvrir dans l'app' cliqué");
@@ -541,8 +552,29 @@ export default function SalonSharePage() {
                               </p>
                             ) : null}
                           </div>
-                          <div className="relative h-[4.5rem] w-[4.5rem] sm:h-[5rem] sm:w-[5rem] shrink-0 rounded-xl overflow-hidden bg-slate-100">
-                            {service.photos?.[0]?.url ? (
+                          {service.photos?.[0]?.url ? (
+                            // La carte est déjà un <button> : la vignette ne
+                            // peut pas en être un, d'où role="button".
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              aria-label={
+                                isEn
+                                  ? `Enlarge photo of ${service.name}`
+                                  : `Agrandir la photo de ${service.name}`
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openPhotoLightbox(service);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key !== "Enter" && e.key !== " ") return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                openPhotoLightbox(service);
+                              }}
+                              className="relative h-[4.5rem] w-[4.5rem] sm:h-[5rem] sm:w-[5rem] shrink-0 rounded-xl overflow-hidden bg-slate-100 cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-[#53745D]"
+                            >
                               <Image
                                 src={service.photos[0].url}
                                 alt={service.name}
@@ -550,15 +582,17 @@ export default function SalonSharePage() {
                                 className="object-cover"
                                 sizes="80px"
                               />
-                            ) : (
+                            </div>
+                          ) : (
+                            <div className="relative h-[4.5rem] w-[4.5rem] sm:h-[5rem] sm:w-[5rem] shrink-0 rounded-xl overflow-hidden bg-slate-100">
                               <div
                                 className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 text-center px-1"
                                 aria-hidden
                               >
                                 Korí
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                         <div className="mt-auto shrink-0 border-t border-[#53745D]/10 px-3 pb-3 pt-3">
                           <span className="flex w-full items-center justify-center rounded-lg border border-[#53745D]/35 bg-[#F0F4F1]/50 py-2 text-sm font-medium text-[#3a5a47]">
@@ -571,6 +605,16 @@ export default function SalonSharePage() {
             </div>
           </motion.div>
         )}
+
+        <ServicePhotoLightbox
+          open={isPhotoLightboxOpen}
+          onClose={() => setIsPhotoLightboxOpen(false)}
+          photos={
+            photoLightboxService?.photos?.filter((photo) => photo.url) ?? []
+          }
+          title={photoLightboxService?.name ?? ""}
+          isEn={locale.startsWith("en")}
+        />
 
         {/* A propos */}
         {salon.description && (
