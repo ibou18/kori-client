@@ -25,7 +25,7 @@ interface ClientQuickAuthPanelProps {
 }
 
 const phoneSelectClassName =
-  "px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#53745D]/30 focus:border-[#53745D] disabled:bg-slate-50 disabled:cursor-not-allowed shrink-0 min-w-[9.5rem]";
+  "px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#53745D]/30 focus:border-[#53745D] disabled:bg-slate-50 disabled:cursor-not-allowed shrink-0 w-[5.5rem]";
 
 export function ClientQuickAuthPanel({
   onAuthenticated,
@@ -298,6 +298,7 @@ export function ClientQuickAuthPanel({
                 error={phoneFieldError}
                 disabled={loading}
                 selectClassName={phoneSelectClassName}
+                dialCodeOnly
               />
               <p className="mt-1 text-[11px] text-slate-500">
                 Optionnel. Choisissez l’indicatif puis saisissez le numéro local
