@@ -17,8 +17,8 @@ export const PHONE_COUNTRY_OPTIONS: {
 }[] = [
   { dialCode: "+1", isoCode: "CA", label: "Canada / É.-U. (+1)" },
   { dialCode: "+33", isoCode: "FR", label: "France (+33)" },
-  { dialCode: "+32", isoCode: "BE", label: "Belgique (+32)" },
-  { dialCode: "+221", isoCode: "SN", label: "Sénégal (+221)" },
+  // { dialCode: "+32", isoCode: "BE", label: "Belgique (+32)" },
+  // { dialCode: "+221", isoCode: "SN", label: "Sénégal (+221)" },
 ];
 
 const PHONE_FORMATS: Record<string, PhoneFormat> = {
@@ -63,46 +63,46 @@ const PHONE_FORMATS: Record<string, PhoneFormat> = {
     placeholder: "01 23 45 67 89",
     maxLength: 10,
   },
-  "+221": {
-    // Sénégal - Format: XX XXX XX XX
-    pattern: /^(\d{2})(\d{3})(\d{2})(\d{2})$/,
-    format: (digits: string) => {
-      const cleaned = digits.replace(/\D/g, "");
-      if (cleaned.length <= 2) return cleaned;
-      if (cleaned.length <= 5)
-        return `${cleaned.slice(0, 2)} ${cleaned.slice(2)}`;
-      if (cleaned.length <= 7)
-        return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(
-          5,
-        )}`;
-      return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(
-        5,
-        7,
-      )} ${cleaned.slice(7, 9)}`;
-    },
-    placeholder: "77 123 45 67",
-    maxLength: 9,
-  },
-  "+32": {
-    // Belgique - Format: XXX XX XX XX
-    pattern: /^(\d{3})(\d{2})(\d{2})(\d{2})$/,
-    format: (digits: string) => {
-      const cleaned = digits.replace(/\D/g, "");
-      if (cleaned.length <= 3) return cleaned;
-      if (cleaned.length <= 5)
-        return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
-      if (cleaned.length <= 7)
-        return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(
-          5,
-        )}`;
-      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(
-        5,
-        7,
-      )} ${cleaned.slice(7, 9)}`;
-    },
-    placeholder: "123 45 67 89",
-    maxLength: 9,
-  },
+  // "+221": {
+  //   // Sénégal - Format: XX XXX XX XX
+  //   pattern: /^(\d{2})(\d{3})(\d{2})(\d{2})$/,
+  //   format: (digits: string) => {
+  //     const cleaned = digits.replace(/\D/g, "");
+  //     if (cleaned.length <= 2) return cleaned;
+  //     if (cleaned.length <= 5)
+  //       return `${cleaned.slice(0, 2)} ${cleaned.slice(2)}`;
+  //     if (cleaned.length <= 7)
+  //       return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(
+  //         5,
+  //       )}`;
+  //     return `${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(
+  //       5,
+  //       7,
+  //     )} ${cleaned.slice(7, 9)}`;
+  //   },
+  //   placeholder: "77 123 45 67",
+  //   maxLength: 9,
+  // },
+  // "+32": {
+  //   // Belgique - Format: XXX XX XX XX
+  //   pattern: /^(\d{3})(\d{2})(\d{2})(\d{2})$/,
+  //   format: (digits: string) => {
+  //     const cleaned = digits.replace(/\D/g, "");
+  //     if (cleaned.length <= 3) return cleaned;
+  //     if (cleaned.length <= 5)
+  //       return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
+  //     if (cleaned.length <= 7)
+  //       return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(
+  //         5,
+  //       )}`;
+  //     return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(
+  //       5,
+  //       7,
+  //     )} ${cleaned.slice(7, 9)}`;
+  //   },
+  //   placeholder: "123 45 67 89",
+  //   maxLength: 9,
+  // },
 };
 
 /**
