@@ -25,6 +25,8 @@ interface FormattedPhoneInputProps {
   id?: string;
   /** Classes pour le select indicatif */
   selectClassName?: string;
+  /** Affiche seulement l’indicatif (« +1 ») au lieu de « Canada / É.-U. (+1) ». */
+  dialCodeOnly?: boolean;
 }
 
 export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
@@ -40,6 +42,7 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   required = false,
   id = "phone",
   selectClassName,
+  dialCodeOnly = false,
 }) => {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
@@ -84,7 +87,7 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
         >
           {PHONE_COUNTRY_OPTIONS.map((cc) => (
             <option key={cc.dialCode} value={cc.dialCode}>
-              {cc.label}
+              {dialCodeOnly ? cc.dialCode : cc.label}
             </option>
           ))}
         </select>
