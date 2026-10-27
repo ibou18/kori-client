@@ -6,9 +6,7 @@ import { ArrowRight, BadgeCheck, Sparkles, Store } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 import { fadeInUp, staggerContainer } from "./animations";
-import { HERO_ROTATING_WORDS } from "./constants";
 import { PhoneMockup } from "./PhoneMockup";
-import { RotatingWord } from "./RotatingWord";
 import { StoreBadges } from "./StoreBadges";
 
 const trustItems = [
@@ -75,7 +73,16 @@ export function LandingHero() {
             className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900 sm:text-6xl lg:text-7xl"
           >
             Votre prochain rendez-vous{" "}
-            <RotatingWord words={HERO_ROTATING_WORDS} />{" "}
+            <span className="relative inline-block text-primary">
+              beauté
+              <motion.span
+                aria-hidden
+                className="absolute -bottom-1 left-0 h-[0.14em] w-full origin-left rounded-full bg-[#D9A441]/70"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.9, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </span>{" "}
             se réserve en 2 minutes.
           </motion.h1>
 
@@ -83,9 +90,9 @@ export function LandingHero() {
             variants={fadeInUp}
             className="mx-auto mt-6 max-w-xl text-pretty text-lg text-gray-600 sm:text-xl lg:mx-0"
           >
-            korí réunit les meilleurs coiffeurs, barbiers et spécialistes
-            beauté près de chez vous. Choisissez un créneau, confirmez, c&apos;est
-            réservé.
+            Coiffure, tresses, barbier, manucure, soins : korí réunit les
+            meilleurs pros près de chez vous. Choisissez un créneau, confirmez,
+            c&apos;est réservé.
           </motion.p>
 
           <motion.div

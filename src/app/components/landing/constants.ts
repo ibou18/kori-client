@@ -30,12 +30,3 @@ export const SERVICE_TAGS = [
   "Lissage",
   "Pédicure",
 ];
-
-/** Mots qui tournent dans le titre du hero. */
-export const HERO_ROTATING_WORDS = [
-  "coiffure",
-  "tresses",
-  "barbier",
-  "manucure",
-  "soins",
-];
