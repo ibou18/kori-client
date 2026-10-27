@@ -11,7 +11,6 @@ const columns = [
     links: [
       { label: "À propos", href: "/about" },
       { label: "Support", href: "/support" },
-      { label: "Blog", href: "/blog" },
     ],
   },
   {
@@ -26,7 +25,7 @@ const columns = [
     title: "Légal",
     links: [
       { label: "Conditions clients", href: "/terms/cgu-client" },
-      { label: "Confidentialité", href: "/terms/privacy" },
+      { label: "Confidentialité", href: "/terms/privacy-policy" },
       { label: "CGV", href: "/terms/cgv" },
     ],
   },

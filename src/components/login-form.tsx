@@ -90,7 +90,7 @@ export function LoginForm() {
         <>
           En vous connectant, vous acceptez nos{" "}
           <Link href="/terms/cgv">Conditions Générales de Vente</Link> et notre{" "}
-          <Link href="/terms/privacy">Politique de confidentialité</Link>.
+          <Link href="/terms/privacy-policy">Politique de confidentialité</Link>.
         </>
       }
     >

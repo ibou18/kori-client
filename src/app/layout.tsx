@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Analytics } from "@vercel/analytics/react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { buildOpenGraph, buildTwitter, siteConfig } from "@/config/site";
 import Script from "next/script";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
@@ -18,32 +19,43 @@ import TanstackWrapperProvider from "@/lib/TanstackWrapperProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "korí - Plateforme de réservation",
-  description:
-    "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
-  openGraph: {
-    title: "korí - Plateforme de réservation",
-    description:
-      "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
-    type: "website",
-    url: "https://korí.app",
-    images: [
-      {
-        url: "https://korí.app/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "korí - Plateforme de réservation",
-      },
-    ],
+  metadataBase: new URL(siteConfig.url),
+  title: {
+    default: siteConfig.title,
+    template: "%s | korí",
   },
-  twitter: {
-    card: "summary_large_image",
-    site: "@korí",
-    title: "korí - Plateforme de réservation",
-    description:
-      "Réservez facilement et rapidement vos services préférés. Une plateforme simple, sécurisée et intuitive pour gérer toutes vos réservations en quelques clics.",
-    images: "https://korí.app/twitter-image.jpg",
+  description: siteConfig.description,
+  applicationName: siteConfig.name,
+  keywords: siteConfig.keywords,
+  authors: [{ name: siteConfig.legalName, url: siteConfig.url }],
+  creator: siteConfig.legalName,
+  publisher: siteConfig.legalName,
+  formatDetection: { telephone: false, email: false, address: false },
+  openGraph: buildOpenGraph({
+    title: siteConfig.title,
+    description: siteConfig.description,
+    url: siteConfig.url,
+  }),
+  twitter: buildTwitter({
+    title: siteConfig.title,
+    description: siteConfig.description,
+  }),
+  // Bannière iOS Safari « Ouvrir dans l'app / Obtenir » sur les pages publiques
+  itunes: { appId: siteConfig.appStoreId },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2A3731",
 };
 
 const geistSans = localFont({
