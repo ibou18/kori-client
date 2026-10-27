@@ -86,7 +86,7 @@ export function ProFreeSection() {
   return (
     <section
       id="pros"
-      className="relative overflow-hidden bg-[#2A3731] py-24 text-white sm:py-32"
+      className="relative scroll-mt-16 overflow-hidden bg-[#2A3731] py-24 text-white sm:py-32"
     >
       {/* Décor */}
       <div

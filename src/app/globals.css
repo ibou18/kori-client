@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Défilement doux pour les ancres (landing : #pros, #telecharger) */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   /* color: var(--foreground); */
   font-family: Tahoma, Helvetica, sans-serif;

@@ -115,10 +115,10 @@ export function LandingHero() {
               variant="outline"
               className="h-12 rounded-full border-gray-900/15 bg-white/70 px-7 text-base backdrop-blur hover:bg-white"
             >
-              <Link href="/inscription">
+              <a href="#pros">
                 <Store className="size-4" />
-                Je suis pro, je m&apos;inscris
-              </Link>
+                Je suis un professionnel
+              </a>
             </Button>
           </motion.div>
 
