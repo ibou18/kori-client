@@ -3,7 +3,9 @@
 
 import { useGetUsersbyToken } from "@/app/data/hooks";
 import ResetForm from "@/components/reset-form";
-
+import { AuthCard } from "@/app/components/auth/AuthCard";
+import { AuthShell } from "@/app/components/auth/AuthShell";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 export default function ResetPassword() {
@@ -13,13 +15,23 @@ export default function ResetPassword() {
   const { data: userByToken }: any = useGetUsersbyToken(token);
 
   if (!token) {
-    return <div>Invalid token</div>;
+    return (
+      <AuthShell>
+        <AuthCard
+          eyebrow="Lien invalide"
+          title="Ce lien n'est plus valide."
+          description="Demandez un nouveau lien de réinitialisation depuis la page de connexion."
+        >
+          <Link
+            href="/auth/forgot-password"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Recevoir un nouveau lien
+          </Link>
+        </AuthCard>
+      </AuthShell>
+    );
   }
 
-  console.log("userByToken", userByToken);
-  return (
-    <main className="mx-auto min-h-screen max-w-2xl mt-12">
-      <ResetForm user={userByToken} token={token} />
-    </main>
-  );
+  return <ResetForm user={userByToken} token={token} />;
 }

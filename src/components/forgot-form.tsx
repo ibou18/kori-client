@@ -1,28 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @next/next/no-img-element */
 "use client";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { message, Spin } from "antd";
 
-import logo from "@/assets/logo-black.png";
-import Image from "next/image";
+import { AuthCard } from "@/app/components/auth/AuthCard";
+import { AuthField } from "@/app/components/auth/AuthField";
+import { AuthShell } from "@/app/components/auth/AuthShell";
 import { useForgotPassword } from "@/app/data/hooks";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { message } from "antd";
+import { ArrowLeft, ArrowRight, Loader2, Mail } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export function ForgotForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  const route = useRouter();
+export function ForgotForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-
   const [loading, setLoading] = useState(false);
 
   const { mutate: forgotPassword } = useForgotPassword();
@@ -35,11 +28,9 @@ export function ForgotForm({
       onSuccess: () => {
         setLoading(false);
         message.success(
-          "Un email de réinitialisation a été envoyé à votre adresse email" +
-            ": " +
-            email
+          "Un email de réinitialisation a été envoyé à votre adresse : " + email
         );
-        route.push("/auth/signin");
+        router.push("/auth/signin");
       },
       onError: () => {
         setLoading(false);
@@ -55,52 +46,53 @@ export function ForgotForm({
   }, [session]);
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <form onSubmit={handleSubmit} className="p-6 md:p-8">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center text-center">
-                <h1 className="text-2xl font-bold">Mot de passe Oublié </h1>
-                <p className="text-balance text-muted-foreground">
-                  Vous avez oubliez votre mot de passe? Pas de soucis, entrez
-                  votre adresse email et nous vous enverrons un lien pour
-                  réinitialiser votre mot de passe.
-                </p>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+    <AuthShell>
+      <AuthCard
+        eyebrow="Mot de passe oublié"
+        title="On vous renvoie un lien."
+        description="Entrez l'adresse email de votre compte. Vous recevrez un lien pour choisir un nouveau mot de passe."
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <AuthField
+            id="email"
+            label="Email"
+            icon={Mail}
+            type="email"
+            autoComplete="email"
+            placeholder="votre@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
+          />
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 w-full rounded-full text-base shadow-[0_12px_30px_-10px_rgba(83,116,93,0.7)] transition-transform hover:-translate-y-0.5"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Envoi…
+              </>
+            ) : (
+              <>
+                Envoyer le lien
+                <ArrowRight className="size-4" />
+              </>
+            )}
+          </Button>
+        </form>
 
-              <Spin spinning={loading}>
-                <Button type="submit" className="w-full">
-                  Continuer
-                </Button>
-              </Spin>
-            </div>
-          </form>
-          <div className="relative hidden bg-muted md:block">
-            <Image
-              src={logo}
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-            />
-          </div>
-        </CardContent>
-      </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        By clicking continue, you agree to our{" "}
-        <Link href="#">Terms of Service</Link> and{" "}
-        <Link href="#">Privacy Policy</Link>.
-      </div>
-    </div>
+        <Link
+          href="/auth/signin"
+          className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+        >
+          <ArrowLeft className="size-4" />
+          Retour à la connexion
+        </Link>
+      </AuthCard>
+    </AuthShell>
   );
 }

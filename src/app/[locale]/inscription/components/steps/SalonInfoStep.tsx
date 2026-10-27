@@ -488,13 +488,13 @@ export function SalonInfoStep({
 
       {/* Boutons de navigation */}
       <div className="flex gap-4 pt-6 border-t">
-        <Button variant="outline" onClick={onPrev} className="flex-1">
+        <Button variant="outline" onClick={onPrev} className="h-12 flex-1 rounded-full text-base">
           <ChevronLeft className="w-4 h-4 mr-2" />
           Précédent
         </Button>
         <Button
           onClick={handleValidate}
-          className="flex-1"
+          className="h-12 flex-1 rounded-full text-base shadow-[0_12px_30px_-10px_rgba(83,116,93,0.7)]"
           disabled={
             !formData.salonName?.trim() ||
             formData.services.length === 0 ||

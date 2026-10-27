@@ -175,5 +175,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)", "/", "/(fr|en)/:path*"],
+  matcher: [
+    // Exclut aussi les images de partage générées (opengraph-image, twitter-image)
+    "/((?!api|_next|_vercel|opengraph-image|twitter-image|.*\\..*).*)",
+    "/",
+    "/(fr|en)/:path*",
+  ],
 };

@@ -1,14 +1,16 @@
 "use client";
 
+import { AuthField, PasswordField } from "@/app/components/auth/AuthField";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FormattedPhoneInput, usePhoneValidation } from "@/components/ui/FormattedPhoneInput";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  FormattedPhoneInput,
+  usePhoneValidation,
+} from "@/components/ui/FormattedPhoneInput";
 import { validateProviderPersonalInfo } from "@/utils/providerRegisterValidation";
-import { ChevronRight } from "lucide-react";
+import { ArrowRight, Mail, User } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { toast } from "sonner";
 import { ProgressIndicator } from "../ProgressIndicator";
 
 interface FormData {
@@ -38,15 +40,13 @@ export function PersonalInfoStep({
   currentStep,
   totalSteps,
 }: PersonalInfoStepProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { isValid: isPhoneValid, errorMessage: phoneError } =
     usePhoneValidation(formData.phone, formData.countryCode);
 
   const handleValidate = () => {
     const error = validateProviderPersonalInfo(formData);
     if (error) {
-      alert(error);
+      toast.error(error);
       return;
     }
     onNext();
@@ -60,46 +60,45 @@ export function PersonalInfoStep({
         stepTitle="Informations personnelles"
       />
       <div>
-        <p className="text-gray-600">
-          Commencez par remplir vos informations personnelles
+        <h2 className="text-2xl font-semibold tracking-tight text-gray-900 md:text-3xl">
+          Créons votre compte.
+        </h2>
+        <p className="mt-1 text-gray-600">
+          Ces informations servent à vous connecter et à vous joindre. Rien
+          n&apos;est public.
         </p>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="email">Email *</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="votre@email.com"
-            value={formData.email}
-            onChange={(e) => updateFormData({ email: e.target.value })}
-            className="mt-1"
-          />
-        </div>
+      <div className="space-y-5">
+        <AuthField
+          id="email"
+          label="Email *"
+          icon={Mail}
+          type="email"
+          autoComplete="email"
+          placeholder="votre@email.com"
+          value={formData.email}
+          onChange={(e) => updateFormData({ email: e.target.value })}
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-            <Label htmlFor="firstName">Prénom *</Label>
-            <Input
-              id="firstName"
-              placeholder="Votre prénom"
-              value={formData.firstName}
-              onChange={(e) => updateFormData({ firstName: e.target.value })}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="lastName">Nom *</Label>
-            <Input
-              id="lastName"
-              placeholder="Votre nom"
-              value={formData.lastName}
-              onChange={(e) => updateFormData({ lastName: e.target.value })}
-              className="mt-1"
-            />
-          </div>
-      
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <AuthField
+            id="firstName"
+            label="Prénom *"
+            icon={User}
+            autoComplete="given-name"
+            placeholder="Votre prénom"
+            value={formData.firstName}
+            onChange={(e) => updateFormData({ firstName: e.target.value })}
+          />
+          <AuthField
+            id="lastName"
+            label="Nom *"
+            autoComplete="family-name"
+            placeholder="Votre nom"
+            value={formData.lastName}
+            onChange={(e) => updateFormData({ lastName: e.target.value })}
+          />
         </div>
 
         <FormattedPhoneInput
@@ -123,49 +122,28 @@ export function PersonalInfoStep({
           id="phone"
         />
 
-        <div>
-          <Label htmlFor="password">Mot de passe *</Label>
-          <div className="relative mt-1">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Minimum 6 caractères"
-              value={formData.password}
-              onChange={(e) => updateFormData({ password: e.target.value })}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showPassword ? "👁️" : "👁️‍🗨️"}
-            </button>
-          </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <PasswordField
+            id="password"
+            label="Mot de passe *"
+            autoComplete="new-password"
+            placeholder="Minimum 6 caractères"
+            value={formData.password}
+            onChange={(e) => updateFormData({ password: e.target.value })}
+          />
+          <PasswordField
+            id="confirmPassword"
+            label="Confirmer *"
+            autoComplete="new-password"
+            placeholder="Confirmez votre mot de passe"
+            value={formData.confirmPassword}
+            onChange={(e) =>
+              updateFormData({ confirmPassword: e.target.value })
+            }
+          />
         </div>
 
-        <div>
-          <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
-          <div className="relative mt-1">
-            <Input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirmez votre mot de passe"
-              value={formData.confirmPassword}
-              onChange={(e) =>
-                updateFormData({ confirmPassword: e.target.value })
-              }
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
           <Checkbox
             checked={formData.acceptTerms}
             onChange={(checked: boolean) =>
@@ -209,7 +187,8 @@ export function PersonalInfoStep({
 
         <Button
           onClick={handleValidate}
-          className="w-full"
+          size="lg"
+          className="h-12 w-full rounded-full text-base shadow-[0_12px_30px_-10px_rgba(83,116,93,0.7)] transition-transform hover:-translate-y-0.5"
           disabled={
             !formData.email.trim() ||
             !formData.lastName.trim() ||
@@ -221,7 +200,7 @@ export function PersonalInfoStep({
           }
         >
           Continuer
-          <ChevronRight className="w-4 h-4 ml-2" />
+          <ArrowRight className="size-4" />
         </Button>
       </div>
     </div>

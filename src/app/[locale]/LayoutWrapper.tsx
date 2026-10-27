@@ -14,12 +14,14 @@ export default function LayoutWrapper({
   // Masquer la navbar pour la page landing-page et inscription
   const isLandingPage = pathname?.includes("/landing-page");
   const isInscriptionPage = pathname?.includes("/inscription");
+  // Pages d'authentification : gabarit plein écran dédié (AuthShell)
+  const isAuthPage = !!pathname && /^\/(fr|en)\/auth\//.test(pathname);
 
   // Page salon partagée : barre dédiée (client / invité) ou navbar pro si OWNER/EMPLOYEE/ADMIN
   const isSalonPublicPath =
     !!pathname && /^\/(fr|en)\/salon\/[^/]+/.test(pathname);
 
-  if (isLandingPage || isInscriptionPage) {
+  if (isLandingPage || isInscriptionPage || isAuthPage) {
     return <>{children}</>;
   }
 
