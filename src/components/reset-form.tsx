@@ -1,22 +1,19 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { message, Spin } from "antd";
-import { signOut, useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
 
-import logo from "@/assets/logo-black.png";
-import Image from "next/image";
-
+import { AuthCard } from "@/app/components/auth/AuthCard";
+import { AuthField, PasswordField } from "@/app/components/auth/AuthField";
+import { AuthShell } from "@/app/components/auth/AuthShell";
 import { useResetPassword } from "@/app/data/hooks";
 import { IUser } from "@/app/interface";
 import useUserStore from "@/app/store/useUserStore";
+import { Button } from "@/components/ui/button";
+import { message } from "antd";
+import { AlertCircle, ArrowRight, Loader2, Mail } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function ResetForm({
   user,
@@ -33,8 +30,6 @@ export default function ResetForm({
   const [loading, setLoading] = useState(false);
 
   const { mutate: resetPassword } = useResetPassword();
-
-  console.log("user", user);
   const { data: session } = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,74 +88,78 @@ export default function ResetForm({
     }
   }, [session]);
 
-  return (
-    <div className={cn("flex flex-col gap-6")}>
-      <Card className="overflow-hidden">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <form onSubmit={handleSubmit} className="p-6 md:p-8">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center text-center">
-                <h1 className="text-2xl font-bold">
-                  {user?.firstName + " " + user?.lastName}
-                </h1>
-                <p className="text-balance text-muted-foreground">
-                  Merci de renseigner votre nouveau mot de passe.
-                </p>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  value={user?.email}
-                  disabled
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Nouveau mot de Passe : </Label>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <Spin spinning={loading}>
-                <Button type="submit" className="w-full">
-                  Save
-                </Button>
-              </Spin>
-              {error && <p className="text-red-500">{error}</p>}
+  const displayName = [user?.firstName, user?.lastName]
+    .filter(Boolean)
+    .join(" ");
 
-              <div className="text-center text-sm">
-                Pas de compte?{" "}
-                <Link
-                  href="/auth/register"
-                  className="underline underline-offset-4"
-                >
-                  Créer un compte
-                </Link>
-              </div>
+  return (
+    <AuthShell>
+      <AuthCard
+        eyebrow="Nouveau mot de passe"
+        title={displayName ? `Bonjour ${displayName}.` : "Choisissez un nouveau mot de passe."}
+        description="Renseignez votre nouveau mot de passe. Vous serez ensuite invité à vous reconnecter."
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <AuthField
+            id="email"
+            label="Email"
+            icon={Mail}
+            type="email"
+            value={user?.email ?? ""}
+            disabled
+            readOnly
+          />
+          <PasswordField
+            id="password"
+            label="Nouveau mot de passe"
+            autoComplete="new-password"
+            placeholder="Minimum 6 caractères"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
+          />
+
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700"
+            >
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              <p>{error}</p>
             </div>
-          </form>
-          <div className="relative hidden bg-muted md:block">
-            <Image
-              src={logo}
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-            />
-          </div>
-        </CardContent>
-      </Card>
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </div>
-    </div>
+          )}
+
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 w-full rounded-full text-base shadow-[0_12px_30px_-10px_rgba(83,116,93,0.7)] transition-transform hover:-translate-y-0.5"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Enregistrement…
+              </>
+            ) : (
+              <>
+                Enregistrer le mot de passe
+                <ArrowRight className="size-4" />
+              </>
+            )}
+          </Button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Pas encore de compte ?{" "}
+          <Link
+            href="/inscription"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Créer mon salon gratuitement
+          </Link>
+        </p>
+      </AuthCard>
+    </AuthShell>
   );
 }

@@ -158,7 +158,7 @@ export function SalonResumeStep({
         <Button
           variant="outline"
           onClick={onPrev}
-          className="flex-1"
+          className="h-12 flex-1 rounded-full text-base"
           disabled={isSubmitting}
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
@@ -166,7 +166,7 @@ export function SalonResumeStep({
         </Button>
         <Button
           onClick={onFinalSubmit}
-          className="flex-1"
+          className="h-12 flex-1 rounded-full text-base shadow-[0_12px_30px_-10px_rgba(83,116,93,0.7)]"
           disabled={isSubmitting}
         >
           {isSubmitting ? (

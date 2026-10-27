@@ -1,45 +1,43 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
+
+import { AuthCard } from "@/app/components/auth/AuthCard";
+import { AuthField, PasswordField } from "@/app/components/auth/AuthField";
+import { AuthShell } from "@/app/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
 import { getPostAuthRedirectPath } from "@/utils/authRedirects";
 import {
   getLoginErrorMessage,
   validateLoginCredentials,
 } from "@/utils/loginValidation";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle,
+  Loader2,
+  Mail,
+  Sparkles,
+} from "lucide-react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
-import logo from "@/assets/logo-white.png";
-import { AlertCircle, CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+const isDev = process.env.NODE_ENV === "development";
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function LoginForm() {
   const params = useParams();
   const locale = (params?.locale as string) || "fr";
 
-  const [email, setEmail] = useState(
-    process.env.NODE_ENV === "development"
-      ? "support@koribeauty.com"
-      : "support@koribeauty.com"
-  );
-  const [password, setPassword] = useState(
-    process.env.NODE_ENV === "development" ? "test1234" : "test1234"
-  );
-  const [showPassword, setShowPassword] = useState(false);
+  // Pré-remplissage uniquement en développement.
+  const [email, setEmail] = useState(isDev ? "support@koribeauty.com" : "");
+  const [password, setPassword] = useState(isDev ? "test1234" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [authSuccess, setAuthSuccess] = useState(false);
+
+  const busy = loading || isRedirecting;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,27 +62,18 @@ export function LoginForm({
         setError(getLoginErrorMessage(result.error));
         setLoading(false);
       } else {
-        // Authentification réussie
         setAuthSuccess(true);
 
-        // Attendre un court instant pour montrer l'animation de succès
+        // Court délai pour montrer l'état de succès avant la redirection.
         setTimeout(async () => {
           setIsRedirecting(true);
-
           try {
-            // Attendre la résolution complète de la promesse
             const response = await fetch("/api/auth/session");
             const sessionData = await response.json();
-
-            console.log("session", sessionData);
-
             const role = sessionData?.user?.role as string | undefined;
             window.location.href = getPostAuthRedirectPath(locale, role);
-          } catch (error) {
-            console.error(
-              "Erreur lors de la récupération de la session:",
-              error
-            );
+          } catch (err) {
+            console.error("Erreur lors de la récupération de la session:", err);
             window.location.href = getPostAuthRedirectPath(locale, undefined);
           }
         }, 800);
@@ -96,170 +85,115 @@ export function LoginForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="overflow-hidden border-0 shadow-lg">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <div className="relative hidden bg-gradient-to-br from-[#53745D] to-[#3a5a47] md:block">
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-white">
+    <AuthShell
+      footer={
+        <>
+          En vous connectant, vous acceptez nos{" "}
+          <Link href="/terms/cgv">Conditions Générales de Vente</Link> et notre{" "}
+          <Link href="/terms/privacy">Politique de confidentialité</Link>.
+        </>
+      }
+    >
+      <AuthCard
+        eyebrow="Connexion"
+        title="Content de vous revoir."
+        description="Connectez-vous pour gérer votre salon, vos prestations et vos rendez-vous."
+      >
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          <AuthField
+            id="email"
+            label="Email"
+            icon={Mail}
+            type="email"
+            autoComplete="email"
+            placeholder="votre@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={busy}
+          />
+
+          <PasswordField
+            id="password"
+            label="Mot de passe"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={busy}
+            labelAction={
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
+            }
+          />
+
+          <AnimatePresence>
+            {error && (
               <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mb-4"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+                role="alert"
               >
-                <Image
-                  src={logo}
-                  alt="Kori"
-                  width={360}
-                  height={150}
-                  className="mb-8"
-                />
+                <div className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700">
+                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                  <p>{error}</p>
+                </div>
               </motion.div>
-              <motion.h2
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="mb-4 text-2xl font-bold"
-              >
-                La plateforme qui simplifie vos rendez-vous beauté
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="text-center text-white/80"
-              >
-                Réservez facilement vos prestations de beauté et bien-être ou
-                proposez vos services à notre communauté.
-              </motion.p>
-            </div>
-          </div>
+            )}
+          </AnimatePresence>
 
-          <form onSubmit={handleSubmit} className="p-6 md:p-8">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center text-center">
-                <h1 className="text-3xl font-bold mb-2">Bienvenue</h1>
-                <p className="text-balance text-muted-foreground">
-                  Connectez-vous à votre compte pour continuer
-                </p>
-                <div className="md:hidden mt-4 mb-2">
-                  <Image src={logo} alt="Kori" width={100} height={100} />
-                </div>
-              </div>
+          <Button
+            type="submit"
+            size="lg"
+            className="h-12 w-full rounded-full text-base shadow-[0_12px_30px_-10px_rgba(83,116,93,0.7)] transition-transform hover:-translate-y-0.5"
+            disabled={busy}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Connexion…
+              </>
+            ) : authSuccess ? (
+              <>
+                <CheckCircle className="size-4" />
+                Connexion réussie
+              </>
+            ) : (
+              <>
+                Se connecter
+                <ArrowRight className="size-4" />
+              </>
+            )}
+          </Button>
+        </form>
 
-              <div className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="votre@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11"
-                    disabled={loading || isRedirecting}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password" className="text-sm font-medium">
-                      Mot de passe
-                    </Label>
-                    <Link
-                      href="/auth/forgot-password"
-                      className="ml-auto text-sm text-blue-600 underline-offset-2 hover:underline"
-                    >
-                      Mot de passe oublié ?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 pr-10"
-                      disabled={loading || isRedirecting}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                      disabled={loading || isRedirecting}
-                      aria-label={
-                        showPassword
-                          ? "Masquer le mot de passe"
-                          : "Afficher le mot de passe"
-                      }
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <AnimatePresence>
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-2 rounded-md bg-red-50 p-3 text-sm text-red-600"
-                  >
-                    <AlertCircle className="h-4 w-4" />
-                    <p>{error}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <Button
-                type="submit"
-                className="h-11 w-full"
-                disabled={loading || isRedirecting}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Connexion...
-                  </span>
-                ) : authSuccess ? (
-                  <span className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    Connexion réussie
-                  </span>
-                ) : (
-                  "Se connecter"
-                )}
-              </Button>
-
-              {/* <div className="text-center text-sm">
-                Pas encore de compte ?{" "}
-                <Link
-                  href="/auth/register"
-                  className="text-blue-600 underline underline-offset-4 hover:text-blue-800"
-                >
-                  S&apos;inscrire
-                </Link>
-              </div> */}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary">
-        En cliquant sur continuer, vous acceptez nos{" "}
-        <Link href="/terms/cgv">Conditions Générales de Vente</Link> et notre{" "}
-        <Link href="/terms/privacy">Politique de confidentialité</Link>
-      </div>
+        <div className="mt-8 border-t border-gray-100 pt-6">
+          <Link
+            href="/inscription"
+            className="group flex items-center gap-3 rounded-2xl border border-primary/15 bg-primary/5 p-4 transition-colors hover:border-primary/30 hover:bg-primary/10"
+          >
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+              <Sparkles className="size-4" />
+            </span>
+            <span className="flex-1 text-sm">
+              <span className="block font-semibold text-gray-900">
+                Pas encore sur korí ?
+              </span>
+              <span className="text-gray-600">
+                Créez votre salon gratuitement, en 2 minutes.
+              </span>
+            </span>
+            <ArrowRight className="size-4 text-primary transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+      </AuthCard>
 
       {/* Overlay de redirection */}
       <AnimatePresence>
@@ -268,29 +202,29 @@ export function LoginForm({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F7F1E8]/90 backdrop-blur-sm"
           >
-            <div className="flex flex-col items-center space-y-6 max-w-md text-center">
+            <div className="flex max-w-md flex-col items-center space-y-6 text-center">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                className="rounded-full bg-blue-100 p-4"
+                className="rounded-full bg-primary/10 p-4"
               >
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+                <Loader2 className="size-12 animate-spin text-primary" />
               </motion.div>
               <div className="space-y-2">
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-2xl font-semibold text-gray-900">
                   Préparation de votre espace
                 </h2>
-                <p className="text-muted-foreground">
-                  Nous vous redirigeons vers votre tableau de bord...
+                <p className="text-gray-600">
+                  Nous vous redirigeons vers votre tableau de bord…
                 </p>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </AuthShell>
   );
 }
