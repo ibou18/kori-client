@@ -873,16 +873,6 @@ export function SalonForm({
                       </p>
                     </div>
 
-                    <div className="rounded-md bg-muted/50 p-3 text-sm">
-                      Exemple : pour une prestation à{" "}
-                      <span className="font-medium">100 $</span>, le client paie{" "}
-                      <span className="font-semibold">{effectiveDepositPercent} $</span>{" "}
-                      d&apos;acompte en ligne et{" "}
-                      <span className="font-semibold">
-                        {100 - effectiveDepositPercent} $
-                      </span>{" "}
-                      sur place.
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
