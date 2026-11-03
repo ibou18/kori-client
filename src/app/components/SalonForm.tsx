@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useGetPlatformConfig } from "@/app/data/hooks";
 import {
   Form,
   FormControl,
@@ -115,6 +116,19 @@ const salonFormSchema = z.object({
   // "auto" (ou vide) ⇒ le serveur déduit le fuseau depuis l'adresse (geo-tz)
   timezone: z.string().optional(),
   offersHomeService: z.boolean().default(false),
+  // Collecte d'acompte (docs/DEPOSIT_COLLECTION.md). Pourcentage en pourcent (5–50), "" = taux plateforme.
+  depositEnabled: z.boolean().default(false),
+  depositPercentage: z
+    .string()
+    .optional()
+    .refine(
+      (v) => {
+        if (v === undefined || v === "") return true;
+        const n = Number(v);
+        return Number.isFinite(n) && n >= 5 && n <= 50;
+      },
+      { message: "Entre 5 % et 50 %" }
+    ),
   isActive: z.boolean().default(true),
   isVerified: z.boolean().default(false),
   address: z.object({
@@ -154,6 +168,13 @@ export function SalonForm({
   onSubmit,
   isSubmitting = false,
 }: SalonFormProps) {
+  const { data: platformConfigData } = useGetPlatformConfig();
+  const platformDepositPercent = Math.round(
+    ((platformConfigData?.data?.depositPercentage ??
+      platformConfigData?.depositPercentage ??
+      0.15) as number) * 100
+  );
+
   const form = useForm<SalonFormValues>({
     resolver: zodResolver(salonFormSchema),
     defaultValues: {
@@ -165,6 +186,8 @@ export function SalonForm({
       salonTypes: [],
       timezone: "auto",
       offersHomeService: false,
+      depositEnabled: false,
+      depositPercentage: "",
       isActive: true,
       isVerified: false,
       address: {
@@ -194,6 +217,11 @@ export function SalonForm({
       // Par défaut "auto" : le fuseau est re-déduit de l'adresse à l'enregistrement
       timezone: "auto",
       offersHomeService: salon.offersHomeService || false,
+      depositEnabled: salon.depositEnabled || false,
+      depositPercentage:
+        salon.depositPercentage != null
+          ? String(Math.round(salon.depositPercentage * 100))
+          : "",
       isActive: salon.isActive !== undefined ? salon.isActive : true,
       isVerified: salon.isVerified !== undefined ? salon.isVerified : false,
       address: {
@@ -220,6 +248,11 @@ export function SalonForm({
       description: values.description || undefined,
       // "auto" ⇒ chaîne vide : le serveur déduit le fuseau depuis l'adresse (geo-tz)
       timezone: values.timezone === "auto" ? "" : values.timezone,
+      // Fraction côté serveur ; null = revenir au taux plateforme.
+      depositPercentage:
+        values.depositPercentage && values.depositPercentage !== ""
+          ? Number(values.depositPercentage) / 100
+          : null,
       address: {
         ...values.address,
         province: values.address.province || undefined,
@@ -670,6 +703,63 @@ export function SalonForm({
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="depositEnabled"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Collecte d&apos;acompte
+                      </FormLabel>
+                      <FormDescription>
+                        Un acompte est demandé en ligne à la réservation, le solde
+                        est réglé sur place. Nécessite un compte Stripe finalisé.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onChange={(checked: boolean) => field.onChange(checked)}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("depositEnabled") && (
+                <FormField
+                  control={form.control}
+                  name="depositPercentage"
+                  render={({ field }) => (
+                    <FormItem className="rounded-lg border p-4">
+                      <FormLabel>Pourcentage de l&apos;acompte</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={5}
+                            max={50}
+                            step={1}
+                            placeholder={String(platformDepositPercent)}
+                            className="w-28"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                          <span className="text-sm text-muted-foreground">%</span>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Part du prix de la prestation demandée en ligne, entre 5 % et
+                        50 %. Laisser vide pour appliquer le taux plateforme (
+                        {platformDepositPercent} %).
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
