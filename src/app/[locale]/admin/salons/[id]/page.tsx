@@ -800,14 +800,25 @@ export default function SalonDetailPage() {
                 )}
 
                 <div>
-                  <p className="text-sm text-gray-500">Acompte</p>
-                  <p className="font-medium">
-                    {salon.depositEnabled
-                      ? salon.depositPercentage != null
-                        ? `${Math.round(salon.depositPercentage * 100)} % (choix du salon)`
-                        : "Taux plateforme"
-                      : "Désactivé"}
-                  </p>
+                  <p className="text-sm text-gray-500">Acompte à la réservation</p>
+                  {salon.depositEnabled ? (
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-bold text-primary">
+                        {salon.depositPercentage != null
+                          ? `${Math.round(salon.depositPercentage * 100)} %`
+                          : "Taux plateforme"}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        {salon.depositPercentage != null
+                          ? "choisi par le salon"
+                          : "par défaut"}
+                      </span>
+                    </div>
+                  ) : (
+                    <Badge variant="outline" className="text-gray-600">
+                      Désactivé
+                    </Badge>
+                  )}
                 </div>
 
                 {salon.dashboardUrl && (

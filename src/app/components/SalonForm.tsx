@@ -104,6 +104,11 @@ const openingHoursDaySchema = z
   .nullable()
   .optional();
 
+/** Bornes du pourcentage d'acompte (miroir du serveur, depositCollectionUtils). */
+const DEPOSIT_PERCENT_MIN = 5;
+const DEPOSIT_PERCENT_MAX = 50;
+const DEPOSIT_PERCENT_PRESETS = [10, 15, 20, 25, 30, 50];
+
 const salonFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   description: z.string().optional(),
@@ -125,9 +130,11 @@ const salonFormSchema = z.object({
       (v) => {
         if (v === undefined || v === "") return true;
         const n = Number(v);
-        return Number.isFinite(n) && n >= 5 && n <= 50;
+        return (
+          Number.isFinite(n) && n >= DEPOSIT_PERCENT_MIN && n <= DEPOSIT_PERCENT_MAX
+        );
       },
-      { message: "Entre 5 % et 50 %" }
+      { message: `Entre ${DEPOSIT_PERCENT_MIN} % et ${DEPOSIT_PERCENT_MAX} %` }
     ),
   isActive: z.boolean().default(true),
   isVerified: z.boolean().default(false),
@@ -202,6 +209,17 @@ export function SalonForm({
       openingHours: emptyOpeningHours(),
     },
   });
+
+  // Valeurs dérivées pour l'affichage de la carte « Acompte ».
+  const depositEnabled = form.watch("depositEnabled");
+  const depositPercentageInput = form.watch("depositPercentage");
+  const usesPlatformRate =
+    !depositPercentageInput || depositPercentageInput.trim() === "";
+  const parsedDepositPercent = Number(depositPercentageInput);
+  const effectiveDepositPercent =
+    !usesPlatformRate && Number.isFinite(parsedDepositPercent)
+      ? Math.round(parsedDepositPercent)
+      : platformDepositPercent;
 
   useEffect(() => {
     if (!salon?.id) {
@@ -706,63 +724,6 @@ export function SalonForm({
 
               <FormField
                 control={form.control}
-                name="depositEnabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Collecte d&apos;acompte
-                      </FormLabel>
-                      <FormDescription>
-                        Un acompte est demandé en ligne à la réservation, le solde
-                        est réglé sur place. Nécessite un compte Stripe finalisé.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onChange={(checked: boolean) => field.onChange(checked)}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("depositEnabled") && (
-                <FormField
-                  control={form.control}
-                  name="depositPercentage"
-                  render={({ field }) => (
-                    <FormItem className="rounded-lg border p-4">
-                      <FormLabel>Pourcentage de l&apos;acompte</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            min={5}
-                            max={50}
-                            step={1}
-                            placeholder={String(platformDepositPercent)}
-                            className="w-28"
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                          <span className="text-sm text-muted-foreground">%</span>
-                        </div>
-                      </FormControl>
-                      <FormDescription>
-                        Part du prix de la prestation demandée en ligne, entre 5 % et
-                        50 %. Laisser vide pour appliquer le taux plateforme (
-                        {platformDepositPercent} %).
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <FormField
-                control={form.control}
                 name="isActive"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -803,6 +764,135 @@ export function SalonForm({
                 )}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Acompte : carte dédiée pour rendre le pourcentage lisible d'un coup d'œil */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Acompte à la réservation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="depositEnabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Collecte d&apos;acompte
+                    </FormLabel>
+                    <FormDescription>
+                      Un acompte est demandé en ligne à la réservation, le solde
+                      est réglé sur place. Nécessite un compte Stripe finalisé.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onChange={(checked: boolean) => field.onChange(checked)}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {depositEnabled ? (
+              <FormField
+                control={form.control}
+                name="depositPercentage"
+                render={({ field }) => (
+                  <FormItem className="rounded-lg border p-4 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <FormLabel className="text-base">
+                          Pourcentage de l&apos;acompte
+                        </FormLabel>
+                        <FormDescription>
+                          Part du prix de la prestation demandée en ligne, entre
+                          {" "}{DEPOSIT_PERCENT_MIN} % et {DEPOSIT_PERCENT_MAX} %.
+                        </FormDescription>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-4xl font-bold leading-none text-primary">
+                          {effectiveDepositPercent} %
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {usesPlatformRate
+                            ? "taux plateforme (par défaut)"
+                            : "taux choisi par le salon"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {DEPOSIT_PERCENT_PRESETS.map((preset) => {
+                        const selected = String(preset) === (field.value ?? "");
+                        return (
+                          <Button
+                            key={preset}
+                            type="button"
+                            size="sm"
+                            variant={selected ? "default" : "outline"}
+                            onClick={() => field.onChange(String(preset))}
+                          >
+                            {preset} %
+                          </Button>
+                        );
+                      })}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={usesPlatformRate ? "default" : "ghost"}
+                        onClick={() => field.onChange("")}
+                      >
+                        Par défaut ({platformDepositPercent} %)
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={DEPOSIT_PERCENT_MIN}
+                            max={DEPOSIT_PERCENT_MAX}
+                            step={1}
+                            placeholder={String(platformDepositPercent)}
+                            className="w-28 text-lg font-semibold"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                          <span className="text-base text-muted-foreground">%</span>
+                        </div>
+                      </FormControl>
+                      <p className="text-sm text-muted-foreground">
+                        Autre valeur : saisissez librement. Laisser vide = taux
+                        plateforme.
+                      </p>
+                    </div>
+
+                    <div className="rounded-md bg-muted/50 p-3 text-sm">
+                      Exemple : pour une prestation à{" "}
+                      <span className="font-medium">100 $</span>, le client paie{" "}
+                      <span className="font-semibold">{effectiveDepositPercent} $</span>{" "}
+                      d&apos;acompte en ligne et{" "}
+                      <span className="font-semibold">
+                        {100 - effectiveDepositPercent} $
+                      </span>{" "}
+                      sur place.
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground px-1">
+                Collecte désactivée : aucun acompte n&apos;est demandé, le client
+                paie seulement les frais de service en ligne.
+              </p>
+            )}
           </CardContent>
         </Card>
 
