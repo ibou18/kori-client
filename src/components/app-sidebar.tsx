@@ -6,6 +6,7 @@ import {
   DollarSign,
   LayoutDashboard,
   Link2,
+  ClipboardList,
   MapIcon,
   Scissors,
   Settings,
@@ -56,6 +57,11 @@ const adminNavMain = [
     title: "Salons",
     url: "/admin/salons",
     icon: Store,
+  },
+  {
+    title: "Relances CRM",
+    url: "/admin/crm",
+    icon: ClipboardList,
   },
   {
     title: "Réservations",

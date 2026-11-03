@@ -1,6 +1,7 @@
 "use client";
 
 import PageWrapper from "@/app/components/block/PageWrapper";
+import { CrmNotesPanel } from "@/app/components/crm/CrmNotesPanel";
 import { useGetSalon } from "@/app/data/hooks";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -567,6 +568,9 @@ export default function SalonDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Suivi CRM (admin / support) */}
+          <CrmNotesPanel subject={{ salonId: salon.id }} subjectLabel="ce salon" />
         </div>
 
         {/* Colonne latérale */}

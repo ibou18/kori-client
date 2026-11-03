@@ -2,6 +2,7 @@
 
 import PageWrapper from "@/app/components/block/PageWrapper";
 import { UserModal } from "@/app/components/UserModal";
+import { CrmNotesPanel } from "@/app/components/crm/CrmNotesPanel";
 import { useGetUser, useUpdateUser } from "@/app/data/hooks";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -740,6 +741,12 @@ export default function UserDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Suivi CRM (admin / support) */}
+            <CrmNotesPanel
+              subject={{ userId: user.id }}
+              subjectLabel={user.role === "CLIENT" ? "ce client" : "cet utilisateur"}
+            />
           </div>
 
           {/* Colonne latérale */}
