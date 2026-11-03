@@ -249,6 +249,12 @@ export function AdminListLayout<T extends { id: string }>({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {/* Œil en tête de ligne : ouvrir la fiche sans scroller jusqu'aux actions */}
+                    {onView && (
+                      <TableHead className="w-[44px] px-2">
+                        <span className="sr-only">Ouvrir</span>
+                      </TableHead>
+                    )}
                     {columns.map((column) => (
                       <TableHead key={column.key} className={column.className}>
                         {column.header}
@@ -264,6 +270,20 @@ export function AdminListLayout<T extends { id: string }>({
                 <TableBody>
                   {currentItems.map((item) => (
                     <TableRow key={item.id}>
+                      {onView && (
+                        <TableCell className="px-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onView(item)}
+                            aria-label="Ouvrir"
+                            title="Ouvrir"
+                            className="h-8 w-8 p-0 hover:bg-[#F0F4F1] hover:text-[#53745D]"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
                       {columns.map((column) => (
                         <TableCell
                           key={column.key}
