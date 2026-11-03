@@ -105,6 +105,9 @@ interface Salon {
   stripeAccountId?: string | null;
   stripeConnectEnabled?: boolean;
   commissionRate?: number;
+  depositEnabled?: boolean;
+  depositPercentage?: number | null;
+  stripeChargesEnabled?: boolean;
   dashboardUrl?: string | null;
   providerCancellationCount?: number;
   lastProviderCancellation?: string | null;
@@ -795,6 +798,17 @@ export default function SalonDetailPage() {
                     </p>
                   </div>
                 )}
+
+                <div>
+                  <p className="text-sm text-gray-500">Acompte</p>
+                  <p className="font-medium">
+                    {salon.depositEnabled
+                      ? salon.depositPercentage != null
+                        ? `${Math.round(salon.depositPercentage * 100)} % (choix du salon)`
+                        : "Taux plateforme"
+                      : "Désactivé"}
+                  </p>
+                </div>
 
                 {salon.dashboardUrl && (
                   <div>
