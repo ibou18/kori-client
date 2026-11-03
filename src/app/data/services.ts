@@ -166,6 +166,65 @@ export const updateProspectStatusApi = async (data: {
   }
 };
 
+// ============================================================================
+// CRM (notes de suivi sur salons et clients) — admin / support
+// ============================================================================
+
+export type CrmSubjectParams = { salonId: string } | { userId: string };
+
+export const getCrmNotesApi = async (
+  subject: CrmSubjectParams,
+  params?: { limit?: number; offset?: number }
+) => {
+  try {
+    const response = await requestWrapper.get("/crm/notes", {
+      params: { ...subject, ...params },
+    });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des notes CRM");
+    return null;
+  }
+};
+
+export const createCrmNoteApi = async (data: {
+  salonId?: string;
+  userId?: string;
+  type?: string;
+  content: string;
+  status?: string | null;
+  followUpAt?: string | null;
+}) => {
+  const response = await requestWrapper.post("/crm/notes", data);
+  return response.data;
+};
+
+export const updateCrmNoteApi = async (data: {
+  id: string;
+  type?: string;
+  content?: string;
+  followUpAt?: string | null;
+}) => {
+  const { id, ...body } = data;
+  const response = await requestWrapper.patch(`/crm/notes/${id}`, body);
+  return response.data;
+};
+
+export const deleteCrmNoteApi = async (id: string) => {
+  const response = await requestWrapper.delete(`/crm/notes/${id}`);
+  return response.data;
+};
+
+export const getCrmFollowUpsApi = async (params?: { before?: string; limit?: number }) => {
+  try {
+    const response = await requestWrapper.get("/crm/follow-ups", { params });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération des relances");
+    return null;
+  }
+};
+
 export const forgotPasswordApi = async (email: string) => {
   try {
     const response = await requestWrapper.post("/auth/forgot-password", {

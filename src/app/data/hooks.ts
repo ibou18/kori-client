@@ -8,6 +8,8 @@ import {
   GET_PLATFORM_CONFIG,
   GET_ADMIN_SHORT_LINKS,
   GET_PROSPECTS,
+  GET_CRM_NOTES,
+  GET_CRM_FOLLOW_UPS,
   GET_RATINGS,
   GET_REVIEW,
   GET_REVIEWS,
@@ -90,6 +92,12 @@ import {
   updateConfigApi,
   // Platform Config
   getPlatformConfigApi,
+  // CRM
+  createCrmNoteApi,
+  deleteCrmNoteApi,
+  getCrmFollowUpsApi,
+  getCrmNotesApi,
+  updateCrmNoteApi,
   // Prospects
   getProspectByIdApi,
   getProspectsApi,
@@ -1758,5 +1766,94 @@ export const useUpdateProspectStatus = () => {
     onError: (error: any) => {
       toast.error(error?.message || "Erreur lors de la mise à jour du statut");
     },
+  });
+};
+
+// ============================================================================
+// CRM HOOKS (notes de suivi sur salons et clients)
+// ============================================================================
+
+export type CrmSubject = { salonId: string } | { userId: string };
+
+const crmSubjectKey = (subject: CrmSubject) =>
+  "salonId" in subject ? ["salon", subject.salonId] : ["user", subject.userId];
+
+export const useGetCrmNotes = (subject: CrmSubject | null, params?: { limit?: number }) => {
+  return useQuery({
+    queryKey: [GET_CRM_NOTES, ...(subject ? crmSubjectKey(subject) : []), params],
+    queryFn: () => getCrmNotesApi(subject as CrmSubject, params),
+    enabled: !!subject && !!("salonId" in subject ? subject.salonId : subject.userId),
+    staleTime: 1000 * 30,
+  });
+};
+
+/** Invalide notes + fiche de la cible (crmStatus dénormalisé) + relances. */
+const useInvalidateCrm = () => {
+  const queryClient = useQueryClient();
+  return (subject?: CrmSubject | null) => {
+    queryClient.invalidateQueries({ queryKey: [GET_CRM_NOTES] });
+    queryClient.invalidateQueries({ queryKey: [GET_CRM_FOLLOW_UPS] });
+    if (subject && "salonId" in subject) {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON, subject.salonId] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALONS] });
+    } else if (subject) {
+      queryClient.invalidateQueries({ queryKey: [GET_USERS] });
+    }
+  };
+};
+
+export const useCreateCrmNote = (subject: CrmSubject) => {
+  const invalidate = useInvalidateCrm();
+  return useMutation({
+    mutationFn: (data: {
+      type?: string;
+      content: string;
+      status?: string | null;
+      followUpAt?: string | null;
+    }) => createCrmNoteApi({ ...subject, ...data }),
+    onSuccess: () => {
+      invalidate(subject);
+      toast.success("Note ajoutée");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Erreur lors de l'ajout de la note");
+    },
+  });
+};
+
+export const useUpdateCrmNote = (subject: CrmSubject) => {
+  const invalidate = useInvalidateCrm();
+  return useMutation({
+    mutationFn: updateCrmNoteApi,
+    onSuccess: () => {
+      invalidate(subject);
+      toast.success("Note mise à jour");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Erreur lors de la mise à jour");
+    },
+  });
+};
+
+export const useDeleteCrmNote = (subject: CrmSubject) => {
+  const invalidate = useInvalidateCrm();
+  return useMutation({
+    mutationFn: deleteCrmNoteApi,
+    onSuccess: () => {
+      invalidate(subject);
+      toast.success("Note supprimée");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Erreur lors de la suppression");
+    },
+  });
+};
+
+export const useGetCrmFollowUps = (params?: { before?: string; limit?: number }) => {
+  return useQuery({
+    queryKey: [GET_CRM_FOLLOW_UPS, params],
+    queryFn: () => getCrmFollowUpsApi(params),
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: true,
   });
 };
