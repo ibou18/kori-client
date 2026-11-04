@@ -1861,3 +1861,41 @@ export const getSalonTypesApi = async () => {
     return null;
   }
 };
+
+// ============================================================================
+// Mini-site salon (docs/SALON_MINI_SITE.md côté serveur)
+// Les erreurs sont relancées telles quelles : l'éditeur lit `errorCode`/`message`.
+// ============================================================================
+
+export interface SalonSiteInput {
+  template?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  font?: string;
+  tagline?: string | null;
+  isPublished?: boolean;
+}
+
+export const getSalonSiteApi = async (salonId: string) => {
+  const response = await requestWrapper.get(`/salons/${salonId}/site`);
+  return response.data as { success: boolean; data: any | null };
+};
+
+export const updateSalonSiteApi = async (salonId: string, data: SalonSiteInput) => {
+  const response = await requestWrapper.put(`/salons/${salonId}/site`, data);
+  return response.data as { success: boolean; data: any };
+};
+
+export const uploadSalonSiteLogoApi = async (salonId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("logo", file);
+  const response = await requestWrapper.post(`/salons/${salonId}/site/logo`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data as { success: boolean; data: any };
+};
+
+export const deleteSalonSiteLogoApi = async (salonId: string) => {
+  const response = await requestWrapper.delete(`/salons/${salonId}/site/logo`);
+  return response.data as { success: boolean; data: any };
+};

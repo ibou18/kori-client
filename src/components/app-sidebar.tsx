@@ -14,6 +14,7 @@ import {
   UserPlus,
   Users,
   Wrench,
+  Palette,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import * as React from "react";
@@ -135,6 +136,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Mon salon",
           url: salonPath,
           icon: Store,
+        },
+        {
+          title: "Mon mini-site",
+          url: "/admin/mon-site",
+          icon: Palette,
         },
         {
           title: "Calendrier",

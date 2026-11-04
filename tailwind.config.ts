@@ -53,6 +53,13 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        // Mini-site salon : variables posées par SalonThemeProvider
+        site: {
+          primary: "var(--site-primary)",
+          secondary: "var(--site-secondary)",
+          "on-primary": "var(--site-on-primary)",
+          "on-secondary": "var(--site-on-secondary)",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -63,6 +70,10 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+      },
+      fontFamily: {
+        "site-display": ["var(--site-font-display)"],
+        "site-body": ["var(--site-font-body)"],
       },
       borderRadius: {
         lg: "var(--radius)",

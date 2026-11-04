@@ -179,6 +179,12 @@ import {
   uploadSalonPhotoApi,
   uploadServicePhotoApi,
   verifyEmailApi,
+  // Mini-site salon
+  deleteSalonSiteLogoApi,
+  getSalonSiteApi,
+  updateSalonSiteApi,
+  uploadSalonSiteLogoApi,
+  type SalonSiteInput,
 } from "./services";
 
 // ============================================================================
@@ -1855,5 +1861,63 @@ export const useGetCrmFollowUps = (params?: { before?: string; limit?: number })
     queryFn: () => getCrmFollowUpsApi(params),
     staleTime: 1000 * 60,
     refetchOnWindowFocus: true,
+  });
+};
+
+// ============================================================================
+// Mini-site salon
+// ============================================================================
+
+export const GET_SALON_SITE = "GET_SALON_SITE";
+
+const salonSiteErrorMessage = (error: any) =>
+  error?.response?.data?.message || error?.message || "Erreur lors de l'enregistrement";
+
+export const useGetSalonSite = (salonId: string) =>
+  useQuery({
+    queryKey: [GET_SALON_SITE, salonId],
+    queryFn: () => getSalonSiteApi(salonId),
+    enabled: !!salonId,
+    staleTime: 1000 * 60,
+  });
+
+export const useUpdateSalonSite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ salonId, data }: { salonId: string; data: SalonSiteInput }) =>
+      updateSalonSiteApi(salonId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SITE, variables.salonId] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON, variables.salonId] });
+      toast.success("Mini-site publié");
+    },
+    onError: (error: any) => toast.error(salonSiteErrorMessage(error)),
+  });
+};
+
+export const useUploadSalonSiteLogo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ salonId, file }: { salonId: string; file: File }) =>
+      uploadSalonSiteLogoApi(salonId, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SITE, variables.salonId] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON, variables.salonId] });
+      toast.success("Logo mis à jour");
+    },
+    onError: (error: any) => toast.error(salonSiteErrorMessage(error)),
+  });
+};
+
+export const useDeleteSalonSiteLogo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ salonId }: { salonId: string }) => deleteSalonSiteLogoApi(salonId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [GET_SALON_SITE, variables.salonId] });
+      queryClient.invalidateQueries({ queryKey: [GET_SALON, variables.salonId] });
+      toast.success("Logo retiré, retour aux initiales");
+    },
+    onError: (error: any) => toast.error(salonSiteErrorMessage(error)),
   });
 };
