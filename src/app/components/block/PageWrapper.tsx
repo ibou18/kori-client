@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import React from "react";
@@ -25,38 +24,42 @@ export default function PageWrapper({
   className,
   actions,
 }: PageWrapperProps) {
+  const hasActions = Boolean(actions || buttonTitle);
+  const hasHeader = Boolean(title || description || hasActions);
+
   return (
-    <div className={cn("container mx-auto px-2 py-6", className)}>
-      <div className="mb-8 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-          <div className="space-y-1.5">
+    <div className={cn("container mx-auto px-2 py-5", className)}>
+      {/* En-tête de page compact : le fil d'Ariane du header situe déjà la page,
+          le titre n'a donc plus besoin d'occuper toute la hauteur. */}
+      {hasHeader && (
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             {title && (
-              <h1 className="text-3xl font-bold tracking-tight">
-                <span className="text-5xl text-primary font-extrabold">
-                  {title.charAt(0)}
-                </span>
-                {title.slice(1)}
+              <h1 className="truncate text-2xl font-semibold tracking-tight text-slate-900">
+                {title}
               </h1>
             )}
             {description && (
-              <p className="text-muted-foreground">{description}</p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {description}
+              </p>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            {actions}
+          {hasActions && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {actions}
 
-            {buttonTitle && (
-              <Button onClick={handleClick} className="gap-2" size="sm">
-                {icon || <PlusCircle className="h-4 w-4" />}
-                {buttonTitle}
-              </Button>
-            )}
-          </div>
+              {buttonTitle && (
+                <Button onClick={handleClick} className="gap-2" size="sm">
+                  {icon || <PlusCircle className="h-4 w-4" />}
+                  {buttonTitle}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-
-        <Separator />
-      </div>
+      )}
 
       {children}
     </div>
