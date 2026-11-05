@@ -1,11 +1,10 @@
 "use client";
 
-import usePageTitleStore from "@/app/store/usePageTitleStore";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
-import React, { useEffect } from "react";
+import React from "react";
 
 interface PageWrapperProps {
   children: React.ReactNode;
@@ -29,16 +28,9 @@ export default function PageWrapper({
   actions,
 }: PageWrapperProps) {
   const pathname = usePathname() ?? "";
-  // Dans le back-office, le titre vit dans le fil d'Ariane du header (AdminHeader) :
-  // on ne le répète pas dans la page. Ailleurs (pages sans ce header), il reste affiché.
+  // Dans le back-office, le fil d'Ariane du header (AdminHeader) situe déjà la page :
+  // on n'affiche pas de gros titre en plus. Ailleurs (pages sans ce header), il reste affiché.
   const titleInHeader = /^\/(fr|en)\/admin(\/|$)/.test(pathname);
-  const setHeaderTitle = usePageTitleStore((state) => state.setTitle);
-
-  useEffect(() => {
-    setHeaderTitle(title ?? null);
-    return () => setHeaderTitle(null);
-  }, [title, setHeaderTitle]);
-
   const showTitle = Boolean(title) && !titleInHeader;
   const hasActions = Boolean(actions || buttonTitle);
   const hasHeader = showTitle || Boolean(description) || hasActions;
