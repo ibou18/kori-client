@@ -91,11 +91,15 @@ export default function MonSitePage() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Charger le brouillon depuis la version publiée (une fois, ou après publication).
+  // Charger le brouillon depuis la version publiée, une seule fois. Après
+  // « Publier », le brouillon est resynchronisé depuis la réponse du serveur,
+  // pas depuis le cache (sinon flash de l'ancien thème le temps du refetch).
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (isLoading || dirty) return;
+    if (isLoading || initializedRef.current) return;
+    initializedRef.current = true;
     setDraft(draftFromSite(savedSite));
-  }, [savedSite, isLoading, dirty]);
+  }, [savedSite, isLoading]);
 
   const previewSite: SalonSiteDto = useMemo(
     () => ({
@@ -109,27 +113,32 @@ export default function MonSitePage() {
     [draft, savedSite?.logoUrl],
   );
 
+  // Toujours envoyer le dernier brouillon, même si l'iframe signale « prêt »
+  // après un message déjà parti (hydratation plus tardive que `onLoad`).
+  const previewSiteRef = useRef(previewSite);
+  previewSiteRef.current = previewSite;
   const postPreview = useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
-      { type: SALON_SITE_PREVIEW_MESSAGE, site: previewSite },
+      { type: SALON_SITE_PREVIEW_MESSAGE, site: previewSiteRef.current },
       window.location.origin,
     );
-  }, [previewSite]);
+  }, []);
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return;
       if ((e.data as { type?: string })?.type === SALON_SITE_PREVIEW_READY) {
         setIframeReady(true);
+        postPreview();
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [postPreview]);
 
   useEffect(() => {
     if (iframeReady) postPreview();
-  }, [iframeReady, postPreview]);
+  }, [iframeReady, previewSite, postPreview]);
 
   const patch = (p: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...p }));
@@ -152,7 +161,12 @@ export default function MonSitePage() {
           tagline: draft.tagline.trim() || null,
         },
       },
-      { onSuccess: () => setDirty(false) },
+      {
+        onSuccess: (res) => {
+          setDraft(draftFromSite((res?.data as SalonSiteDto) ?? savedSite));
+          setDirty(false);
+        },
+      },
     );
   };
 
