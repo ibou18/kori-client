@@ -48,6 +48,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { DashboardHero } from "./components/DashboardHero";
 import { SalonProDashboard } from "./SalonProDashboard";
 
 export interface IStats {
@@ -362,7 +363,28 @@ export default function Dashboard() {
   const hasBookingEvolutionData = bookingEvolutionSeries.length > 0;
 
   return (
-    <PageWrapper title="Dashboard Admin">
+    <div className="container mx-auto px-2 py-6">
+      <DashboardHero
+        subtitle="Vue d'ensemble de la plateforme Korí"
+        highlights={[
+          {
+            label: "Réservations aujourd'hui",
+            value: adminStats?.data?.bookings?.today ?? "—",
+          },
+          {
+            label: "Revenus payés ce mois",
+            value: adminStats?.data
+              ? formatCurrency(adminStats.data.revenue?.thisMonth || 0)
+              : "—",
+          },
+        ]}
+        actions={[
+          { label: "Salons", href: "/admin/salons", icon: Store },
+          { label: "Réservations", href: "/admin/bookings", icon: Calendar },
+          { label: "Paiements", href: "/admin/payments", icon: DollarSign },
+        ]}
+      />
+
       {/* Stats Cards */}
       {statsLoading ? (
         <dl className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -863,6 +885,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </PageWrapper>
+    </div>
   );
 }

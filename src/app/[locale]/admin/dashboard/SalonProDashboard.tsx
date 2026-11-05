@@ -2,6 +2,7 @@
 
 import PageWrapper from "@/app/components/block/PageWrapper";
 import {
+  useGetSalon,
   useGetSalonBookings,
   useGetSalonDashboardStats,
   useGetSalonMonthlyRevenue,
@@ -17,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   DollarSign,
+  ExternalLink,
   Loader2,
   Scissors,
   TrendingUp,
@@ -38,6 +40,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+import { DashboardHero } from "./components/DashboardHero";
 
 dayjs.extend(isoWeek);
 dayjs.locale("fr");
@@ -91,7 +95,7 @@ function KpiCard({
 }: KpiCardProps) {
   return (
     <div
-      className={`rounded-xl border p-5 shadow-sm flex flex-col gap-3 ${
+      className={`rounded-xl border p-5 shadow-sm flex flex-col gap-3 transition-shadow hover:shadow-md ${
         highlighted
           ? "border-[#53745D]/40 bg-[#F0F4F1]"
           : "border-slate-200 bg-white"
@@ -128,6 +132,10 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
   const today = dayjs().format("YYYY-MM-DD");
 
   const [bookingsOpen, setBookingsOpen] = useState(true);
+
+  const { data: salonData } = useGetSalon(salonId);
+  const salonName: string | undefined =
+    (salonData as any)?.data?.name ?? (salonData as any)?.name;
 
   const { data: dashboardData, isLoading: dashLoading } =
     useGetSalonDashboardStats(salonId);
@@ -197,9 +205,38 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
   }
 
   return (
-    <PageWrapper title="Tableau de bord">
+    <div className="container mx-auto px-2 py-6">
+      <DashboardHero
+        subtitle={
+          salonName
+            ? `${salonName} · voici l'activité de votre salon`
+            : "Voici l'activité de votre salon"
+        }
+        highlights={[
+          {
+            label: "RDV aujourd'hui",
+            value: stats.today?.appointments ?? 0,
+          },
+          {
+            label: "Revenus du jour",
+            value: formatCad(stats.today?.revenue ?? 0),
+          },
+        ]}
+        actions={[
+          { label: "Calendrier", href: "/admin/calendrier", icon: Calendar },
+          { label: "Mes services", href: "/admin/mes-services", icon: Scissors },
+          { label: "Paiements", href: "/admin/payments", icon: DollarSign },
+          {
+            label: "Voir mon site",
+            href: `/salon/${salonId}`,
+            icon: ExternalLink,
+            external: true,
+          },
+        ]}
+      />
+
       {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <KpiCard
           label="Total"
           appointments={stats.total?.appointments ?? 0}
@@ -450,31 +487,6 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
       </div>
 
       </div>{/* fin grid 2 colonnes */}
-
-      {/* Quick links */}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href="/admin/calendrier"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#53745D]/30 bg-[#F0F4F1] px-4 py-2 text-sm font-medium text-[#3a5a47] hover:bg-[#D6E3D8] transition-colors"
-        >
-          <Calendar className="h-4 w-4" />
-          Calendrier
-        </Link>
-        <Link
-          href="/admin/mes-services"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#53745D]/30 bg-[#F0F4F1] px-4 py-2 text-sm font-medium text-[#3a5a47] hover:bg-[#D6E3D8] transition-colors"
-        >
-          <Scissors className="h-4 w-4" />
-          Mes services
-        </Link>
-        <Link
-          href="/admin/payments"
-          className="inline-flex items-center gap-2 rounded-lg border border-[#53745D]/30 bg-[#F0F4F1] px-4 py-2 text-sm font-medium text-[#3a5a47] hover:bg-[#D6E3D8] transition-colors"
-        >
-          <DollarSign className="h-4 w-4" />
-          Paiements
-        </Link>
-      </div>
-    </PageWrapper>
+    </div>
   );
 }
