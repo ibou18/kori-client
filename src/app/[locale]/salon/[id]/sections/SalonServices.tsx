@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { ServicePhotoLightbox } from "../components/ServicePhotoLightbox";
@@ -110,139 +111,15 @@ export function SalonServices({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {visible.map((service) => {
-          const opts = service.options ?? [];
-          const effective = (o: (typeof opts)[number]) => o.discountPrice ?? o.price;
-          const minPrice = opts.length ? Math.min(...opts.map(effective)) : null;
-          const maxPrice = opts.length ? Math.max(...opts.map(effective)) : null;
-          const subtitle = service.particularities?.trim() || service.description?.trim();
-          return (
-            <motion.button
-              key={service.id}
-              type="button"
-              onClick={() => onBookService(service)}
-              className="flex w-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition-all hover:shadow-lg"
-              style={{ borderColor: `${theme.primaryColor}33` }}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.99 }}
-            >
-              <div className="flex min-h-0 flex-1 items-start gap-3 p-3.5">
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <p className="line-clamp-2 text-[15px] font-bold leading-snug text-slate-900">
-                    {service.name}
-                  </p>
-                  {subtitle ? (
-                    <p className="line-clamp-2 text-xs text-slate-500">{subtitle}</p>
-                  ) : null}
-                  {service.duration ? (
-                    <p className="text-xs text-slate-500">
-                      {formatDuration(getServiceDurationMinutes(service.duration))}
-                    </p>
-                  ) : null}
-                  {opts.length > 0 && minPrice !== null && maxPrice !== null ? (
-                    <>
-                      <p className="mt-1 text-sm font-bold tabular-nums text-slate-900">
-                        {minPrice === maxPrice
-                          ? `${formatSalonPriceDollars(minPrice)} $`
-                          : `${formatSalonPriceDollars(minPrice)} $ – ${formatSalonPriceDollars(maxPrice)} $`}
-                      </p>
-                      {opts.length > 1 && (
-                        <ul className="mt-1.5 max-h-[5.5rem] space-y-0.5 overflow-y-auto pr-0.5">
-                          {opts.map((o, i) => {
-                            const final = effective(o);
-                            const hasDiscount =
-                              o.discountPrice != null && o.discountPrice < o.price;
-                            const label = o.name?.trim() || `Option ${i + 1}`;
-                            return (
-                              <li
-                                key={o.id}
-                                className="flex justify-between gap-2 text-[11px] leading-tight"
-                              >
-                                <span className="min-w-0 truncate text-slate-500">{label}</span>
-                                <span className="flex shrink-0 items-center gap-1 tabular-nums">
-                                  {hasDiscount ? (
-                                    <span className="text-slate-400 line-through">
-                                      {formatSalonPriceDollars(o.price)} $
-                                    </span>
-                                  ) : null}
-                                  <span
-                                    className={
-                                      hasDiscount
-                                        ? "font-semibold text-red-600"
-                                        : "font-semibold text-slate-900"
-                                    }
-                                  >
-                                    {formatSalonPriceDollars(final)} $
-                                  </span>
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </>
-                  ) : null}
-                </div>
-
-                {service.photos?.[0]?.url ? (
-                  // La carte est déjà un <button> : la vignette ne peut pas en
-                  // être un, d'où role="button".
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    aria-label={
-                      isEn
-                        ? `Enlarge photo of ${service.name}`
-                        : `Agrandir la photo de ${service.name}`
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openLightbox(service);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter" && e.key !== " ") return;
-                      e.preventDefault();
-                      e.stopPropagation();
-                      openLightbox(service);
-                    }}
-                    className="relative size-[4.5rem] shrink-0 cursor-zoom-in overflow-hidden rounded-xl bg-slate-100 focus:outline-none focus-visible:ring-2 sm:size-20"
-                  >
-                    <Image
-                      src={service.photos[0].url}
-                      alt={service.name}
-                      fill
-                      className="object-cover"
-                      sizes="80px"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    aria-hidden
-                    className="size-[4.5rem] shrink-0 rounded-xl sm:size-20"
-                    style={{
-                      background: `linear-gradient(135deg, ${theme.secondaryColor}55, ${theme.primaryColor}55)`,
-                    }}
-                  />
-                )}
-              </div>
-              <div
-                className="mt-auto shrink-0 border-t px-3.5 pb-3.5 pt-3"
-                style={{ borderColor: `${theme.primaryColor}1A` }}
-              >
-                <span
-                  className="flex w-full items-center justify-center rounded-lg border py-2 text-sm font-semibold"
-                  style={{
-                    borderColor: `${theme.primaryColor}59`,
-                    background: `${theme.primaryColor}0F`,
-                    color: theme.primaryColor,
-                  }}
-                >
-                  {isEn ? "Book" : "Réserver"}
-                </span>
-              </div>
-            </motion.button>
-          );
-        })}
+        {visible.map((service) => (
+          <ServiceCard
+            key={service.id}
+            service={service}
+            isEn={isEn}
+            onBook={() => onBookService(service)}
+            onOpenPhoto={() => openLightbox(service)}
+          />
+        ))}
       </div>
 
       <ServicePhotoLightbox
@@ -253,5 +130,189 @@ export function SalonServices({
         isEn={isEn}
       />
     </section>
+  );
+}
+
+/**
+ * Carte prestation. Repliée : photo, nom, durée, fourchette de prix, bouton
+ * Réserver. Dépliée (chevron) : description et détail des options avec
+ * prix barrés. La photo s'agrandit toujours au clic (lightbox).
+ */
+function ServiceCard({
+  service,
+  isEn,
+  onBook,
+  onOpenPhoto,
+}: {
+  service: PublicService;
+  isEn: boolean;
+  onBook: () => void;
+  onOpenPhoto: () => void;
+}) {
+  const theme = useSalonTheme();
+  const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
+
+  const opts = service.options ?? [];
+  const effective = (o: (typeof opts)[number]) => o.discountPrice ?? o.price;
+  const minPrice = opts.length ? Math.min(...opts.map(effective)) : null;
+  const maxPrice = opts.length ? Math.max(...opts.map(effective)) : null;
+  const hasDiscount = opts.some((o) => o.discountPrice != null && o.discountPrice < o.price);
+  const description = service.description?.trim();
+  const particularities = service.particularities?.trim();
+  const hasDetails = !!description || !!particularities || opts.length > 1;
+  const detailsId = `service-details-${service.id}`;
+
+  return (
+    <article
+      className="flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg"
+      style={{ borderColor: `${theme.primaryColor}33` }}
+    >
+      <div className="flex items-start gap-3 p-3.5">
+        {/* Photo : agrandissement au clic */}
+        {service.photos?.[0]?.url ? (
+          <button
+            type="button"
+            aria-label={
+              isEn ? `Enlarge photo of ${service.name}` : `Agrandir la photo de ${service.name}`
+            }
+            onClick={onOpenPhoto}
+            className="relative size-[4.5rem] shrink-0 cursor-zoom-in overflow-hidden rounded-xl bg-slate-100 focus:outline-none focus-visible:ring-2 sm:size-20"
+          >
+            <Image
+              src={service.photos[0].url}
+              alt={service.name}
+              fill
+              className="object-cover"
+              sizes="80px"
+            />
+          </button>
+        ) : (
+          <div
+            aria-hidden
+            className="size-[4.5rem] shrink-0 rounded-xl sm:size-20"
+            style={{
+              background: `linear-gradient(135deg, ${theme.secondaryColor}55, ${theme.primaryColor}55)`,
+            }}
+          />
+        )}
+
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <p className="line-clamp-2 text-[15px] font-bold leading-snug text-slate-900">
+            {service.name}
+          </p>
+          {service.duration ? (
+            <p className="text-xs text-slate-500">
+              {formatDuration(getServiceDurationMinutes(service.duration))}
+            </p>
+          ) : null}
+          {minPrice !== null && maxPrice !== null ? (
+            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm font-bold tabular-nums text-slate-900">
+              {minPrice === maxPrice
+                ? `${formatSalonPriceDollars(minPrice)} $`
+                : `${formatSalonPriceDollars(minPrice)} $ – ${formatSalonPriceDollars(maxPrice)} $`}
+              {hasDiscount && (
+                <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600">
+                  {isEn ? "Promo" : "Promo"}
+                </span>
+              )}
+            </p>
+          ) : null}
+        </div>
+
+        {hasDetails && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={detailsId}
+            aria-label={open ? (isEn ? "Hide details" : "Masquer les détails") : (isEn ? "Show details" : "Voir les détails")}
+            onClick={() => setOpen((v) => !v)}
+            className="grid size-8 shrink-0 place-items-center rounded-full border transition-colors hover:bg-slate-50"
+            style={{ borderColor: `${theme.primaryColor}40`, color: theme.primaryColor }}
+          >
+            <motion.span
+              animate={{ rotate: open ? 180 : 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className="grid place-items-center"
+            >
+              <ChevronDown className="size-4" />
+            </motion.span>
+          </button>
+        )}
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && hasDetails && (
+          <motion.div
+            id={detailsId}
+            key="details"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div
+              className="mx-3.5 space-y-3 border-t pb-3.5 pt-3 text-sm"
+              style={{ borderColor: `${theme.primaryColor}1A` }}
+            >
+              {particularities && (
+                <p
+                  className="rounded-lg px-3 py-2 text-[13px] leading-snug"
+                  style={{ background: `${theme.secondaryColor}26`, color: "#334155" }}
+                >
+                  {particularities}
+                </p>
+              )}
+              {description && (
+                <p className="whitespace-pre-line text-[13px] leading-relaxed text-slate-600">
+                  {description}
+                </p>
+              )}
+              {opts.length > 1 && (
+                <ul className="space-y-1">
+                  {opts.map((o, i) => {
+                    const final = effective(o);
+                    const discounted = o.discountPrice != null && o.discountPrice < o.price;
+                    return (
+                      <li key={o.id} className="flex items-baseline justify-between gap-3 text-[13px]">
+                        <span className="min-w-0 truncate text-slate-600">
+                          {o.name?.trim() || `Option ${i + 1}`}
+                        </span>
+                        <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
+                          {discounted && (
+                            <span className="text-slate-400 line-through">
+                              {formatSalonPriceDollars(o.price)} $
+                            </span>
+                          )}
+                          <span className={discounted ? "font-semibold text-red-600" : "font-semibold text-slate-900"}>
+                            {formatSalonPriceDollars(final)} $
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="mt-auto px-3.5 pb-3.5">
+        <button
+          type="button"
+          onClick={onBook}
+          className="flex w-full items-center justify-center rounded-lg border py-2 text-sm font-semibold transition-colors hover:brightness-95"
+          style={{
+            borderColor: `${theme.primaryColor}59`,
+            background: `${theme.primaryColor}0F`,
+            color: theme.primaryColor,
+          }}
+        >
+          {isEn ? "Book" : "Réserver"}
+        </button>
+      </div>
+    </article>
   );
 }
