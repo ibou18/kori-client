@@ -49,19 +49,14 @@ export function SalonContact({ salon, isEn }: { salon: PublicSalon; isEn: boolea
       <div className="grid gap-5 sm:grid-cols-2">
         {line1 && (
           <Item icon={<MapPin className="size-4" />} label={isEn ? "Address" : "Adresse"}>
-            {line1}
-            {line2 && (
-              <>
-                <br />
-                {line2}
-              </>
-            )}
+            <p>{line1}</p>
+            {line2 && <p>{line2}</p>}
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-              style={{ color: theme.primaryColor }}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-white"
+              style={{ borderColor: `${theme.primaryColor}59`, color: theme.primaryColor }}
             >
               {isEn ? "Directions" : "Itinéraire"} <ExternalLink className="size-3" />
             </a>
