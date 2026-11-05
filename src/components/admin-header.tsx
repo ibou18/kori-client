@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LocaleSwitch } from "@/components/locale-switch";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useLocaleContext } from "@/lib/LocaleProvider";
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 /**
  * Titre affiché dans le fil d'Ariane, par préfixe de chemin (sans la locale).
@@ -65,44 +66,6 @@ function resolveTitle(path: string, role?: string, salonId?: string) {
     return "Mon salon";
   }
   return PAGE_TITLES.find(([prefix]) => path.startsWith(prefix))?.[1] ?? null;
-}
-
-function LocaleSwitch() {
-  const { locale, setLocale } = useLocaleContext();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const switchTo = (next: string) => {
-    if (next === locale) return;
-    setLocale(next);
-    router.replace(`/${next}${stripLocale(pathname) === "/" ? "" : stripLocale(pathname)}`);
-    router.refresh();
-  };
-
-  return (
-    <div
-      role="group"
-      aria-label="Langue"
-      className="flex items-center rounded-full border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold"
-    >
-      {["fr", "en"].map((code) => (
-        <button
-          key={code}
-          type="button"
-          onClick={() => switchTo(code)}
-          aria-pressed={locale === code}
-          className={cn(
-            "rounded-full px-2.5 py-1 uppercase transition-colors",
-            locale === code
-              ? "bg-white text-[#3a5a47] shadow-sm"
-              : "text-slate-400 hover:text-slate-600",
-          )}
-        >
-          {code}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 /**

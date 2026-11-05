@@ -1,26 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { ADMIN, CLIENT, TRAVELER, USER } from "@/shared/constantes";
-import { normalizePathname } from "@/utils/utils";
-import { useSession } from "next-auth/react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-
-// Shadcn UI Components
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-
+import logo from "@/assets/logo-black.png";
+import { LocaleSwitch } from "@/components/locale-switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetClose,
@@ -29,507 +21,324 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-
-// Lucide Icons
+import { cn } from "@/lib/utils";
+import { CLIENT } from "@/shared/constantes";
+import type { LucideIcon } from "lucide-react";
 import {
-  BoxIcon,
-  BuildingIcon,
+  ArrowRight,
   Calendar,
-  CreditCard,
-  FileTextIcon,
-  HelpCircle,
-  HomeIcon,
-  LayoutDashboardIcon,
-  LifeBuoyIcon,
-  LogInIcon,
-  MenuIcon,
-  MessageSquareIcon,
-  PackageIcon,
-  PlaneIcon,
-  PlusIcon,
-  ReceiptIcon,
-  Settings,
-  User,
-  UsersIcon,
-  WrenchIcon,
+  ChevronDown,
+  FileText,
+  Home,
+  LayoutDashboard,
+  LifeBuoy,
+  Menu,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
-
-// Logo import
-import logo from "@/assets/logo-black.png";
-import LanguageToggle from "../components/LanguageToggle";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import LogoutButton from "../components/LogoutButton";
 
-// Routes avec icônes de Lucide
-export const navigation = [
-  {
-    name: "Accueil",
-    href: "/",
-    current: true,
-    icon: <HomeIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Support",
-    href: "/support",
-    current: false,
-    icon: <LifeBuoyIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Conditions",
-    href: "/terms/privacy-policy",
-    current: false,
-    icon: <FileTextIcon className="size-4 mr-2" />,
-  },
+interface NavItem {
+  name: string;
+  /** Chemin sans locale ; peut porter une ancre (« /#pros »). */
+  href: string;
+  icon: LucideIcon;
+}
+
+const GUEST_NAV: NavItem[] = [
+  { name: "Accueil", href: "/", icon: Home },
+  { name: "Professionnels", href: "/#pros", icon: Sparkles },
+  { name: "Support", href: "/support", icon: LifeBuoy },
+  { name: "Conditions", href: "/terms/privacy-policy", icon: FileText },
 ];
 
-/** Navigation pages espace client (hors page salon partagée). */
-export const clientNavigation = [
-  {
-    name: "Accueil",
-    href: "/",
-    current: true,
-    icon: <HomeIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Mes rendez-vous",
-    href: "/mes-rendez-vous",
-    current: false,
-    icon: <Calendar className="size-4 mr-2" />,
-  },
-  {
-    name: "Support",
-    href: "/support",
-    current: false,
-    icon: <LifeBuoyIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Conditions",
-    href: "/terms/privacy-policy",
-    current: false,
-    icon: <FileTextIcon className="size-4 mr-2" />,
-  },
+const CLIENT_NAV: NavItem[] = [
+  { name: "Accueil", href: "/", icon: Home },
+  { name: "Mes rendez-vous", href: "/mes-rendez-vous", icon: Calendar },
+  { name: "Support", href: "/support", icon: LifeBuoy },
+  { name: "Conditions", href: "/terms/privacy-policy", icon: FileText },
 ];
 
-// Modification de la structure userNavigation avec des sous-menus
-export const userNavigation = [
-  // {
-  //   name: "Accueil",
-  //   href: "/",
-  //   current: true,
-  //   icon: <HomeIcon className="size-4 mr-2" />,
-  // },
-  {
-    name: "Tableau de bord",
-    href: "/admin/dashboard",
-    current: false,
-    icon: <LayoutDashboardIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Mes Colis",
-    href: "/admin/colis",
-    current: false,
-    icon: <BoxIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Livraisons",
-    href: "/admin/deliveries",
-    current: false,
-    icon: <PackageIcon className="size-4 mr-2" />,
-    submenu: [
-      {
-        name: "Mes livraisons",
-        href: "/admin/deliveries/my-deliveries",
-        icon: <PackageIcon className="size-4 mr-2" />,
-      },
-      {
-        name: "Créer une Livraison",
-        href: "/admin/deliveries/available",
-        icon: <PlusIcon className="size-4 mr-2" />,
-      },
-    ],
-  },
-  {
-    name: "Voyages",
-    href: "/admin/trips",
-    current: false,
-    icon: <PlaneIcon className="size-4 mr-2" />,
-    submenu: [
-      {
-        name: "Mes voyages",
-        href: "/admin/trips/my-trips",
-        icon: <PlaneIcon className="size-4 mr-2" />,
-      },
-      {
-        name: "Voyages disponibles",
-        href: "/admin/trips/available",
-        icon: <PlaneIcon className="size-4 mr-2" />,
-      },
-    ],
-  },
-  {
-    name: "Conversations",
-    href: "/admin/conversations",
-    current: false,
-    icon: <MessageSquareIcon className="size-4 mr-2" />,
-  },
-];
-
-export const adminNavigation = [
-  {
-    name: "Tableau de bord",
-    href: "/dashboard",
-    current: false,
-    icon: <LayoutDashboardIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Utilisateurs",
-    href: "/users",
-    current: false,
-    icon: <UsersIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Clients",
-    href: "/client",
-    current: false,
-    icon: <BuildingIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Factures",
-    href: "/invoices",
-    current: false,
-    icon: <ReceiptIcon className="size-4 mr-2" />,
-  },
-  {
-    name: "Services",
-    href: "/services",
-    current: false,
-    icon: <WrenchIcon className="size-4 mr-2" />,
-  },
+/** Comptes pro arrivant sur une page publique : un seul raccourci vers leur espace. */
+const PRO_NAV: NavItem[] = [
+  { name: "Mon espace", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Support", href: "/support", icon: LifeBuoy },
 ];
 
 export default function Navbar({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const locale = pathname?.match(/^\/(fr|en)(?:\/|$)/)?.[1] ?? "fr";
+  const pathname = usePathname() ?? "";
+  const locale = pathname.match(/^\/(fr|en)(?:\/|$)/)?.[1] ?? "fr";
   const { data: session, status }: any = useSession();
-  const [currentNavigation, setCurrentNavigation] = useState(navigation);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    if (session && session.user.role === ADMIN) {
-      setCurrentNavigation(adminNavigation);
-    } else if (!session) {
-      setCurrentNavigation(navigation);
-    } else if (session?.user?.role === CLIENT) {
-      setCurrentNavigation(clientNavigation);
-    } else if (
-      (session && session.user.role === USER) ||
-      session.user.role === TRAVELER
-    ) {
-      setCurrentNavigation(userNavigation);
-    }
-  }, [pathname, session]);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  const isActive = (href: string) => normalizePathname(pathname) === href;
+  const user = session?.user;
+  const isClient = user?.role === CLIENT;
+  const items = !user ? GUEST_NAV : isClient ? CLIENT_NAV : PRO_NAV;
+
+  const path = pathname.replace(/^\/(fr|en)(?=\/|$)/, "") || "/";
+  const href = (target: string) =>
+    `/${locale}${target === "/" ? "" : target.replace(/^\/#/, "#")}`;
+  // Une ancre n'est jamais « la page courante » : seule l'entrée sans ancre s'allume.
+  const isActive = (target: string) =>
+    !target.includes("#") &&
+    (target === "/" ? path === "/" : path.startsWith(target));
+
+  const signInHref = `/${locale}/auth/signin?callbackUrl=${encodeURIComponent(
+    pathname || `/${locale}`,
+  )}`;
+  const homeHref = user && !isClient ? `/${locale}/admin/dashboard` : `/${locale}`;
+
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
+  const initials =
+    [user?.firstName, user?.lastName]
+      .map((part: string | undefined) => part?.trim()?.[0] ?? "")
+      .join("")
+      .toUpperCase() || "K";
 
   return (
     <div className="min-h-full">
       {!pathname.includes("/contact/") && (
-        <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur border-b">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 items-center justify-between">
-              {/* Logo */}
-              <div className="flex items-center">
-                <div className="shrink-0">
-                  <Link
-                    href={
-                      session?.user?.role === CLIENT
-                        ? "/"
-                        : session
-                          ? "/admin/dashboard"
-                          : "/"
-                    }
-                    className="flex items-center"
-                  >
-                    <Image
-                      src={logo}
-                      alt="Kori"
-                      className="h-10 w-auto"
-                      width={1000}
-                      height={1000}
-                    />
-                  </Link>
-                </div>
+        <header
+          className={cn(
+            "sticky top-0 z-40 w-full border-b bg-white/85 backdrop-blur-md transition-shadow",
+            scrolled
+              ? "border-slate-200/80 shadow-sm"
+              : "border-transparent",
+          )}
+        >
+          <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+            <Link
+              href={homeHref}
+              className="flex shrink-0 items-center"
+              aria-label="Korí — accueil"
+            >
+              <Image
+                src={logo}
+                alt="Korí"
+                className="h-10 w-auto"
+                width={1000}
+                height={1000}
+                priority
+              />
+            </Link>
 
-                {/* Navigation Desktop */}
-                <div className="hidden md:block ml-10">
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      {currentNavigation.map((item: any) => (
-                        <NavigationMenuItem key={item.name}>
-                          {item.submenu ? (
-                            <NavigationMenu>
-                              <NavigationMenuList>
-                                <NavigationMenuItem>
-                                  <NavigationMenuTrigger
-                                    className={
-                                      isActive(item.href)
-                                        ? "bg-muted text-primary font-medium"
-                                        : ""
-                                    }
-                                  >
-                                    <div className="flex items-center">
-                                      {item.icon}
-                                      {item.name}
-                                    </div>
-                                  </NavigationMenuTrigger>
-                                  <NavigationMenuContent>
-                                    <ul className="grid gap-3 p-4 w-[200px]">
-                                      <li>
-                                        <NavigationMenuLink asChild>
-                                          <Link
-                                            href={item.href}
-                                            className={`block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground ${
-                                              isActive(item.href)
-                                                ? "bg-muted"
-                                                : ""
-                                            }`}
-                                          >
-                                            <div className="flex items-center text-sm font-medium">
-                                              {item.icon}
-                                              Tous
-                                            </div>
-                                          </Link>
-                                        </NavigationMenuLink>
-                                      </li>
-                                      {item.submenu.map((subItem: any) => (
-                                        <li key={subItem.name}>
-                                          <NavigationMenuLink asChild>
-                                            <Link
-                                              href={subItem.href}
-                                              className={`block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground ${
-                                                isActive(subItem.href)
-                                                  ? "bg-muted"
-                                                  : ""
-                                              }`}
-                                            >
-                                              <div className="flex items-center text-sm font-medium">
-                                                {subItem.icon}
-                                                {subItem.name}
-                                              </div>
-                                            </Link>
-                                          </NavigationMenuLink>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </NavigationMenuContent>
-                                </NavigationMenuItem>
-                              </NavigationMenuList>
-                            </NavigationMenu>
-                          ) : (
-                            <NavigationMenuLink
-                              asChild
-                              className={navigationMenuTriggerStyle({
-                                className: isActive(item.href)
-                                  ? "bg-muted text-primary font-medium"
-                                  : "text-muted-foreground hover:text-foreground",
-                              })}
-                            >
-                              <Link href={item.href}>
-                                <div className="flex items-center">
-                                  {item.icon}
-                                  {item.name}
-                                </div>
-                              </Link>
-                            </NavigationMenuLink>
-                          )}
-                        </NavigationMenuItem>
-                      ))}
-                    </NavigationMenuList>
-                  </NavigationMenu>
-                </div>
-              </div>
+            {/* Navigation — bureau */}
+            <nav
+              aria-label="Navigation principale"
+              className="hidden flex-1 items-center gap-1 md:flex"
+            >
+              {items.map((item) => (
+                <Link
+                  key={item.name}
+                  href={href(item.href)}
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={cn(
+                    "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                    isActive(item.href)
+                      ? "bg-[#F0F4F1] text-[#3a5a47]"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
 
-              {/* Right side actions (Desktop) */}
-              <div className="hidden md:flex items-center gap-4">
-                <LanguageToggle />
-                {status === "loading" ? (
-                  <span className="text-sm text-muted-foreground">…</span>
-                ) : session ? (
-                  <div className="flex items-center gap-3 pl-2 border-l border-border">
-                    <span className="text-sm text-muted-foreground max-w-[11rem] truncate">
-                      {session.user?.firstName || session.user?.email}
-                    </span>
-                    {session.user?.role !== CLIENT && (
-                      <Link
-                        href="/admin/account"
-                        className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                      >
-                        Mon espace
-                      </Link>
-                    )}
-                    <LogoutButton className="mt-0 py-1 px-2 text-sm font-medium text-muted-foreground hover:text-foreground" />
-                  </div>
-                ) : (
-                  <Button asChild variant="default" size="sm">
-                    <Link
-                      href={`/${locale}/auth/signin?callbackUrl=${encodeURIComponent(pathname || `/${locale}`)}`}
-                      className="flex items-center gap-2"
+            {/* Actions — bureau */}
+            <div className="ml-auto hidden items-center gap-3 md:flex">
+              <LocaleSwitch />
+              {status === "loading" ? (
+                <span className="h-9 w-28 animate-pulse rounded-full bg-slate-100" />
+              ) : user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-full p-0.5 pr-2 outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-[#53745D]/40"
                     >
-                      <LogInIcon className="size-4" />
-                      <span>Se connecter</span>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.image || ""} alt={fullName} />
+                        <AvatarFallback className="bg-[#53745D] text-xs font-semibold text-white">
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="max-w-[9rem] truncate text-sm font-semibold text-slate-900">
+                        {user.firstName || user.email}
+                      </span>
+                      <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" sideOffset={8} className="w-60">
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="truncate text-sm font-semibold">
+                        {fullName || "Compte"}
+                      </p>
+                      {user.email && (
+                        <p className="truncate text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                      )}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {isClient ? (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href={`/${locale}/mes-rendez-vous`}
+                          className="cursor-pointer gap-2"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          Mes rendez-vous
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href={`/${locale}/admin/account`}
+                          className="cursor-pointer gap-2"
+                        >
+                          <UserRound className="h-4 w-4" />
+                          Mon compte
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="p-0">
+                      <LogoutButton className="mt-0 w-full justify-start gap-2 px-2 py-1.5 text-sm text-red-600" />
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <Link
+                    href={signInHref}
+                    className="rounded-full px-3.5 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                  >
+                    Se connecter
+                  </Link>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="group h-9 rounded-full bg-[#53745D] px-4 text-white hover:bg-[#4A6854]"
+                  >
+                    <Link href={`/${locale}/inscription`}>
+                      Créer mon salon
+                      <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </Button>
-                )}
-              </div>
+                </>
+              )}
+            </div>
 
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MenuIcon className="size-6" />
-                      <span className="sr-only">Menu</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="flex flex-col p-0">
-                    <SheetHeader className="px-4 py-2 border-b">
-                      <SheetTitle>Menu</SheetTitle>
-                    </SheetHeader>
-
-                    {/* Zone défilante principale - occupe tout l'espace disponible */}
-                    <div className="flex-1 overflow-y-auto">
-                      <div className="flex flex-col gap-0.5 p-2">
-                        {currentNavigation.map((item: any) => (
-                          <div key={item.name} className="mb-0.5">
-                            {item.submenu ? (
-                              <div className="space-y-0.5">
-                                <Link
-                                  href={item.href}
-                                  className={`flex items-center py-1 px-2 rounded-md ${
-                                    isActive(item.href)
-                                      ? "bg-muted font-medium"
-                                      : "text-muted-foreground hover:bg-muted/50"
-                                  }`}
-                                >
-                                  {item.icon}
-                                  {item.name}
-                                </Link>
-                                <div className="pl-4 space-y-0 border-l ml-2 border-gray-200">
-                                  {item.submenu.map((subItem: any) => (
-                                    <SheetClose asChild key={subItem.name}>
-                                      <Link
-                                        href={subItem.href}
-                                        className={`flex items-center py-1 px-2 rounded-md ${
-                                          isActive(subItem.href)
-                                            ? "bg-muted font-medium"
-                                            : "text-muted-foreground hover:bg-muted/50"
-                                        }`}
-                                      >
-                                        {subItem.icon}
-                                        {subItem.name}
-                                      </Link>
-                                    </SheetClose>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : (
-                              <SheetClose asChild>
-                                <Link
-                                  href={item.href}
-                                  className={`flex items-center py-1 px-2 rounded-md ${
-                                    isActive(item.href)
-                                      ? "bg-muted font-medium"
-                                      : "text-muted-foreground hover:bg-muted/50"
-                                  }`}
-                                >
-                                  {item.icon}
-                                  {item.name}
-                                </Link>
-                              </SheetClose>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {session && (
-                        <>
-                          <Separator className="my-1" />
-                          <div className="p-2 space-y-0.5">
-                            <p className="text-xs font-medium mb-1 px-2 text-muted-foreground">
-                              Mon compte
-                            </p>
-                            {session.user?.role !== CLIENT && (
-                              <>
-                                <SheetClose asChild>
-                                  <Link
-                                    href="/admin/account"
-                                    className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                                  >
-                                    <User className="mr-2 h-4 w-4" />
-                                    <span>Mon profil</span>
-                                  </Link>
-                                </SheetClose>
-
-                                {session.user.role === "TRAVELER" && (
-                                  <SheetClose asChild>
-                                    <Link
-                                      href="/admin/earnings"
-                                      className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                                    >
-                                      <CreditCard className="mr-2 h-4 w-4" />
-                                      <span>Mes gains</span>
-                                    </Link>
-                                  </SheetClose>
-                                )}
-
-                                <SheetClose asChild>
-                                  <Link
-                                    href="/admin/settings"
-                                    className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                                  >
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Paramètres</span>
-                                  </Link>
-                                </SheetClose>
-                              </>
-                            )}
-
-                            <SheetClose asChild>
-                              <Link
-                                href="/support"
-                                className="flex items-center py-1 px-2 rounded-md text-muted-foreground hover:bg-muted/50"
-                              >
-                                <HelpCircle className="mr-2 h-4 w-4" />
-                                <span>Aide</span>
-                              </Link>
-                            </SheetClose>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Pied de page fixe - reste visible */}
-                    <div className="border-t p-2 space-y-2">
-                      <LanguageToggle />
-                      {session ? (
-                        <LogoutButton className="w-full">
-                          <div className="flex items-center gap-2">
-                            <span>Déconnexion</span>
-                          </div>
-                        </LogoutButton>
+            {/* Menu — mobile */}
+            <div className="ml-auto md:hidden">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Ouvrir le menu">
+                    <Menu className="size-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="flex flex-col p-0">
+                  <SheetHeader className="border-b px-5 py-4 text-left">
+                    <SheetTitle>
+                      {user ? (
+                        <span className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={user.image || ""} alt={fullName} />
+                            <AvatarFallback className="bg-[#53745D] text-xs font-semibold text-white">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold">
+                              {fullName || "Compte"}
+                            </span>
+                            <span className="block truncate text-xs font-normal text-muted-foreground">
+                              {user.email}
+                            </span>
+                          </span>
+                        </span>
                       ) : (
-                        <Button asChild className="w-full">
-                          <Link
-                            href={`/${locale}/auth/signin?callbackUrl=${encodeURIComponent(pathname || `/${locale}`)}`}
-                            className="flex items-center justify-center gap-2"
-                          >
-                            <LogInIcon className="size-4" />
-                            <span>Se connecter</span>
-                          </Link>
-                        </Button>
+                        "Menu"
                       )}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <nav
+                    aria-label="Navigation principale"
+                    className="flex-1 space-y-1 overflow-y-auto p-3"
+                  >
+                    {items.map((item) => (
+                      <SheetClose asChild key={item.name}>
+                        <Link
+                          href={href(item.href)}
+                          aria-current={isActive(item.href) ? "page" : undefined}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                            isActive(item.href)
+                              ? "bg-[#F0F4F1] text-[#3a5a47]"
+                              : "text-slate-700 hover:bg-slate-100",
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {item.name}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                    {user && !isClient && (
+                      <SheetClose asChild>
+                        <Link
+                          href={`/${locale}/admin/account`}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
+                        >
+                          <UserRound className="h-4 w-4" />
+                          Mon compte
+                        </Link>
+                      </SheetClose>
+                    )}
+                  </nav>
+
+                  <div className="space-y-3 border-t p-4">
+                    <LocaleSwitch />
+                    {user ? (
+                      <LogoutButton className="mt-0 w-full justify-start gap-2 px-0 py-1 text-sm font-medium text-red-600" />
+                    ) : (
+                      <div className="grid gap-2">
+                        <SheetClose asChild>
+                          <Button
+                            asChild
+                            className="w-full rounded-full bg-[#53745D] text-white hover:bg-[#4A6854]"
+                          >
+                            <Link href={`/${locale}/inscription`}>
+                              Créer mon salon
+                            </Link>
+                          </Button>
+                        </SheetClose>
+                        <SheetClose asChild>
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="w-full rounded-full"
+                          >
+                            <Link href={signInHref}>Se connecter</Link>
+                          </Button>
+                        </SheetClose>
+                      </div>
+                    )}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </header>
