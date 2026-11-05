@@ -6,6 +6,23 @@ import { useSalonTheme } from "../theme/SalonThemeProvider";
 import type { PublicSalon } from "../types";
 import { SalonSectionHeading } from "./SalonSectionHeading";
 
+/**
+ * Téléphone et courriel masqués pour le moment (décision produit) : le code
+ * d'affichage est conservé, repasser ces drapeaux à `true` pour les réafficher.
+ */
+const SHOW_PHONE = false;
+const SHOW_EMAIL = false;
+
+/** Vrai si la section Contact a quelque chose à afficher (sert aussi à la sous-nav). */
+export function salonHasContact(salon: PublicSalon): boolean {
+  return !!(
+    salon.address?.street?.trim() ||
+    salon.website?.trim() ||
+    (SHOW_PHONE && salon.phone) ||
+    (SHOW_EMAIL && salon.email)
+  );
+}
+
 /** Coordonnées du salon + lien vers l'itinéraire. */
 export function SalonContact({ salon, isEn }: { salon: PublicSalon; isEn: boolean }) {
   const theme = useSalonTheme();
@@ -18,7 +35,7 @@ export function SalonContact({ salon, isEn }: { salon: PublicSalon; isEn: boolea
   const website = salon.website?.trim();
   const websiteHref = website && !/^https?:\/\//i.test(website) ? `https://${website}` : website;
 
-  if (!line1 && !salon.phone && !salon.email && !website) return null;
+  if (!salonHasContact(salon)) return null;
 
   const Item = ({
     icon,
@@ -62,14 +79,14 @@ export function SalonContact({ salon, isEn }: { salon: PublicSalon; isEn: boolea
             </a>
           </Item>
         )}
-        {salon.phone && (
+        {SHOW_PHONE && salon.phone && (
           <Item icon={<Phone className="size-4" />} label={isEn ? "Phone" : "Téléphone"}>
             <a href={`tel:${salon.phone.replace(/\s/g, "")}`} className="hover:underline">
               {salon.phone}
             </a>
           </Item>
         )}
-        {salon.email && (
+        {SHOW_EMAIL && salon.email && (
           <Item icon={<Mail className="size-4" />} label={isEn ? "Email" : "Courriel"}>
             <a href={`mailto:${salon.email}`} className="hover:underline">
               {salon.email}

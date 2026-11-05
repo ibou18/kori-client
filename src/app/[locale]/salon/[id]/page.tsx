@@ -9,7 +9,7 @@ import { CalendarCheck } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SalonAbout } from "./sections/SalonAbout";
-import { SalonContact } from "./sections/SalonContact";
+import { SalonContact, salonHasContact } from "./sections/SalonContact";
 import { SalonFooter } from "./sections/SalonFooter";
 import { SalonHero } from "./sections/SalonHero";
 import { SalonHours } from "./sections/SalonHours";
@@ -162,7 +162,7 @@ export default function SalonSharePage() {
   const photoCount = (salon.photos ?? []).filter((p) => p.url).length;
   const hasHours = !!salon.openingHours && Object.values(salon.openingHours).some((h) => h?.open && h?.close);
   const hasReviews = reviews.some((r) => r.comment?.trim());
-  const hasContact = !!(salon.address?.street || salon.phone || salon.email || salon.website);
+  const hasContact = salonHasContact(salon);
 
   const navItems: SalonNavItem[] = [
     services.length > 0 && { id: "services", label: isEn ? "Services" : "Services" },
