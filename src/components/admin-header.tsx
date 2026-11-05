@@ -2,6 +2,7 @@
 "use client";
 
 import LogoutButton from "@/app/components/LogoutButton";
+import usePageTitleStore from "@/app/store/usePageTitleStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -60,11 +61,14 @@ const ROLE_LABELS: Record<string, string> = {
 const stripLocale = (pathname: string) =>
   pathname.replace(/^\/(en|fr)(?=\/|$)/, "") || "/";
 
-function resolveTitle(path: string, role?: string, salonId?: string) {
-  if (role === OWNER && salonId && path.startsWith(`/admin/salons/${salonId}`)) {
-    return "Mon salon";
+/** Section du menu à laquelle appartient le chemin : son titre et son URL racine. */
+function resolveSection(path: string, role?: string, salonId?: string) {
+  const ownSalon = `/admin/salons/${salonId}`;
+  if (role === OWNER && salonId && path.startsWith(ownSalon)) {
+    return { title: "Mon salon", url: ownSalon };
   }
-  return PAGE_TITLES.find(([prefix]) => path.startsWith(prefix))?.[1] ?? null;
+  const match = PAGE_TITLES.find(([prefix]) => path.startsWith(prefix));
+  return match ? { title: match[1], url: match[0] } : null;
 }
 
 function LocaleSwitch() {
@@ -119,7 +123,18 @@ export function AdminHeader() {
   const salonId = user?.salonId as string | undefined;
 
   const path = stripLocale(pathname);
-  const title = resolveTitle(path, role, salonId);
+  const section = resolveSection(path, role, salonId);
+  const pageTitle = usePageTitleStore((state) => state.title);
+  // Sur la racine d'une section, son nom suffit. Sur une sous-page (fiche,
+  // édition, création), le titre publié par PageWrapper devient le dernier maillon.
+  const isSectionRoot = !!section && path.replace(/\/$/, "") === section.url;
+  const crumb =
+    pageTitle &&
+    !isSectionRoot &&
+    pageTitle.toLowerCase() !== section?.title.toLowerCase()
+      ? pageTitle
+      : null;
+  const title = section?.title ?? null;
   const shellLabel = role === ADMIN ? "Administration" : "Espace professionnel";
   const homeUrl = role === EMPLOYEE ? "/admin/calendrier" : "/admin/dashboard";
 
@@ -150,16 +165,35 @@ export function AdminHeader() {
           href={homeUrl}
           className={cn(
             "shrink-0 text-slate-500 transition-colors hover:text-[#3a5a47]",
-            title && "hidden sm:inline",
+            (title || crumb) && "hidden sm:inline",
           )}
         >
           {shellLabel}
         </Link>
-        {title && (
+        {section && (
           <>
             <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 text-slate-300 sm:block" />
+            {crumb ? (
+              <Link
+                href={section.url}
+                className="hidden shrink-0 text-slate-500 transition-colors hover:text-[#3a5a47] md:inline"
+              >
+                {section.title}
+              </Link>
+            ) : (
+              <span className="truncate font-semibold text-slate-900">
+                {section.title}
+              </span>
+            )}
+          </>
+        )}
+        {crumb && (
+          <>
+            {section && (
+              <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 text-slate-300 md:block" />
+            )}
             <span className="truncate font-semibold text-slate-900">
-              {title}
+              {crumb}
             </span>
           </>
         )}
