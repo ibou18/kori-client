@@ -17,6 +17,15 @@ body {
 main {
   background-color: #FEFCF9;
 }
+
+/* Mini-site salon (/salon/[id]) : fond blanc au lieu du crème du reste du site.
+   La page ne possède pas son <main> (gabarit public ou coque back-office, dont
+   l'aperçu de /admin/mon-site) : on cible le <main> le plus proche qui la contient. */
+main:has([data-salon-theme], [data-salon-page]):not(:has(main)) {
+  background-color: #fff;
+  /* Recouvre la bande crème (py-2 de [locale]/layout.tsx) sous la page. */
+  box-shadow: 0 0.5rem 0 #fff;
+}
 :root {
   --primary-color: #4a6b5a; /* vert foncé Kori */
   --primary-hover: #3a5a4a; /* vert foncé plus sombre pour hover */

@@ -128,7 +128,7 @@ export default function SalonSharePage() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center">
+      <div data-salon-page className="mx-auto flex min-h-screen max-w-3xl items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-b-2 border-[#53745D]" />
           <p className="text-slate-600">{isEn ? "Loading salon…" : "Chargement du salon..."}</p>
@@ -139,7 +139,7 @@ export default function SalonSharePage() {
 
   if (error || !salon) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center">
+      <div data-salon-page className="mx-auto flex min-h-screen max-w-3xl items-center justify-center">
         <div className="text-center">
           <h1 className="mb-4 text-2xl font-bold text-slate-800">
             {isEn ? "Salon not found" : "Salon non trouvé"}
@@ -195,7 +195,7 @@ export default function SalonSharePage() {
 
       {/* Barre d'action mobile : Réserver toujours à portée de pouce */}
       {services.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-[#FEFCF9]/92 p-3 backdrop-blur sm:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-white/[0.92] p-3 backdrop-blur sm:hidden">
           <button
             type="button"
             onClick={scrollToServices}

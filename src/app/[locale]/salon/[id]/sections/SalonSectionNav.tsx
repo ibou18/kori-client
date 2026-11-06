@@ -39,7 +39,7 @@ export function SalonSectionNav({ items }: { items: SalonNavItem[] }) {
   return (
     <nav
       aria-label="Sections"
-      className="sticky top-14 z-30 -mx-4 border-b border-black/[0.07] bg-[#FEFCF9]/85 backdrop-blur lg:-mx-8"
+      className="sticky top-14 z-30 -mx-4 border-b border-black/[0.07] bg-white/85 backdrop-blur lg:-mx-8"
     >
       <div className="scrollbar-hide mx-auto flex h-11 max-w-5xl items-center gap-1 overflow-x-auto px-4 sm:px-8">
         {items.map((item) => {

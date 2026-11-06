@@ -72,7 +72,7 @@ export function SalonContact({ salon, isEn }: { salon: PublicSalon; isEn: boolea
               href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-white"
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors hover:bg-slate-50"
               style={{ borderColor: `${theme.primaryColor}59`, color: theme.primaryColor }}
             >
               {isEn ? "Directions" : "Itinéraire"} <ExternalLink className="size-3" />
