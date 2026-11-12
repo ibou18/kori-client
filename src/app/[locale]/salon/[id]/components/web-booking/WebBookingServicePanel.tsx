@@ -1,24 +1,21 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
 
 import {
   formatDurationMinutes,
-  formatServicesCount,
   getServicesTotalDollars,
   getTotalDurationMinutes,
 } from "./bookingSelection";
-import { getOptionPriceDollars } from "./pricing";
+import { formatSalonPriceDollars, getOptionPriceDollars } from "./pricing";
 import type {
   WebBookingSelectedService,
   WebBookingServiceOption,
   WebBookingServicePayload,
 } from "./types";
 import { WebBookingServiceInfo } from "./WebBookingServiceInfo";
-import { WebBookingStepActions } from "./WebBookingStepActions";
+import { WebBookingCta, WebBookingStepActions, type WebBookingFooterSummary } from "./WebBookingStepActions";
 
 interface WebBookingServicePanelProps {
   service: WebBookingServicePayload;
@@ -32,13 +29,29 @@ interface WebBookingServicePanelProps {
   onOpenAddService: () => void;
   /** Motif d'indisponibilité du bouton « Ajouter », `null` si possible. */
   addServiceHelp: string | null;
+  /** Conditions du service (particularités) à accepter avant de continuer. */
+  conditionsAccepted: boolean;
+  onConditionsAcceptedChange: (value: boolean) => void;
   onContinue: () => void;
   continueLabel: string;
-  onBack?: () => void;
-  backLabel?: string;
-  layoutVariant?: "modal" | "page";
+  summary: WebBookingFooterSummary | null;
 }
 
+const price = (v: number) => `${formatSalonPriceDollars(v)} $`;
+
+/** Lignes des conditions : une par ligne non vide du texte « particularités ». */
+function splitConditions(text: string): string[] {
+  return text
+    .split(/\n+/)
+    .map((l) => l.replace(/^[-•*\d.)\s]+/, "").trim())
+    .filter(Boolean);
+}
+
+/**
+ * Étape 1 (maquette) : carte récapitulative de la sélection, ajout d'une
+ * prestation, choix de la formule en liste radio, conditions du service à
+ * accepter. Le bouton « Suivant » vit dans la barre basse.
+ */
 export function WebBookingServicePanel({
   service,
   selectedOptionId,
@@ -48,160 +61,174 @@ export function WebBookingServicePanel({
   onRemoveAdditional,
   onOpenAddService,
   addServiceHelp,
+  conditionsAccepted,
+  onConditionsAcceptedChange,
   onContinue,
   continueLabel,
-  onBack,
-  backLabel,
-  layoutVariant = "modal",
+  summary,
 }: WebBookingServicePanelProps) {
-  const options: WebBookingServiceOption[] = service.options?.length
-    ? service.options
-    : [];
-
-  const canContinue = !!selectedOptionId;
+  const options: WebBookingServiceOption[] = service.options?.length ? service.options : [];
+  const conditions = splitConditions(service.particularities?.trim() ?? "");
+  const hasConditions = conditions.length > 0;
+  const canContinue = !!selectedOptionId && (!hasConditions || conditionsAccepted);
+  const mainOption = options.find((o) => o.id === selectedOptionId) ?? null;
+  const mainMeta = [
+    mainOption && options.length > 1 ? mainOption.name : null,
+    formatDurationMinutes(service.duration ?? 0),
+    mainOption ? price(getOptionPriceDollars(mainOption)) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   if (options.length === 0) {
     return (
-      <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-        Ce service ne propose pas de formule réservable en ligne pour le moment.
-        Utilisez l&apos;application korí.
-      </p>
+      <div className="px-5 py-5">
+        <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Ce service ne propose pas de formule réservable en ligne pour le moment. Utilisez l&apos;application korí.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "space-y-5 overflow-y-auto pr-1",
-        layoutVariant === "page"
-          ? "max-h-none pb-2"
-          : "max-h-[min(70vh,520px)]",
-      )}
-    >
-      {options.length > 1 && (
-        <div>
-          <Label className="text-base font-semibold">Option</Label>
-          <div className="mt-2 space-y-2">
-            {options.map((opt) => {
-              const picked = selectedOptionId === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => onSelectOption(opt.id)}
-                  className={`w-full flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${
-                    picked
-                      ? "border-[#53745D] bg-[#F0F4F1]"
-                      : "border-slate-200 hover:bg-[#F0F4F1]/50"
-                  }`}
-                >
-                  <span
-                    className={`flex h-4 w-4 shrink-0 rounded-full border-2 ${
-                      picked
-                        ? "border-[#53745D] bg-[#53745D]"
-                        : "border-slate-300"
-                    }`}
-                  />
-                  <div className="flex-1 flex justify-between gap-2">
-                    <span className="text-sm font-medium">{opt.name}</span>
-                    <span className="text-sm font-semibold text-[#53745D] tabular-nums">
-                      {getOptionPriceDollars(opt).toFixed(2)} $
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {options.length === 1 && (
-        <div className="rounded-xl border border-[#53745D]/20 bg-[#F0F4F1]/80 px-3 py-2 text-sm">
-          <span className="font-medium">{options[0].name}</span>
-          <span className="float-right font-semibold text-[#53745D] tabular-nums">
-            {getOptionPriceDollars(options[0]).toFixed(2)} $
-          </span>
-        </div>
-      )}
-
-      <WebBookingServiceInfo
-        description={service.description}
-        particularities={service.particularities}
-      />
-
-      {additionalLines.length > 0 && (
-        <div>
-          <Label className="text-base font-semibold">Prestations ajoutées</Label>
-          <ul className="mt-2 space-y-2">
+    <>
+      <div className="flex flex-1 flex-col gap-5 px-5 pb-5 pt-5">
+        {/* Récapitulatif de la sélection */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col rounded-2xl border border-site-border bg-site-surface-2 px-4 py-1">
+            <div className="flex min-h-16 items-center gap-3">
+              <div className="flex flex-1 flex-col">
+                <p className="font-semibold">{service.name}</p>
+                <p className="text-sm text-site-fg-2">{mainMeta || "Choisissez une formule ci-dessous"}</p>
+              </div>
+            </div>
             {additionalLines.map((line) => (
-              <li
-                key={line.service.id}
-                className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900">
-                    {line.service.name}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {line.option.name} ·{" "}
-                    {formatDurationMinutes(line.service.duration ?? 0)} ·{" "}
-                    {getOptionPriceDollars(line.option).toFixed(2)} $
+              <div key={line.service.id} className="flex min-h-16 items-center gap-3 border-t border-site-border">
+                <div className="flex flex-1 flex-col">
+                  <p className="font-semibold">{line.service.name}</p>
+                  <p className="text-sm text-site-fg-2">
+                    {[line.option.name, formatDurationMinutes(line.service.duration ?? 0), price(getOptionPriceDollars(line.option))]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => onRemoveAdditional(line.service.id)}
-                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                   aria-label={`Retirer ${line.service.name}`}
+                  className="grid size-11 place-items-center rounded-full text-site-muted hover:bg-site-surface"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <X className="size-[18px]" />
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenAddService}
+            disabled={addServiceHelp !== null}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-site-accent bg-site-bg text-[15px] font-semibold text-site-accent transition-colors hover:bg-site-accent-soft disabled:border-site-border-strong disabled:text-site-muted disabled:hover:bg-transparent"
+          >
+            <Plus className="size-[18px]" />
+            Ajouter une prestation
+          </button>
+          {addServiceHelp && <p className="-mt-1 text-center text-xs text-site-muted">{addServiceHelp}</p>}
         </div>
-      )}
 
-      {/* Ajouter une prestation du même salon (4 max, enchaînées) */}
-      <div>
-        <button
-          type="button"
-          onClick={onOpenAddService}
-          disabled={addServiceHelp !== null}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 px-3 py-2.5 text-sm font-medium text-slate-800 transition-colors hover:bg-[#F0F4F1]/60 disabled:opacity-50 disabled:hover:bg-transparent"
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter une prestation
-        </button>
-        {addServiceHelp && (
-          <p className="mt-1 text-center text-xs text-slate-500">
-            {addServiceHelp}
-          </p>
+        {/* Formules */}
+        {options.length > 1 && (
+          <fieldset className="m-0 flex flex-col border-0 p-0">
+            <legend className="mb-1.5 text-[15px] font-semibold">Choisissez votre formule</legend>
+            {options.map((opt) => {
+              const picked = selectedOptionId === opt.id;
+              const discounted = opt.discountPrice != null && opt.discountPrice < opt.price;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={picked}
+                  onClick={() => onSelectOption(opt.id)}
+                  className="flex min-h-12 items-center gap-3 border-t border-site-border py-1.5 text-left text-site-fg"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className={cn("text-sm", picked ? "font-semibold" : "font-medium")}>{opt.name}</span>
+                  </span>
+                  <span className="flex shrink-0 items-baseline gap-1.5 text-sm">
+                    {discounted && <s className="text-[13px] text-site-muted">{price(opt.price)}</s>}
+                    <span className="font-semibold tabular-nums">{price(getOptionPriceDollars(opt))}</span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "grid size-5 shrink-0 place-items-center rounded-full border-2",
+                      picked ? "border-site-accent" : "border-site-border-strong",
+                    )}
+                  >
+                    <span className={cn("size-2.5 rounded-full", picked ? "bg-site-accent" : "bg-transparent")} />
+                  </span>
+                </button>
+              );
+            })}
+          </fieldset>
+        )}
+
+        <WebBookingServiceInfo description={service.description} />
+
+        {/* Conditions du service */}
+        {hasConditions && (
+          <section aria-labelledby="wb-conditions-title" className="flex flex-col gap-2 rounded-2xl bg-site-surface-2 px-4 py-3.5">
+            <p id="wb-conditions-title" className="text-[15px] font-semibold">
+              Conditions du service
+            </p>
+            <ul className="flex flex-col gap-1.5">
+              {conditions.map((c, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-site-fg-2">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-site-accent" />
+                  <span className="whitespace-pre-line">{c}</span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={conditionsAccepted}
+              onClick={() => onConditionsAcceptedChange(!conditionsAccepted)}
+              className="mt-1.5 flex min-h-11 items-center gap-2.5 border-t border-site-border pt-2 text-left text-site-fg"
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  "grid size-[22px] shrink-0 place-items-center rounded-md border-2 text-site-on-accent",
+                  conditionsAccepted ? "border-site-accent bg-site-accent" : "border-site-border-strong bg-site-bg",
+                )}
+              >
+                {conditionsAccepted && <Check className="size-3.5" strokeWidth={3} />}
+              </span>
+              <span className="text-sm font-semibold">J&apos;ai lu et j&apos;accepte les conditions de ce service</span>
+            </button>
+          </section>
         )}
       </div>
 
-      {selectedLines.length > 0 && (
-        <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm">
-          <span className="text-slate-600">
-            {formatServicesCount(selectedLines.length)} ·{" "}
-            {formatDurationMinutes(getTotalDurationMinutes(selectedLines))}
-          </span>
-          <span className="font-semibold text-slate-900 tabular-nums">
-            {getServicesTotalDollars(selectedLines).toFixed(2)} $
-          </span>
-        </div>
-      )}
-
-      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
-        <Button
-          type="button"
-          className="flex-1 bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50"
-          disabled={!canContinue}
-          onClick={onContinue}
-        >
+      <WebBookingStepActions
+        summary={
+          summary ??
+          (selectedLines.length > 0
+            ? {
+                label: `${selectedLines.length > 1 ? `${selectedLines.length} prestations` : service.name} · ${formatDurationMinutes(getTotalDurationMinutes(selectedLines))}`,
+                price: price(getServicesTotalDollars(selectedLines)),
+              }
+            : null)
+        }
+      >
+        <WebBookingCta type="button" disabled={!canContinue} onClick={onContinue}>
           {continueLabel}
-        </Button>
+        </WebBookingCta>
+        {hasConditions && !conditionsAccepted && selectedOptionId && (
+          <p className="-mt-1 text-center text-xs text-site-muted">Cochez la case pour confirmer avoir lu les conditions.</p>
+        )}
       </WebBookingStepActions>
-    </div>
+    </>
   );
 }

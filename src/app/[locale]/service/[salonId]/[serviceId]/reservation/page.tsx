@@ -1,11 +1,13 @@
 "use client";
 
 import { SalonWebBookingFlow } from "@/app/[locale]/salon/[id]/components/web-booking";
+import { resolveSalonTheme, type SalonSiteDto } from "@/app/[locale]/salon/[id]/theme/salonTheme";
+import { SalonThemeProvider } from "@/app/[locale]/salon/[id]/theme/SalonThemeProvider";
 import { getSalonApi, getSalonServiceByIdApi } from "@/app/data/services";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ServiceData {
   id: string;
@@ -26,6 +28,18 @@ interface ServiceData {
   salon?: { id: string; name: string };
 }
 
+interface SalonMeta {
+  name: string;
+  offersHomeService: boolean;
+  province: string;
+  site: SalonSiteDto | null;
+}
+
+/**
+ * Page de réservation d'une prestation : le parcours est rendu aux couleurs et
+ * polices du mini-site du salon (`salon.site`), plein écran sur téléphone,
+ * colonne centrée en carte sur ordinateur.
+ */
 export default function ServiceReservationPage() {
   const params = useParams();
   const salonId = params.salonId as string;
@@ -33,13 +47,12 @@ export default function ServiceReservationPage() {
   const locale = (params.locale as string) || "fr";
 
   const [service, setService] = useState<ServiceData | null>(null);
-  const [salonName, setSalonName] = useState("");
-  const [salonOffersHomeService, setSalonOffersHomeService] = useState(false);
-  const [salonProvince, setSalonProvince] = useState("QC");
+  const [salonMeta, setSalonMeta] = useState<SalonMeta>({ name: "", offersHomeService: false, province: "QC", site: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const backHref = `/${locale}/salon/${salonId}`;
+  const theme = useMemo(() => resolveSalonTheme(salonMeta.site), [salonMeta.site]);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,11 +62,7 @@ export default function ServiceReservationPage() {
         setLoading(true);
         setError(null);
 
-        const [svcRes, salonRes] = await Promise.all([
-          getSalonServiceByIdApi(salonId, serviceId),
-          getSalonApi(salonId),
-        ]);
-
+        const [svcRes, salonRes] = await Promise.all([getSalonServiceByIdApi(salonId, serviceId), getSalonApi(salonId)]);
         if (cancelled) return;
 
         if (svcRes?.success && svcRes?.data) {
@@ -63,22 +72,20 @@ export default function ServiceReservationPage() {
           setService(null);
         }
 
-        const salonRaw = salonRes as
-          | { data?: Record<string, unknown> }
-          | Record<string, unknown>
-          | null;
+        const salonRaw = salonRes as { data?: Record<string, unknown> } | Record<string, unknown> | null;
         const salon =
           salonRaw && typeof salonRaw === "object" && "data" in salonRaw
             ? (salonRaw as { data?: Record<string, unknown> }).data
             : (salonRaw as Record<string, unknown> | null);
 
         if (salon && typeof salon === "object") {
-          setSalonName(typeof salon.name === "string" ? salon.name : "");
-          setSalonOffersHomeService(salon.offersHomeService === true);
           const addr = salon.address as { province?: string } | undefined;
-          if (addr?.province && typeof addr.province === "string") {
-            setSalonProvince(addr.province);
-          }
+          setSalonMeta({
+            name: typeof salon.name === "string" ? salon.name : "",
+            offersHomeService: salon.offersHomeService === true,
+            province: addr?.province && typeof addr.province === "string" ? addr.province : "QC",
+            site: (salon.site as SalonSiteDto | null | undefined) ?? null,
+          });
         }
       } catch {
         if (!cancelled) {
@@ -90,10 +97,7 @@ export default function ServiceReservationPage() {
       }
     };
 
-    if (salonId && serviceId) {
-      load();
-    }
-
+    if (salonId && serviceId) load();
     return () => {
       cancelled = true;
     };
@@ -101,8 +105,8 @@ export default function ServiceReservationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3 text-slate-600">
-        <Loader2 className="h-10 w-10 animate-spin text-[#53745D]" />
+      <div data-salon-page className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-neutral-600">
+        <Loader2 className="size-10 animate-spin text-neutral-900" />
         <p>Préparation de votre réservation…</p>
       </div>
     );
@@ -110,14 +114,9 @@ export default function ServiceReservationPage() {
 
   if (error || !service?.options?.length) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center px-4 text-center">
-        <p className="text-slate-700 mb-4">
-          {error || "Réservation indisponible."}
-        </p>
-        <Link
-          href={backHref}
-          className="text-[#53745D] font-semibold underline underline-offset-2"
-        >
+      <div data-salon-page className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+        <p className="mb-4 text-neutral-700">{error || "Réservation indisponible."}</p>
+        <Link href={backHref} className="font-semibold text-neutral-900 underline underline-offset-2">
           Retour au salon
         </Link>
       </div>
@@ -136,24 +135,23 @@ export default function ServiceReservationPage() {
     travelFees: service.travelFees ?? null,
   };
 
-  const displaySalonName = salonName || service.salon?.name || "Salon";
+  const displaySalonName = salonMeta.name || service.salon?.name || "Salon";
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-2xl mx-auto px-0 py-8 md:py-12">
-        <div className="bg-white rounded-2xl border border-[#53745D]/15 shadow-md p-4 md:p-10">
+    <SalonThemeProvider theme={theme} className="-mx-4 -mb-12 -mt-4 min-h-screen lg:-mx-8">
+      <div className="mx-auto w-full max-w-[640px] md:py-8">
+        <div className="bg-site-bg md:overflow-hidden md:rounded-3xl md:border md:border-site-border md:shadow-[0_18px_50px_-30px_rgba(17,17,17,0.35)]">
           <SalonWebBookingFlow
-            variant="page"
             salonId={salonId}
             salonName={displaySalonName}
             locale={locale}
-            salonProvince={salonProvince}
-            salonOffersHomeService={salonOffersHomeService}
+            salonProvince={salonMeta.province}
+            salonOffersHomeService={salonMeta.offersHomeService}
             service={servicePayload}
             backHref={backHref}
           />
         </div>
       </div>
-    </div>
+    </SalonThemeProvider>
   );
 }

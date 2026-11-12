@@ -1,37 +1,66 @@
 "use client";
 
 import { forgotPasswordApi, registerApi } from "@/app/data/services";
+import { FormattedPhoneInput } from "@/components/ui/FormattedPhoneInput";
+import { cn } from "@/lib/utils";
+import { getSession, signIn } from "next-auth/react";
+import { Loader2 } from "lucide-react";
+import { useState, type InputHTMLAttributes } from "react";
+
 import {
   getRegisterErrorMessage,
   phoneE164ForRegister,
   validateClientRegistrationNames,
   validateOptionalRegistrationPhone,
 } from "./registerValidation";
-import { Button } from "@/components/ui/button";
-import { FormattedPhoneInput } from "@/components/ui/FormattedPhoneInput";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getSession, signIn } from "next-auth/react";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-
-import { WebBookingStepActions } from "./WebBookingStepActions";
+import {
+  WebBookingCta,
+  WebBookingSecondaryAction,
+  WebBookingStepActions,
+  type WebBookingFooterSummary,
+} from "./WebBookingStepActions";
 
 interface ClientQuickAuthPanelProps {
   onAuthenticated: () => void;
-  onBack?: () => void;
-  backLabel?: string;
+  summary: WebBookingFooterSummary | null;
 }
 
-const phoneSelectClassName =
-  "px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#53745D]/30 focus:border-[#53745D] disabled:bg-slate-50 disabled:cursor-not-allowed shrink-0 w-[5.5rem]";
+type Mode = "register" | "login";
 
-export function ClientQuickAuthPanel({
-  onAuthenticated,
-  onBack,
-  backLabel,
-}: ClientQuickAuthPanelProps) {
+const inputClass =
+  "h-12 w-full rounded-xl border border-site-border-strong bg-site-bg px-3.5 text-[15px] text-site-fg placeholder:text-site-muted focus:border-site-accent focus:outline-none focus:ring-2 focus:ring-site-accent/20 disabled:opacity-60";
+
+const phoneSelectClassName =
+  "h-12 w-[5.5rem] shrink-0 rounded-xl border border-site-border-strong bg-site-bg px-3 text-sm text-site-fg focus:border-site-accent focus:outline-none focus:ring-2 focus:ring-site-accent/20 disabled:cursor-not-allowed disabled:opacity-60";
+
+function Field({
+  id,
+  label,
+  hint,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { id: string; label: string; hint?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
+      <input id={id} className={inputClass} aria-describedby={hint ? `${id}-hint` : undefined} {...props} />
+      {hint && (
+        <p id={`${id}-hint`} className="text-xs text-site-muted">
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Étape coordonnées (maquette) : sélecteur « Créer un compte / Se connecter » en
+ * pilule, formulaire, bouton principal dans la barre basse (il soumet le
+ * formulaire visible).
+ */
+export function ClientQuickAuthPanel({ onAuthenticated, summary }: ClientQuickAuthPanelProps) {
+  const [mode, setMode] = useState<Mode>("register");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -70,11 +99,7 @@ export function ClientQuickAuthPanel({
     setError(null);
     setLoading(true);
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        email: loginEmail.trim(),
-        password: loginPassword,
-      });
+      const res = await signIn("credentials", { redirect: false, email: loginEmail.trim(), password: loginPassword });
       if (res?.error) {
         setError(res.error);
         return;
@@ -93,19 +118,19 @@ export function ClientQuickAuthPanel({
     setForgotSuccess(false);
     const email = forgotEmail.trim();
     if (!email) {
-      setError("Veuillez saisir votre adresse email.");
+      setError("Veuillez saisir votre adresse courriel.");
       return;
     }
     setLoading(true);
     try {
       const result = await forgotPasswordApi(email);
       if (!result) {
-        setError("Erreur lors de l'envoi de l'email de réinitialisation.");
+        setError("Erreur lors de l'envoi du courriel de réinitialisation.");
         return;
       }
       setForgotSuccess(true);
     } catch {
-      setError("Erreur lors de l'envoi de l'email de réinitialisation.");
+      setError("Erreur lors de l'envoi du courriel de réinitialisation.");
     } finally {
       setLoading(false);
     }
@@ -122,17 +147,12 @@ export function ClientQuickAuthPanel({
         setError(nameError);
         return;
       }
-
-      const phoneErr = validateOptionalRegistrationPhone(
-        phoneDialCode,
-        phoneLocal,
-      );
+      const phoneErr = validateOptionalRegistrationPhone(phoneDialCode, phoneLocal);
       if (phoneErr) {
         setPhoneFieldError(phoneErr);
         setError(phoneErr);
         return;
       }
-
       const payload: {
         email: string;
         password: string;
@@ -148,27 +168,16 @@ export function ClientQuickAuthPanel({
         role: "CLIENT",
       };
       const phoneE164 = phoneE164ForRegister(phoneDialCode, phoneLocal);
-      if (phoneE164) {
-        payload.phone = phoneE164;
-      }
+      if (phoneE164) payload.phone = phoneE164;
 
       const result = await registerApi(payload);
       if (!result?.token) {
-        setError(
-          (result as { message?: string })?.message ||
-            "Inscription refusée. Vérifiez vos informations.",
-        );
+        setError((result as { message?: string })?.message || "Inscription refusée. Vérifiez vos informations.");
         return;
       }
-      const sign = await signIn("credentials", {
-        redirect: false,
-        email: regEmail.trim(),
-        password: regPassword,
-      });
+      const sign = await signIn("credentials", { redirect: false, email: regEmail.trim(), password: regPassword });
       if (sign?.error) {
-        setError(
-          "Compte créé mais connexion automatique échouée. Connectez-vous manuellement.",
-        );
+        setError("Compte créé mais connexion automatique échouée. Connectez-vous manuellement.");
         return;
       }
       await finishAuth();
@@ -179,108 +188,88 @@ export function ClientQuickAuthPanel({
     }
   };
 
+  const activeFormId = showForgotPassword ? "wb-forgot-form" : mode === "register" ? "wb-register-form" : "wb-login-form";
+  const ctaLabel = showForgotPassword
+    ? "Envoyer le lien"
+    : mode === "register"
+      ? "Créer mon compte et continuer"
+      : "Se connecter et continuer";
+
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        Connectez-vous ou créez un compte client en quelques secondes pour
-        poursuivre la réservation.
-      </p>
-      {forgotSuccess && (
-        <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-          Si un compte existe pour cette adresse, un email de réinitialisation a
-          été envoyé. Consultez votre boîte de réception puis reconnectez-vous
-          ici.
-        </p>
-      )}
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
-      {showForgotPassword ? (
-        <div className="space-y-3 pt-1">
-          <p className="text-sm text-slate-600">
-            Saisissez l’email de votre compte. Nous vous enverrons un lien pour
-            choisir un nouveau mot de passe.
+    <>
+      <div className="flex flex-1 flex-col gap-3.5 px-5 pb-5 pt-5">
+        {!showForgotPassword && (
+          <div role="tablist" aria-label="Type de compte" className="flex rounded-full bg-site-surface p-1">
+            {(
+              [
+                { key: "register", label: "Créer un compte" },
+                { key: "login", label: "Se connecter" },
+              ] as { key: Mode; label: string }[]
+            ).map((t) => {
+              const selected = mode === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => {
+                    setMode(t.key);
+                    setError(null);
+                  }}
+                  className={cn(
+                    "h-11 flex-1 rounded-full text-sm transition-colors",
+                    selected ? "bg-site-bg font-semibold text-site-fg shadow-sm" : "font-medium text-site-fg-2",
+                  )}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {forgotSuccess && (
+          <p className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            Si un compte existe pour cette adresse, un courriel de réinitialisation a été envoyé. Consultez votre boîte
+            de réception puis reconnectez-vous ici.
           </p>
-          <form onSubmit={handleForgotPassword} className="space-y-3">
-            <div>
-              <Label htmlFor="wb-forgot-email">Email</Label>
-              <Input
-                id="wb-forgot-email"
-                type="email"
-                autoComplete="email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                required
-                disabled={loading || forgotSuccess}
-                className="mt-1"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full"
+        )}
+        {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+
+        {showForgotPassword ? (
+          <form id="wb-forgot-form" onSubmit={handleForgotPassword} className="flex flex-col gap-3.5">
+            <p className="text-[13px] text-site-muted">
+              Saisissez le courriel de votre compte. Nous vous enverrons un lien pour choisir un nouveau mot de passe.
+            </p>
+            <Field
+              id="wb-forgot-email"
+              label="Courriel"
+              type="email"
+              autoComplete="email"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              required
               disabled={loading || forgotSuccess}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Envoyer le lien"
-              )}
-            </Button>
-            <Button
+            />
+            <button
               type="button"
-              variant="ghost"
-              className="w-full text-slate-600"
               onClick={closeForgotPassword}
+              className="flex min-h-11 items-center self-start text-sm font-semibold text-site-fg hover:underline"
             >
               Retour à la connexion
-            </Button>
+            </button>
           </form>
-        </div>
-      ) : (
-      <Tabs defaultValue="register" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="register">Inscription</TabsTrigger>
-          <TabsTrigger value="login">Connexion</TabsTrigger>
-        </TabsList>
-        <TabsContent value="register" className="space-y-3 pt-2">
-          <form onSubmit={handleRegister} className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="wb-reg-fn">Prénom</Label>
-                <Input
-                  id="wb-reg-fn"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="wb-reg-ln">Nom</Label>
-                <Input
-                  id="wb-reg-ln"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
-                  className="mt-1"
-                />
-              </div>
+        ) : mode === "register" ? (
+          <form id="wb-register-form" onSubmit={handleRegister} className="flex flex-col gap-3.5">
+            <p className="-mt-1 text-[13px] text-site-fg">
+              Créez votre compte <b>korí</b> pour retrouver vos rendez-vous et réserver plus vite la prochaine fois.
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <Field id="wb-reg-fn" label="Prénom" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+              <Field id="wb-reg-ln" label="Nom" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
             </div>
-            <div>
-              <Label htmlFor="wb-reg-email">Email</Label>
-              <Input
-                id="wb-reg-email"
-                type="email"
-                autoComplete="email"
-                value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <div className="mt-1">
+            <div className="flex flex-col gap-1.5">
               <FormattedPhoneInput
                 id="wb-reg-phone"
                 label="Téléphone"
@@ -300,85 +289,78 @@ export function ClientQuickAuthPanel({
                 selectClassName={phoneSelectClassName}
                 dialCodeOnly
               />
-              <p className="mt-1 text-[11px] text-slate-500">
-                Optionnel. Choisissez l’indicatif puis saisissez le numéro local
-                (formaté automatiquement).
-              </p>
+              <p className="text-xs text-site-muted">Optionnel. Utile pour le rappel par texto la veille.</p>
             </div>
-            <div>
-              <Label htmlFor="wb-reg-password">Mot de passe</Label>
-              <Input
-                id="wb-reg-password"
-                type="password"
-                autoComplete="new-password"
-                value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
-                required
-                minLength={5}
-                className="mt-1"
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Créer mon compte"
-              )}
-            </Button>
+            <Field
+              id="wb-reg-email"
+              label="Courriel"
+              type="email"
+              autoComplete="email"
+              placeholder="vous@exemple.com"
+              value={regEmail}
+              onChange={(e) => setRegEmail(e.target.value)}
+              required
+            />
+            <Field
+              id="wb-reg-password"
+              label="Créer un mot de passe"
+              type="password"
+              autoComplete="new-password"
+              placeholder="5 caractères minimum"
+              hint="Au moins 5 caractères."
+              value={regPassword}
+              onChange={(e) => setRegPassword(e.target.value)}
+              required
+              minLength={5}
+            />
           </form>
-        </TabsContent>
-        <TabsContent value="login" className="space-y-3 pt-2">
-          <form onSubmit={handleLogin} className="space-y-3">
-            <div>
-              <Label htmlFor="wb-login-email">Email</Label>
-              <Input
-                id="wb-login-email"
-                type="email"
-                autoComplete="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                required
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="wb-login-password">Mot de passe</Label>
-                <button
-                  type="button"
-                  onClick={openForgotPassword}
-                  className="text-xs text-[#53745D] hover:underline"
-                >
-                  Mot de passe oublié ?
-                </button>
-              </div>
-              <Input
+        ) : (
+          <form id="wb-login-form" onSubmit={handleLogin} className="flex flex-col gap-3.5">
+            <p className="-mt-1 text-[13px] text-site-muted">Connectez-vous : vos coordonnées seront remplies automatiquement.</p>
+            <Field
+              id="wb-login-email"
+              label="Courriel"
+              type="email"
+              autoComplete="email"
+              placeholder="vous@exemple.com"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              required
+            />
+            <div className="flex flex-col gap-1.5">
+              <Field
                 id="wb-login-password"
+                label="Mot de passe"
                 type="password"
                 autoComplete="current-password"
                 value={loginPassword}
                 onChange={(e) => setLoginPassword(e.target.value)}
                 required
-                className="mt-1"
               />
+              <button
+                type="button"
+                onClick={openForgotPassword}
+                className="flex min-h-11 items-center self-start text-sm font-semibold text-site-fg hover:underline"
+              >
+                Mot de passe oublié ?
+              </button>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Se connecter"
-              )}
-            </Button>
           </form>
-        </TabsContent>
-      </Tabs>
-      )}
+        )}
+      </div>
 
       <WebBookingStepActions
-        onBack={onBack}
-        backLabel={backLabel}
-        className="mt-4"
-      />
-    </div>
+        summary={summary}
+        secondary={
+          showForgotPassword ? (
+            <WebBookingSecondaryAction onClick={closeForgotPassword}>Annuler</WebBookingSecondaryAction>
+          ) : null
+        }
+      >
+        <WebBookingCta type="submit" form={activeFormId} disabled={loading || (showForgotPassword && forgotSuccess)}>
+          {loading ? <Loader2 className="size-5 animate-spin" /> : ctaLabel}
+        </WebBookingCta>
+      </WebBookingStepActions>
+    </>
   );
 }

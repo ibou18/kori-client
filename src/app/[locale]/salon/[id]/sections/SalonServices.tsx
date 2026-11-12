@@ -1,17 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Clock } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import { ServicePhotoLightbox } from "../components/ServicePhotoLightbox";
-import {
-  formatSalonPriceDollars,
-  getServiceDurationMinutes,
-} from "../components/web-booking/pricing";
-import { useSalonTheme } from "../theme/SalonThemeProvider";
+import { formatSalonPriceDollars, getServiceDurationMinutes } from "../components/web-booking/pricing";
 import type { PublicService } from "../types";
-import { SalonSectionHeading } from "./SalonSectionHeading";
 
 const formatDuration = (minutes: number) => {
   if (minutes < 60) return `${minutes} min`;
@@ -20,105 +15,112 @@ const formatDuration = (minutes: number) => {
   return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")}`;
 };
 
+const price = (v: number) => `${formatSalonPriceDollars(v)} $`;
+
 /**
- * Liste des prestations : filtres par catégorie, cartes avec options et prix,
- * vignette agrandissable. Comportement repris de l'ancienne page, thémé.
+ * Onglet Prestations (maquette) : pastilles de catégories, puis une liste par
+ * catégorie. Chaque ligne : vignette, nom, description sur deux lignes, durée et
+ * prix, bouton « Réserver ». Une prestation à plusieurs formules déplie ses prix.
  */
 export function SalonServices({
   services,
   isEn,
   onBookService,
+  disabled = false,
 }: {
   services: PublicService[];
   isEn: boolean;
   onBookService: (service: PublicService) => void;
+  /** Mode aperçu : les boutons restent visibles mais inertes. */
+  disabled?: boolean;
 }) {
-  const theme = useSalonTheme();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  // Service gardé après la fermeture pour que l'animation de sortie
-  // affiche encore la photo.
   const [lightboxService, setLightboxService] = useState<PublicService | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const categories = useMemo(
     () =>
       Array.from(
-        new Map(
-          services.filter((s) => s.category).map((s) => [s.category!.id, s.category!]),
-        ).values(),
+        new Map(services.filter((s) => s.category).map((s) => [s.category!.id, s.category!])).values(),
       ),
     [services],
   );
 
-  const visible = services.filter(
-    (s) => !selectedCategoryId || s.categoryId === selectedCategoryId,
-  );
+  const groups = useMemo(() => {
+    const visible = services.filter((s) => !selectedCategoryId || s.categoryId === selectedCategoryId);
+    const byCat = new Map<string, { name: string; items: PublicService[] }>();
+    for (const s of visible) {
+      const key = s.category?.id ?? "__none";
+      const name = s.category?.name ?? (isEn ? "Other services" : "Autres prestations");
+      if (!byCat.has(key)) byCat.set(key, { name, items: [] });
+      byCat.get(key)!.items.push(s);
+    }
+    return Array.from(byCat.entries());
+  }, [services, selectedCategoryId, isEn]);
 
-  const openLightbox = (service: PublicService) => {
-    setLightboxService(service);
-    setLightboxOpen(true);
-  };
-
-  if (services.length === 0) return null;
+  if (services.length === 0) {
+    return (
+      <p className="px-5 py-10 text-center text-sm text-site-muted">
+        {isEn ? "No service bookable online yet." : "Aucune prestation réservable en ligne pour le moment."}
+      </p>
+    );
+  }
 
   return (
-    <section id="services" className="scroll-mt-28 py-10">
-      <SalonSectionHeading
-        eyebrow={isEn ? "Services" : "Prestations"}
-        title={isEn ? "Our services" : "Nos services"}
-        aside={
-          <span className="tabular-nums">
-            {services.length} {isEn ? "services" : "prestations"}
-            {categories.length > 1 &&
-              ` · ${categories.length} ${isEn ? "categories" : "catégories"}`}
-          </span>
-        }
-      />
-
+    <>
       {categories.length > 1 && (
-        <div className="scrollbar-hide -mx-4 mb-4 overflow-x-auto px-4 pb-2">
-          <div className="flex min-w-max gap-2">
-            {[{ id: null as string | null, name: isEn ? "All" : "Tous" }, ...categories].map(
-              (category) => {
-                const isActive = selectedCategoryId === category.id;
-                return (
-                  <button
-                    key={category.id ?? "all"}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(category.id)}
-                    className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "shadow-md"
-                        : "border-slate-200 bg-white/80 text-slate-600 hover:bg-white"
-                    }`}
-                    style={
-                      isActive
-                        ? {
-                            background: theme.primaryColor,
-                            borderColor: theme.primaryColor,
-                            color: theme.onPrimary,
-                          }
-                        : undefined
-                    }
-                  >
-                    {category.name}
-                  </button>
-                );
-              },
-            )}
-          </div>
-        </div>
+        <nav
+          aria-label={isEn ? "Categories" : "Catégories"}
+          className="scrollbar-hide flex gap-2 overflow-x-auto px-5 pb-1 pt-4"
+        >
+          {[{ id: null as string | null, name: isEn ? "All" : "Tout" }, ...categories].map((category) => {
+            const active = selectedCategoryId === category.id;
+            return (
+              <button
+                key={category.id ?? "all"}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setSelectedCategoryId(category.id)}
+                className={cn(
+                  "flex min-h-10 shrink-0 items-center rounded-full px-4 text-sm transition-colors",
+                  active
+                    ? "bg-site-accent font-semibold text-site-on-accent"
+                    : "border border-site-chip-border font-medium text-site-fg hover:bg-site-surface",
+                )}
+              >
+                {category.name}
+              </button>
+            );
+          })}
+        </nav>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {visible.map((service) => (
-          <ServiceCard
-            key={service.id}
-            service={service}
-            isEn={isEn}
-            onBook={() => onBookService(service)}
-            onOpenPhoto={() => openLightbox(service)}
-          />
+      <div className="flex flex-col gap-7 px-5 pb-8 pt-4">
+        <h2
+          className="font-site-display text-2xl font-bold tracking-[-0.3px]"
+          style={{ textTransform: "var(--site-display-transform)" as never }}
+        >
+          {isEn ? "Services" : "Prestations"}
+        </h2>
+        {groups.map(([key, group]) => (
+          <section key={key} className="flex flex-col">
+            {(groups.length > 1 || categories.length > 0) && (
+              <h3 className="mb-1 text-[13px] font-semibold uppercase tracking-[1px] text-site-muted">{group.name}</h3>
+            )}
+            {group.items.map((service) => (
+              <ServiceRow
+                key={service.id}
+                service={service}
+                isEn={isEn}
+                disabled={disabled}
+                onBook={() => onBookService(service)}
+                onOpenPhoto={() => {
+                  setLightboxService(service);
+                  setLightboxOpen(true);
+                }}
+              />
+            ))}
+          </section>
         ))}
       </div>
 
@@ -129,190 +131,114 @@ export function SalonServices({
         title={lightboxService?.name ?? ""}
         isEn={isEn}
       />
-    </section>
+    </>
   );
 }
 
-/**
- * Carte prestation. Repliée : photo, nom, durée, fourchette de prix, bouton
- * Réserver. Dépliée (chevron) : description et détail des options avec
- * prix barrés. La photo s'agrandit toujours au clic (lightbox).
- */
-function ServiceCard({
+function ServiceRow({
   service,
   isEn,
+  disabled,
   onBook,
   onOpenPhoto,
 }: {
   service: PublicService;
   isEn: boolean;
+  disabled: boolean;
   onBook: () => void;
   onOpenPhoto: () => void;
 }) {
-  const theme = useSalonTheme();
   const [open, setOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
-
   const opts = service.options ?? [];
   const effective = (o: (typeof opts)[number]) => o.discountPrice ?? o.price;
-  const minPrice = opts.length ? Math.min(...opts.map(effective)) : null;
-  const maxPrice = opts.length ? Math.max(...opts.map(effective)) : null;
-  const hasDiscount = opts.some((o) => o.discountPrice != null && o.discountPrice < o.price);
+  const prices = opts.map(effective);
+  const minPrice = prices.length ? Math.min(...prices) : null;
+  const hasSizes = opts.length > 1;
+  const single = opts.length === 1 ? opts[0] : null;
+  const singleDiscounted = !!single && single.discountPrice != null && single.discountPrice < single.price;
+  const duration = service.duration ? formatDuration(getServiceDurationMinutes(service.duration)) : null;
   const description = service.description?.trim();
-  const particularities = service.particularities?.trim();
-  const hasDetails = !!description || !!particularities || opts.length > 1;
-  const detailsId = `service-details-${service.id}`;
+  const photo = service.photos?.find((p) => p.url);
+  const detailsId = `service-sizes-${service.id}`;
 
   return (
-    <article
-      className="flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-lg"
-      style={{ borderColor: `${theme.primaryColor}33` }}
-    >
-      <div className="flex items-start gap-3 p-3.5">
-        {/* Photo : agrandissement au clic */}
-        {service.photos?.[0]?.url ? (
-          <button
-            type="button"
-            aria-label={
-              isEn ? `Enlarge photo of ${service.name}` : `Agrandir la photo de ${service.name}`
-            }
-            onClick={onOpenPhoto}
-            className="relative size-[4.5rem] shrink-0 cursor-zoom-in overflow-hidden rounded-xl bg-slate-100 focus:outline-none focus-visible:ring-2 sm:size-20"
-          >
-            <Image
-              src={service.photos[0].url}
-              alt={service.name}
-              fill
-              className="object-cover"
-              sizes="80px"
-            />
-          </button>
-        ) : (
-          <div
-            aria-hidden
-            className="size-[4.5rem] shrink-0 rounded-xl sm:size-20"
-            style={{
-              background: `linear-gradient(135deg, ${theme.secondaryColor}55, ${theme.primaryColor}55)`,
-            }}
-          />
+    <div className="flex items-center gap-3.5 border-b border-site-border py-3.5">
+      {photo ? (
+        <button
+          type="button"
+          onClick={onOpenPhoto}
+          aria-label={isEn ? `Enlarge photo of ${service.name}` : `Agrandir la photo de ${service.name}`}
+          className="relative size-16 shrink-0 cursor-zoom-in overflow-hidden rounded-xl bg-site-media"
+        >
+          <Image src={photo.url} alt="" fill sizes="64px" className="object-cover" />
+        </button>
+      ) : (
+        <div aria-hidden className="size-16 shrink-0 rounded-xl bg-site-media" />
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <p className="text-[15px] font-semibold uppercase leading-[1.3] tracking-[0.2px]">{service.name}</p>
+        {description && (
+          <p className="line-clamp-2 text-[13px] leading-[1.4] text-site-muted">{description}</p>
         )}
-
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <p className="line-clamp-2 text-[15px] font-bold leading-snug text-slate-900">
-            {service.name}
-          </p>
-          {service.duration ? (
-            <p className="text-xs text-slate-500">
-              {formatDuration(getServiceDurationMinutes(service.duration))}
-            </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-site-muted">
+          {duration && (
+            <>
+              <Clock className="size-3.5" />
+              {duration}
+              <span>·</span>
+            </>
+          )}
+          {single ? (
+            <>
+              {singleDiscounted && <s>{price(single.price)}</s>}
+              <strong className="text-sm text-site-fg">{price(effective(single))}</strong>
+            </>
+          ) : minPrice !== null ? (
+            <strong className="text-sm text-site-fg">
+              {isEn ? "from" : "dès"} {price(minPrice)}
+            </strong>
           ) : null}
-          {minPrice !== null && maxPrice !== null ? (
-            <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm font-bold tabular-nums text-slate-900">
-              {minPrice === maxPrice
-                ? `${formatSalonPriceDollars(minPrice)} $`
-                : `${formatSalonPriceDollars(minPrice)} $ – ${formatSalonPriceDollars(maxPrice)} $`}
-              {hasDiscount && (
-                <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600">
-                  {isEn ? "Promo" : "Promo"}
-                </span>
-              )}
-            </p>
-          ) : null}
-        </div>
-
-        {hasDetails && (
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-controls={detailsId}
-            aria-label={open ? (isEn ? "Hide details" : "Masquer les détails") : (isEn ? "Show details" : "Voir les détails")}
-            onClick={() => setOpen((v) => !v)}
-            className="grid size-8 shrink-0 place-items-center rounded-full border transition-colors hover:bg-slate-50"
-            style={{ borderColor: `${theme.primaryColor}40`, color: theme.primaryColor }}
-          >
-            <motion.span
-              animate={{ rotate: open ? 180 : 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.2 }}
-              className="grid place-items-center"
-            >
-              <ChevronDown className="size-4" />
-            </motion.span>
-          </button>
+        </p>
+        {hasSizes && open && (
+          <ul id={detailsId} aria-label={isEn ? "Prices by option" : "Prix selon la formule"} className="mt-0.5 flex flex-col">
+            {opts.map((o, i) => {
+              const discounted = o.discountPrice != null && o.discountPrice < o.price;
+              return (
+                <li key={o.id} className="flex min-h-[26px] items-center gap-2 border-t border-site-border text-[13px]">
+                  <span className="flex-1 truncate">{o.name?.trim() || `Option ${i + 1}`}</span>
+                  {discounted && <s className="text-site-muted">{price(o.price)}</s>}
+                  <span className="font-semibold tabular-nums">{price(effective(o))}</span>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
-      <AnimatePresence initial={false}>
-        {open && hasDetails && (
-          <motion.div
-            id={detailsId}
-            key="details"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div
-              className="mx-3.5 space-y-3 border-t pb-3.5 pt-3 text-sm"
-              style={{ borderColor: `${theme.primaryColor}1A` }}
-            >
-              {particularities && (
-                <p
-                  className="rounded-lg px-3 py-2 text-[13px] leading-snug"
-                  style={{ background: `${theme.secondaryColor}26`, color: "#334155" }}
-                >
-                  {particularities}
-                </p>
-              )}
-              {description && (
-                <p className="whitespace-pre-line text-[13px] leading-relaxed text-slate-600">
-                  {description}
-                </p>
-              )}
-              {opts.length > 1 && (
-                <ul className="space-y-1">
-                  {opts.map((o, i) => {
-                    const final = effective(o);
-                    const discounted = o.discountPrice != null && o.discountPrice < o.price;
-                    return (
-                      <li key={o.id} className="flex items-baseline justify-between gap-3 text-[13px]">
-                        <span className="min-w-0 truncate text-slate-600">
-                          {o.name?.trim() || `Option ${i + 1}`}
-                        </span>
-                        <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
-                          {discounted && (
-                            <span className="text-slate-400 line-through">
-                              {formatSalonPriceDollars(o.price)} $
-                            </span>
-                          )}
-                          <span className={discounted ? "font-semibold text-red-600" : "font-semibold text-slate-900"}>
-                            {formatSalonPriceDollars(final)} $
-                          </span>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="mt-auto px-3.5 pb-3.5">
+      <div className={cn("flex shrink-0 flex-col items-center gap-0.5", hasSizes && open && "self-start")}>
         <button
           type="button"
           onClick={onBook}
-          className="flex w-full items-center justify-center rounded-lg border py-2 text-sm font-semibold transition-colors hover:brightness-95"
-          style={{
-            borderColor: `${theme.primaryColor}59`,
-            background: `${theme.primaryColor}0F`,
-            color: theme.primaryColor,
-          }}
+          aria-disabled={disabled}
+          aria-label={isEn ? `Book ${service.name}` : `Réserver ${service.name}`}
+          className="flex h-9 items-center justify-center rounded-full border border-site-accent bg-site-bg px-3 text-[13px] font-semibold text-site-accent transition-colors hover:bg-site-accent hover:text-site-on-accent"
         >
           {isEn ? "Book" : "Réserver"}
         </button>
+        {hasSizes && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls={detailsId}
+            className="flex min-h-8 items-center gap-0.5 px-1 text-xs font-semibold text-site-fg-2"
+          >
+            {open ? (isEn ? "Hide" : "Masquer") : isEn ? "Prices" : "Prix"}
+            <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} strokeWidth={2.2} />
+          </button>
+        )}
       </div>
-    </article>
+    </div>
   );
 }

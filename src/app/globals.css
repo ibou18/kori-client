@@ -27,6 +27,27 @@ main:has([data-salon-theme], [data-salon-page]):not(:has(main)) {
   box-shadow: 0 0.5rem 0 #fff;
 }
 :root {
+  /* Mini-site salon : repli du thème MONO quand un composant du parcours de
+     réservation est rendu hors de SalonThemeProvider (theme/salonTheme.ts). */
+  --site-bg: #ffffff;
+  --site-fg: #111111;
+  --site-fg-2: #3a3a3a;
+  --site-muted: #5e5e5e;
+  --site-surface: #f5f5f5;
+  --site-surface-2: #f7f7f7;
+  --site-border: #e8e8e8;
+  --site-border-strong: #cfcfcf;
+  --site-chip-border: #dcdcdc;
+  --site-accent: #111111;
+  --site-on-accent: #ffffff;
+  --site-accent-soft: #ececec;
+  --site-media: #e6e6e6;
+  --site-star: #111111;
+  --site-font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --site-font-body: "Inter", system-ui, sans-serif;
+  --site-display-transform: none;
+  --site-display-scale: 1;
+
   --primary-color: #4a6b5a; /* vert foncé Kori */
   --primary-hover: #3a5a4a; /* vert foncé plus sombre pour hover */
 }

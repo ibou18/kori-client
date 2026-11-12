@@ -1,9 +1,6 @@
 "use client";
 
-import { Star } from "lucide-react";
-import { useSalonTheme } from "../theme/SalonThemeProvider";
 import type { PublicReview } from "../types";
-import { SalonSectionHeading } from "./SalonSectionHeading";
 
 const relativeDate = (iso: string, isEn: boolean) => {
   const days = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 86_400_000));
@@ -15,7 +12,17 @@ const relativeDate = (iso: string, isEn: boolean) => {
   return isEn ? `${years} y ago` : `il y a ${years} an${years > 1 ? "s" : ""}`;
 };
 
-/** Trois derniers avis vérifiés (réservations korí). Masqué s'il n'y en a aucun. */
+function Stars({ value, className = "" }: { value: number; className?: string }) {
+  const full = Math.round(Math.max(0, Math.min(5, value)));
+  return (
+    <span role="img" aria-label={`${full} / 5`} className={`tracking-[2px] text-site-star ${className}`}>
+      {"★".repeat(full)}
+      <span className="text-site-border">{"★".repeat(5 - full)}</span>
+    </span>
+  );
+}
+
+/** Onglet Avis (maquette) : note globale en grand, puis la liste des avis vérifiés. */
 export function SalonReviews({
   reviews,
   rating,
@@ -27,77 +34,55 @@ export function SalonReviews({
   reviewCount?: number;
   isEn: boolean;
 }) {
-  const theme = useSalonTheme();
-  const shown = reviews.filter((r) => r.comment?.trim()).slice(0, 3);
-  if (shown.length === 0) return null;
+  const shown = reviews.filter((r) => r.comment?.trim());
+  const count = reviewCount ?? reviews.length;
+  const average =
+    rating ?? (reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0);
 
   return (
-    <section id="avis" className="scroll-mt-28 border-t border-black/[0.06] py-10">
-      <SalonSectionHeading
-        eyebrow={isEn ? "Verified reviews" : "Avis vérifiés"}
-        title={isEn ? "What clients say" : "Ce que disent les clients"}
-        aside={
-          rating !== undefined && (reviewCount ?? 0) > 0 ? (
-            <span className="inline-flex items-center gap-1 tabular-nums">
-              <Star
-                className="size-4"
-                style={{ color: theme.secondaryColor, fill: theme.secondaryColor }}
-              />
-              <b className="text-slate-800">{rating.toFixed(1)}</b> · {reviewCount}{" "}
-              {isEn ? "reviews" : "avis"}
-            </span>
-          ) : undefined
-        }
-      />
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {shown.map((r) => {
+    <section className="flex flex-col gap-4 px-5 pb-8 pt-5">
+      <div className="flex items-center gap-3.5 rounded-2xl bg-site-surface p-4">
+        <p className="font-site-display text-[40px] font-bold leading-none tabular-nums">
+          {average.toFixed(1).replace(".", isEn ? "." : ",")}
+        </p>
+        <div className="flex flex-col gap-0.5">
+          <Stars value={average} className="text-base" />
+          <p className="text-[13px] text-site-fg-2">
+            {count} {isEn ? "verified reviews · korí clients" : "avis vérifiés · clientes korí"}
+          </p>
+        </div>
+      </div>
+
+      {shown.length === 0 ? (
+        <p className="text-sm text-site-muted">
+          {isEn ? "No written review yet." : "Pas encore de commentaire écrit."}
+        </p>
+      ) : (
+        shown.map((r) => {
           const first = r.client?.firstName?.trim() ?? "";
           const lastInitial = r.client?.lastName?.trim()?.[0];
-          const who = first
-            ? `${first}${lastInitial ? ` ${lastInitial}.` : ""}`
-            : isEn
-              ? "Client"
-              : "Client·e";
-          const initials = `${first[0] ?? "K"}${lastInitial ?? ""}`.toUpperCase();
+          const who = first ? `${first}${lastInitial ? ` ${lastInitial}.` : ""}` : isEn ? "Client" : "Client·e";
+          const initial = (first[0] ?? "K").toUpperCase();
           return (
-            <li
-              key={r.id}
-              className="rounded-2xl border bg-white p-4 shadow-sm"
-              style={{ borderColor: `${theme.primaryColor}33` }}
-            >
-              <div className="mb-2 flex items-center gap-2.5 text-[13px]">
-                <span
-                  className="grid size-8 place-items-center rounded-full text-xs font-bold"
-                  style={{ background: theme.primaryColor, color: theme.onPrimary }}
+            <article key={r.id} className="flex flex-col gap-1.5 border-b border-site-border pb-4">
+              <div className="flex items-center gap-2.5">
+                <div
+                  aria-hidden
+                  className="grid size-9 place-items-center rounded-full bg-site-accent-soft text-sm font-semibold text-site-fg"
                 >
-                  {initials}
-                </span>
-                <span className="min-w-0">
-                  <b className="text-slate-800">{who}</b>
-                  <span className="text-slate-500"> · {relativeDate(r.createdAt, isEn)}</span>
-                </span>
-                <span
-                  className="ml-auto inline-flex items-center gap-0.5"
-                  aria-label={`${r.rating}/5`}
-                >
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      className="size-3"
-                      style={
-                        i < Math.round(r.rating)
-                          ? { color: theme.secondaryColor, fill: theme.secondaryColor }
-                          : { color: "#cbd5e1" }
-                      }
-                    />
-                  ))}
-                </span>
+                  {initial}
+                </div>
+                <div className="flex flex-1 flex-col">
+                  <p className="text-sm font-semibold">{who}</p>
+                  <p className="text-xs text-site-muted">{relativeDate(r.createdAt, isEn)}</p>
+                </div>
+                <Stars value={r.rating} className="text-[13px] !tracking-[1px]" />
               </div>
-              <p className="line-clamp-4 text-sm leading-relaxed text-slate-700">{r.comment}</p>
-            </li>
+              <p className="text-sm text-site-fg-2">{r.comment}</p>
+            </article>
           );
-        })}
-      </ul>
+        })
+      )}
     </section>
   );
 }

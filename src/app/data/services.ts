@@ -1869,9 +1869,11 @@ export const getSalonTypesApi = async () => {
 
 export interface SalonSiteInput {
   template?: string;
+  colorTheme?: string;
   primaryColor?: string;
   secondaryColor?: string;
   font?: string;
+  showLogo?: boolean;
   tagline?: string | null;
   isPublished?: boolean;
 }

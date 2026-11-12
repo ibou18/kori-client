@@ -1,68 +1,104 @@
 "use client";
 
-import Image from "next/image";
-import { useSalonTheme } from "../theme/SalonThemeProvider";
+import { ExternalLink, Globe, Home, Mail, MapPin, Phone } from "lucide-react";
+import type { ReactNode } from "react";
 import type { PublicSalon } from "../types";
-import { SalonSectionHeading } from "./SalonSectionHeading";
 
-/** À propos + galerie (photos du salon, à partir de deux). */
+/**
+ * Téléphone et courriel masqués pour le moment (décision produit) : le code
+ * d'affichage est conservé, repasser ces drapeaux à `true` pour les réafficher.
+ */
+const SHOW_PHONE = false;
+const SHOW_EMAIL = false;
+
+/** Vrai si l'onglet À propos a quelque chose à afficher. */
+export function salonHasAbout(salon: PublicSalon): boolean {
+  return !!(
+    salon.description?.trim() ||
+    salon.address?.street?.trim() ||
+    salon.website?.trim() ||
+    salon.offersHomeService ||
+    (SHOW_PHONE && salon.phone) ||
+    (SHOW_EMAIL && salon.email)
+  );
+}
+
+function ContactRow({ icon, href, children }: { icon: ReactNode; href?: string; children: ReactNode }) {
+  const className =
+    "flex min-h-12 items-center gap-2.5 border-b border-site-border text-sm text-site-fg last:border-b-0";
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={`${className} hover:underline`}>
+        <span className="text-site-fg">{icon}</span>
+        <span className="min-w-0 flex-1 truncate">{children}</span>
+        <ExternalLink className="size-3.5 text-site-muted" />
+      </a>
+    );
+  }
+  return (
+    <div className={className}>
+      <span className="text-site-fg">{icon}</span>
+      <span className="min-w-0 flex-1">{children}</span>
+    </div>
+  );
+}
+
+/** Onglet À propos (maquette) : texte de présentation, puis coordonnées en carte. */
 export function SalonAbout({ salon, isEn }: { salon: PublicSalon; isEn: boolean }) {
-  const theme = useSalonTheme();
   const description = salon.description?.trim();
-  const gallery = (salon.photos ?? []).filter((p) => p.url).slice(0, 8);
-  const hasGallery = gallery.length >= 2;
-  if (!description && !hasGallery) return null;
+  const a = salon.address;
+  const addressLine = a ? [a.street, a.city].filter(Boolean).join(", ") : "";
+  const mapsHref = a
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        [a.street, a.city, a.postalCode, a.country].filter(Boolean).join(", "),
+      )}`
+    : undefined;
+  const website = salon.website?.trim();
+  const websiteHref = website && !/^https?:\/\//i.test(website) ? `https://${website}` : website;
+  const hasContact =
+    !!addressLine || !!websiteHref || (SHOW_PHONE && !!salon.phone) || (SHOW_EMAIL && !!salon.email);
 
   return (
-    <section id="a-propos" className="scroll-mt-28 border-t border-black/[0.06] py-10">
-      <div className={`grid gap-8 ${hasGallery && description ? "md:grid-cols-[1.1fr_0.9fr]" : ""}`}>
-        {description && (
-          <div>
-            <SalonSectionHeading
-              eyebrow={isEn ? "The salon" : "Le salon"}
-              title={isEn ? "About" : "À propos"}
-            />
-            <div className="max-w-[62ch] whitespace-pre-line text-[15px] leading-relaxed text-slate-700">
-              {description}
-            </div>
-            {salon.offersHomeService && (
-              <p
-                className="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
-                style={{ background: `${theme.primaryColor}1F`, color: theme.primaryColor }}
-              >
-                {isEn ? "Home service available" : "Service à domicile disponible"}
-              </p>
-            )}
-          </div>
-        )}
-        {hasGallery && (
-          <div id="galerie" className="scroll-mt-28">
-            {!description && (
-              <SalonSectionHeading eyebrow="Photos" title={isEn ? "Gallery" : "Galerie"} />
-            )}
-            <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-2">
-              {gallery.map((photo, i) => (
-                <li
-                  key={photo.id ?? i}
-                  className={`relative overflow-hidden rounded-2xl bg-slate-100 ${
-                    i === 0 && gallery.length >= 3
-                      ? "col-span-2 aspect-[2/1] sm:col-span-3 md:col-span-2"
-                      : "aspect-square"
-                  }`}
-                >
-                  <Image
-                    src={photo.url}
-                    alt={photo.alt || `${salon.name} ${i + 1}`}
-                    fill
-                    sizes="(min-width: 768px) 30vw, 50vw"
-                    className="object-cover transition-transform duration-500 hover:scale-105"
-                  />
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+    <section className="flex flex-col gap-4 px-5 pb-8 pt-5">
+      <h2
+        className="font-site-display text-[22px] font-bold"
+        style={{ textTransform: "var(--site-display-transform)" as never }}
+      >
+        {isEn ? "About" : "À propos"}
+      </h2>
+      {description && (
+        <p className="max-w-[62ch] whitespace-pre-line text-sm leading-relaxed text-site-fg-2">{description}</p>
+      )}
+      {salon.offersHomeService && (
+        <p className="inline-flex w-fit items-center gap-2 rounded-full bg-site-accent-soft px-3 py-1.5 text-xs font-semibold text-site-fg">
+          <Home className="size-3.5" />
+          {isEn ? "Home service available" : "Service à domicile disponible"}
+        </p>
+      )}
+      {hasContact && (
+        <div className="flex flex-col rounded-2xl border border-site-border px-4 py-1">
+          {addressLine && (
+            <ContactRow icon={<MapPin className="size-[18px]" />} href={mapsHref}>
+              {addressLine}
+            </ContactRow>
+          )}
+          {websiteHref && (
+            <ContactRow icon={<Globe className="size-[18px]" />} href={websiteHref}>
+              {website!.replace(/^https?:\/\//i, "")}
+            </ContactRow>
+          )}
+          {SHOW_PHONE && salon.phone && (
+            <ContactRow icon={<Phone className="size-[18px]" />} href={`tel:${salon.phone.replace(/\s/g, "")}`}>
+              {salon.phone}
+            </ContactRow>
+          )}
+          {SHOW_EMAIL && salon.email && (
+            <ContactRow icon={<Mail className="size-[18px]" />} href={`mailto:${salon.email}`}>
+              {salon.email}
+            </ContactRow>
+          )}
+        </div>
+      )}
     </section>
   );
 }

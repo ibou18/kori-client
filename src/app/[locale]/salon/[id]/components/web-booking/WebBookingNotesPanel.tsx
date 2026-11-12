@@ -1,18 +1,22 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { ImagePlus, X } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 
-import { WebBookingStepActions } from "./WebBookingStepActions";
+import {
+  WebBookingCta,
+  WebBookingSecondaryAction,
+  WebBookingStepActions,
+  type WebBookingFooterSummary,
+} from "./WebBookingStepActions";
 
 const MAX_NOTES_LENGTH = 500;
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 interface WebBookingNotesPanelProps {
+  salonName: string;
   clientNotes: string;
   onClientNotesChange: (value: string) => void;
   referencePhotoFile: File | null;
@@ -20,11 +24,16 @@ interface WebBookingNotesPanelProps {
   onPhotoSelect: (file: File, previewUrl: string) => void;
   onPhotoRemove: () => void;
   onContinue: () => void;
-  onBack?: () => void;
-  backLabel?: string;
+  summary: WebBookingFooterSummary | null;
 }
 
+/**
+ * Étape facultative (maquette) : note pour la prestataire et photo de
+ * référence. « Passer cette étape » est proposé sous le bouton principal et
+ * dans l'en-tête.
+ */
 export function WebBookingNotesPanel({
+  salonName,
   clientNotes,
   onClientNotesChange,
   referencePhotoFile,
@@ -32,8 +41,7 @@ export function WebBookingNotesPanel({
   onPhotoSelect,
   onPhotoRemove,
   onContinue,
-  onBack,
-  backLabel,
+  summary,
 }: WebBookingNotesPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -43,7 +51,6 @@ export function WebBookingNotesPanel({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       setPhotoError("Format accepté : JPEG, PNG ou WebP.");
       return;
@@ -52,100 +59,92 @@ export function WebBookingNotesPanel({
       setPhotoError("La photo ne doit pas dépasser 5 Mo.");
       return;
     }
-
-    const previewUrl = URL.createObjectURL(file);
-    onPhotoSelect(file, previewUrl);
+    onPhotoSelect(file, URL.createObjectURL(file));
   };
 
-  const hasContent =
-    clientNotes.trim().length > 0 || referencePhotoFile !== null;
+  const hasContent = clientNotes.trim().length > 0 || referencePhotoFile !== null;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-slate-600">
-        Optionnel — aidez la coiffeuse à préparer votre rendez-vous avec des
-        précisions ou une photo de référence.
-      </p>
-
-      <div>
-        <Label htmlFor="wb-client-notes">Précisions pour la coiffeuse</Label>
-        <textarea
-          id="wb-client-notes"
-          value={clientNotes}
-          onChange={(e) => onClientNotesChange(e.target.value)}
-          placeholder="Ex. : cheveux fins, préfère les coupes courtes, allergique à certains produits…"
-          maxLength={MAX_NOTES_LENGTH}
-          rows={5}
-          className="mt-1 flex w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#53745D]/30 focus:border-[#53745D] resize-y min-h-[120px]"
-        />
-        <p className="mt-1 text-right text-[11px] text-slate-500">
-          {clientNotes.length}/{MAX_NOTES_LENGTH} caractères
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm font-medium text-slate-800">
-          Photo de référence (optionnel)
-        </p>
-        <p className="text-xs text-slate-500 mt-0.5 mb-2">
-          Ajoutez une photo de la coiffure souhaitée pour illustrer vos attentes.
+    <>
+      <div className="flex flex-1 flex-col gap-5 px-5 pb-5 pt-2">
+        <p className="text-sm text-site-fg-2">
+          Aidez {salonName} à préparer votre rendez-vous. Cette étape est facultative.
         </p>
 
-        {photoError && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-2">
-            {photoError}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="wb-client-notes" className="text-[15px] font-semibold">
+            Note pour la prestataire
+          </label>
+          <textarea
+            id="wb-client-notes"
+            value={clientNotes}
+            onChange={(e) => onClientNotesChange(e.target.value)}
+            placeholder="Ex. : j'aimerais les tresses jusqu'au bas du dos, avec quelques perles dorées. Cuir chevelu sensible."
+            maxLength={MAX_NOTES_LENGTH}
+            rows={5}
+            aria-describedby="wb-notes-count"
+            className="w-full resize-none rounded-xl border border-site-border-strong bg-site-bg px-3.5 py-3 text-[15px] text-site-fg placeholder:text-site-muted focus:border-site-accent focus:outline-none focus:ring-2 focus:ring-site-accent/20"
+          />
+          <p id="wb-notes-count" className="self-end text-xs tabular-nums text-site-muted">
+            {clientNotes.length}/{MAX_NOTES_LENGTH} caractères
           </p>
-        )}
+        </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPTED_IMAGE_TYPES.join(",")}
-          className="sr-only"
-          onChange={handleFileChange}
-        />
-
-        {referencePhotoPreview ? (
-          <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-            <Image
-              src={referencePhotoPreview}
-              alt="Photo de référence"
-              width={800}
-              height={400}
-              unoptimized
-              className="w-full h-[200px] object-cover"
-            />
-            <button
-              type="button"
-              onClick={onPhotoRemove}
-              className="absolute top-2 right-2 rounded-full bg-white/95 p-1.5 shadow border border-slate-200 text-slate-700 hover:bg-white"
-              aria-label="Supprimer la photo"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            {referencePhotoFile && (
-              <p className="text-[11px] text-slate-500 px-3 py-2 border-t border-slate-100 truncate">
-                {referencePhotoFile.name}
-              </p>
+        <div className="flex flex-col gap-2.5">
+          <div>
+            <p className="text-[15px] font-semibold">Photo de référence</p>
+            <p className="text-[13px] text-site-muted">Montrez le style que vous voulez.</p>
+          </div>
+          {photoError && (
+            <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{photoError}</p>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_IMAGE_TYPES.join(",")}
+            className="sr-only"
+            onChange={handleFileChange}
+          />
+          <div className="grid grid-cols-3 gap-2.5">
+            {referencePhotoPreview ? (
+              <div className="relative aspect-square overflow-hidden rounded-[14px] bg-site-media">
+                <Image src={referencePhotoPreview} alt="Photo de référence" fill unoptimized className="object-cover" />
+                <button
+                  type="button"
+                  onClick={onPhotoRemove}
+                  aria-label="Retirer la photo"
+                  className="absolute right-1 top-1 grid size-8 place-items-center rounded-full bg-[rgba(17,17,17,0.72)] text-white"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-[14px] border-[1.5px] border-dashed border-site-border-strong bg-site-surface-2 text-[13px] font-semibold text-site-fg transition-colors hover:bg-site-surface"
+              >
+                <Camera className="size-6" strokeWidth={1.8} />
+                Ajouter
+              </button>
             )}
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-[#53745D] hover:border-[#53745D]/40 hover:bg-[#F0F4F1]/50 transition-colors"
-          >
-            <ImagePlus className="h-8 w-8" />
-            <span className="text-sm font-medium">Ajouter une photo</span>
-          </button>
-        )}
+          <p className="text-xs text-site-muted">Seule {salonName} verra votre photo.</p>
+        </div>
       </div>
 
-      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
-        <Button type="button" className="flex-1" onClick={onContinue}>
-          {hasContent ? "Continuer" : "Passer cette étape"}
-        </Button>
+      <WebBookingStepActions
+        summary={summary}
+        secondary={
+          hasContent ? null : (
+            <WebBookingSecondaryAction onClick={onContinue}>Passer cette étape</WebBookingSecondaryAction>
+          )
+        }
+      >
+        <WebBookingCta type="button" onClick={onContinue}>
+          {hasContent ? "Continuer vers le paiement" : "Continuer sans note"}
+        </WebBookingCta>
       </WebBookingStepActions>
-    </div>
+    </>
   );
 }

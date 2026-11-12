@@ -1,17 +1,11 @@
 "use client";
 
 import { getSalonBookingAvailabilityApi } from "@/app/data/services";
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { useQuery } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, startOfDay } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { addDays, format, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -22,7 +16,7 @@ import type {
   WebBookingAssignmentMode,
   WebBookingStaffMember,
 } from "./types";
-import { WebBookingStepActions } from "./WebBookingStepActions";
+import { WebBookingCta, WebBookingStepActions, type WebBookingFooterSummary } from "./WebBookingStepActions";
 
 interface WebBookingSlotPanelProps {
   salonId: string;
@@ -38,13 +32,16 @@ interface WebBookingSlotPanelProps {
   employeeId: string | undefined;
   onEmployeeIdChange: (id: string | undefined) => void;
   onContinue: () => void;
-  onBack?: () => void;
-  backLabel?: string;
-  layoutVariant?: "modal" | "page";
+  /** Résumé de la sélection, avec lien « Modifier » vers l'étape prestation. */
+  selectionTitle: string;
+  selectionMeta: string;
+  onEditSelection: () => void;
+  summary: WebBookingFooterSummary | null;
 }
 
-function todayISODate(): string {
-  const d = new Date();
+const DAY_STRIP_LENGTH = 5;
+
+function localDateToISO(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -58,13 +55,14 @@ function parseISODateToLocal(iso: string): Date | undefined {
   return new Date(y, mo - 1, d);
 }
 
-function localDateToISO(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
+const initialsOf = (s: WebBookingStaffMember) =>
+  `${s.firstName?.[0] ?? ""}${s.lastName?.[0] ?? ""}`.toUpperCase() || "?";
 
+/**
+ * Étape créneau (maquette) : récapitulatif avec « Modifier », choix de la
+ * professionnelle en avatars, bande de cinq jours + calendrier complet, grille
+ * de créneaux sur trois colonnes.
+ */
 export function WebBookingSlotPanel({
   salonId,
   durationMin,
@@ -78,277 +76,290 @@ export function WebBookingSlotPanel({
   employeeId,
   onEmployeeIdChange,
   onContinue,
-  onBack,
-  backLabel,
-  layoutVariant = "modal",
+  selectionTitle,
+  selectionMeta,
+  onEditSelection,
+  summary,
 }: WebBookingSlotPanelProps) {
-  const [date, setDate] = useState(() => todayISODate());
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [date, setDate] = useState(() => localDateToISO(today));
+  const [stripStart, setStripStart] = useState<Date>(today);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
-  const selectedCalendarDate = useMemo(
-    () => parseISODateToLocal(date),
-    [date],
+  const selectedCalendarDate = useMemo(() => parseISODateToLocal(date), [date]);
+  const stripDays = useMemo(
+    () => Array.from({ length: DAY_STRIP_LENGTH }, (_, i) => addDays(stripStart, i)),
+    [stripStart],
   );
 
-  const availabilityEmployeeId =
-    assignmentMode === "SPECIFIC_EMPLOYEE" ? employeeId : undefined;
+  const availabilityEmployeeId = assignmentMode === "SPECIFIC_EMPLOYEE" ? employeeId : undefined;
   const availabilityAssignmentMode: WebBookingAssignmentMode =
-    assignmentMode === "SPECIFIC_EMPLOYEE"
-      ? "SPECIFIC_EMPLOYEE"
-      : "FIRST_AVAILABLE";
+    assignmentMode === "SPECIFIC_EMPLOYEE" ? "SPECIFIC_EMPLOYEE" : "FIRST_AVAILABLE";
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: [
-      "web-booking-availability",
-      salonId,
-      date,
-      durationMin,
-      availabilityAssignmentMode,
-      availabilityEmployeeId ?? "",
-    ],
+    queryKey: ["web-booking-availability", salonId, date, durationMin, availabilityAssignmentMode, availabilityEmployeeId ?? ""],
     queryFn: async (): Promise<SalonBookingAvailabilityPayload | null> => {
-      const res = await getSalonBookingAvailabilityApi(
-        salonId,
-        date,
-        durationMin,
-        {
-          employeeId: availabilityEmployeeId,
-          assignmentMode: availabilityAssignmentMode,
-        },
-      );
+      const res = await getSalonBookingAvailabilityApi(salonId, date, durationMin, {
+        employeeId: availabilityEmployeeId,
+        assignmentMode: availabilityAssignmentMode,
+      });
       if (!res?.success || !res?.data) return null;
       return res.data as SalonBookingAvailabilityPayload;
     },
     enabled:
-      !!salonId &&
-      !!date &&
-      durationMin > 0 &&
-      !!selectedOptionId &&
-      (assignmentMode === "FIRST_AVAILABLE" || !!employeeId),
+      !!salonId && !!date && durationMin > 0 && !!selectedOptionId && (assignmentMode === "FIRST_AVAILABLE" || !!employeeId),
     staleTime: 60_000,
   });
 
-  const slots = useMemo(() => {
-    const list = data?.day?.timeSlots ?? [];
-    return list.filter((s) => s.available);
-  }, [data]);
+  const slots = useMemo(() => (data?.day?.timeSlots ?? []).filter((s) => s.available), [data]);
+  const showSlotPro = hasEmployees && assignmentMode === "FIRST_AVAILABLE";
 
   const canContinue =
     !!selectedOptionId &&
     !!selectedSlot &&
-    (assignmentMode === "FIRST_AVAILABLE" ||
-      (assignmentMode === "SPECIFIC_EMPLOYEE" && !!employeeId));
+    (assignmentMode === "FIRST_AVAILABLE" || (assignmentMode === "SPECIFIC_EMPLOYEE" && !!employeeId));
+
+  const pickDate = (d: Date) => {
+    setDate(localDateToISO(d));
+    onSelectSlot(null);
+  };
+
+  const slotNote = isLoading || isFetching
+    ? "Chargement…"
+    : isError || !data
+      ? ""
+      : slots.length === 0
+        ? "Aucun créneau"
+        : `${slots.length} créneau${slots.length > 1 ? "x" : ""}`;
 
   if (!selectedOptionId) {
     return (
-      <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-        Choisissez d&apos;abord une option de prestation.
-      </p>
+      <div className="px-5 py-5">
+        <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Choisissez d&apos;abord une formule de prestation.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "space-y-5 overflow-y-auto pr-1",
-        layoutVariant === "page"
-          ? "max-h-none pb-2"
-          : "max-h-[min(70vh,520px)]",
-      )}
-    >
-      {hasEmployees && (
-        <div>
-          <Label className="text-base font-semibold">
-            Choix du professionnel
-          </Label>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                onSelectSlot(null);
-                onAssignmentModeChange("FIRST_AVAILABLE");
-                onEmployeeIdChange(undefined);
-              }}
-              className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                assignmentMode === "FIRST_AVAILABLE"
-                  ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40"
-              }`}
-            >
-              Premier disponible
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const first = staffOptions[0];
-                if (!first?.id) return;
-                onSelectSlot(null);
-                onAssignmentModeChange("SPECIFIC_EMPLOYEE");
-                onEmployeeIdChange(first.id);
-              }}
-              className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                assignmentMode === "SPECIFIC_EMPLOYEE"
-                  ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40"
-              }`}
-            >
-              Choisir un professionnel
-            </button>
+    <>
+      <div className="flex flex-1 flex-col gap-5 px-5 pb-5 pt-5">
+        {/* Récapitulatif */}
+        <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-site-border bg-site-surface-2 px-4 py-1">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <p className="truncate font-semibold">{selectionTitle}</p>
+            <p className="text-sm text-site-fg-2">{selectionMeta}</p>
           </div>
-          {assignmentMode === "SPECIFIC_EMPLOYEE" && staffOptions.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {staffOptions.map((s) => {
-                const active = s.id === employeeId;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => {
-                      onSelectSlot(null);
-                      onAssignmentModeChange("SPECIFIC_EMPLOYEE");
-                      onEmployeeIdChange(s.id);
-                    }}
-                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                      active
-                        ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40"
-                    }`}
-                  >
-                    {s.firstName} {s.lastName?.charAt(0)}.
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      <div>
-        <Label htmlFor="wb-date" className="text-base font-semibold">
-          Date
-        </Label>
-        <Popover
-          open={datePickerOpen}
-          onOpenChange={setDatePickerOpen}
-          modal={false}
-        >
-          <PopoverTrigger asChild>
-            <Button
-              id="wb-date"
-              type="button"
-              variant="outline"
-              aria-expanded={datePickerOpen}
-              className={cn(
-                "mt-2 h-11 w-full justify-between rounded-lg border-slate-200 bg-white px-3 py-2 text-left font-normal text-slate-900 shadow-sm hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-[#53745D]/30 focus-visible:ring-offset-0",
-                !selectedCalendarDate && "text-slate-500",
-              )}
-            >
-              <span className="truncate">
-                {selectedCalendarDate
-                  ? format(selectedCalendarDate, "EEEE d MMMM yyyy", {
-                      locale: fr,
-                    })
-                  : "Choisir une date"}
-              </span>
-              <CalendarIcon
-                className="h-4 w-4 shrink-0 text-slate-500"
-                aria-hidden
-              />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="z-[120] w-auto border-slate-200 p-0 shadow-lg"
-            align="start"
-          >
-            <Calendar
-              mode="single"
-              locale={fr}
-              selected={selectedCalendarDate}
-              onSelect={(d) => {
-                if (d) {
-                  setDate(localDateToISO(d));
-                  onSelectSlot(null);
-                  setDatePickerOpen(false);
-                }
-              }}
-              disabled={{ before: startOfDay(new Date()) }}
-              initialFocus
-              classNames={{
-                day_selected:
-                  "bg-[#53745D] text-white hover:bg-[#4A6854] hover:text-white focus:bg-[#53745D] focus:text-white",
-                day_today:
-                  "bg-[#F0F4F1] text-[#53745D] font-semibold aria-selected:bg-[#53745D] aria-selected:text-white",
-              }}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between">
-          <Label className="text-base font-semibold">Créneaux</Label>
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="sm"
-            className="text-[#53745D] hover:bg-[#F0F4F1] hover:text-[#3a5a47]"
-            onClick={() => refetch()}
-            disabled={isFetching}
+            onClick={onEditSelection}
+            className="flex min-h-11 items-center text-sm font-semibold text-site-accent hover:underline"
           >
-            Actualiser
-          </Button>
+            Modifier
+          </button>
         </div>
-        {isLoading || isFetching ? (
-          <div className="flex items-center gap-2 text-slate-500 text-sm py-6 justify-center">
-            <Loader2 className="h-4 w-4 animate-spin text-[#53745D]" />
-            Chargement des disponibilités…
+
+        {/* Professionnelle */}
+        {hasEmployees && staffOptions.length > 0 && (
+          <div role="radiogroup" aria-labelledby="wb-pro-title" className="flex flex-col gap-2.5">
+            <p id="wb-pro-title" className="font-semibold">
+              Avec qui ?
+            </p>
+            <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+              <StaffChoice
+                checked={assignmentMode === "FIRST_AVAILABLE"}
+                initials="✓"
+                name="Peu importe"
+                onClick={() => {
+                  onSelectSlot(null);
+                  onAssignmentModeChange("FIRST_AVAILABLE");
+                  onEmployeeIdChange(undefined);
+                }}
+              />
+              {staffOptions.map((s) => (
+                <StaffChoice
+                  key={s.id}
+                  checked={assignmentMode === "SPECIFIC_EMPLOYEE" && s.id === employeeId}
+                  initials={initialsOf(s)}
+                  name={`${s.firstName}${s.lastName ? ` ${s.lastName.charAt(0)}.` : ""}`}
+                  onClick={() => {
+                    onSelectSlot(null);
+                    onAssignmentModeChange("SPECIFIC_EMPLOYEE");
+                    onEmployeeIdChange(s.id);
+                  }}
+                />
+              ))}
+            </div>
           </div>
-        ) : isError || !data ? (
-          <p className="text-sm text-red-600 py-4">
-            Impossible de charger les créneaux. Réessayez plus tard.
-          </p>
-        ) : data.day?.hasHoliday ? (
-          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-            {data.day.holidayReason || "Le salon est fermé ce jour-là."}
-          </p>
-        ) : slots.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4">
-            Aucun créneau libre pour cette date. Choisissez un autre jour.
-          </p>
-        ) : (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {slots.map((slot) => {
-              const selected =
-                selectedSlot?.startDateTime === slot.startDateTime;
+        )}
+
+        {/* Date */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-semibold capitalize">
+              {selectedCalendarDate ? format(selectedCalendarDate, "MMMM yyyy", { locale: fr }) : "Date"}
+            </p>
+            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen} modal={false}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Ouvrir le calendrier"
+                  aria-expanded={datePickerOpen}
+                  className="flex min-h-10 items-center gap-1.5 rounded-full border border-site-border-strong bg-site-bg px-3.5 text-sm font-semibold text-site-fg hover:bg-site-surface"
+                >
+                  <CalendarIcon className="size-4" />
+                  Calendrier
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="z-[120] w-auto rounded-2xl border-site-border p-0 shadow-lg" align="end">
+                <Calendar
+                  mode="single"
+                  locale={fr}
+                  selected={selectedCalendarDate}
+                  onSelect={(d) => {
+                    if (!d) return;
+                    pickDate(d);
+                    setStripStart(startOfDay(d));
+                    setDatePickerOpen(false);
+                  }}
+                  disabled={{ before: today }}
+                  initialFocus
+                  classNames={{
+                    day_selected:
+                      "bg-site-accent text-site-on-accent hover:bg-site-accent hover:text-site-on-accent focus:bg-site-accent focus:text-site-on-accent",
+                    day_today: "bg-site-accent-soft text-site-fg font-semibold aria-selected:bg-site-accent aria-selected:text-site-on-accent",
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${DAY_STRIP_LENGTH}, minmax(0, 1fr))` }}>
+            {stripDays.map((d) => {
+              const iso = localDateToISO(d);
+              const active = iso === date;
               return (
                 <button
-                  key={slot.startDateTime}
+                  key={iso}
                   type="button"
-                  onClick={() => onSelectSlot(slot)}
-                  className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
-                    selected
-                      ? "border-[#53745D] bg-[#F0F4F1] text-[#3a5a47]"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-[#53745D]/40 hover:bg-[#F0F4F1]/40"
-                  }`}
+                  aria-pressed={active}
+                  aria-label={format(d, "EEEE d MMMM", { locale: fr })}
+                  onClick={() => pickDate(d)}
+                  className={cn(
+                    "flex h-[68px] flex-col items-center justify-center gap-0.5 rounded-[14px] border transition-colors",
+                    active
+                      ? "border-site-accent bg-site-accent text-site-on-accent"
+                      : "border-site-border-strong bg-site-bg text-site-fg hover:bg-site-surface",
+                  )}
                 >
-                  {slot.startTime}
+                  <span className="text-xs capitalize">{format(d, "EEE", { locale: fr }).replace(".", "")}</span>
+                  <span className="text-lg font-semibold tabular-nums">{format(d, "d")}</span>
                 </button>
               );
             })}
           </div>
-        )}
+        </div>
+
+        {/* Créneaux */}
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-semibold">Créneaux</p>
+            <p className="text-[13px] text-site-muted">{slotNote}</p>
+          </div>
+          {isLoading || isFetching ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-sm text-site-muted">
+              <Loader2 className="size-4 animate-spin text-site-accent" />
+              Chargement des disponibilités…
+            </div>
+          ) : isError || !data ? (
+            <div className="flex flex-col items-start gap-2 py-2">
+              <p className="text-sm text-red-600">Impossible de charger les créneaux.</p>
+              <button type="button" onClick={() => refetch()} className="text-sm font-semibold text-site-accent underline">
+                Réessayer
+              </button>
+            </div>
+          ) : data.day?.hasHoliday ? (
+            <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              {data.day.holidayReason || "Le salon est fermé ce jour-là."}
+            </p>
+          ) : slots.length === 0 ? (
+            <p className="py-2 text-sm text-site-muted">Aucun créneau libre pour cette date. Choisissez un autre jour.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {slots.map((slot) => {
+                const selected = selectedSlot?.startDateTime === slot.startDateTime;
+                return (
+                  <button
+                    key={slot.startDateTime}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onSelectSlot(slot)}
+                    className={cn(
+                      "flex min-h-12 flex-col items-center justify-center rounded-xl border py-1 transition-colors",
+                      selected
+                        ? "border-site-accent bg-site-accent text-site-on-accent"
+                        : "border-site-border-strong bg-site-bg text-site-fg hover:bg-site-surface",
+                    )}
+                  >
+                    <span className="text-[15px] font-semibold leading-[1.2] tabular-nums">{slot.startTime}</span>
+                    {showSlotPro && slot.suggestedEmployee?.firstName && (
+                      <span className={cn("text-[11px] leading-[1.2]", selected ? "opacity-80" : "text-site-muted")}>
+                        {slot.suggestedEmployee.firstName}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      <WebBookingStepActions onBack={onBack} backLabel={backLabel}>
-        <Button
-          type="button"
-          className="flex-1 bg-gradient-to-r from-[#53745D] to-[#3a5a47] text-white shadow-md hover:brightness-110 disabled:opacity-50 disabled:hover:brightness-100"
-          disabled={!canContinue}
-          onClick={onContinue}
-        >
-          Continuer vers les remarques
-        </Button>
+      <WebBookingStepActions summary={summary}>
+        <WebBookingCta type="button" disabled={!canContinue} onClick={onContinue}>
+          Continuer
+        </WebBookingCta>
       </WebBookingStepActions>
-    </div>
+    </>
+  );
+}
+
+function StaffChoice({
+  checked,
+  initials,
+  name,
+  onClick,
+}: {
+  checked: boolean;
+  initials: string;
+  name: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={checked}
+      onClick={onClick}
+      className="flex min-w-[64px] shrink-0 flex-col items-center gap-1 text-site-fg"
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "flex size-10 rounded-full border-2 p-0.5",
+          checked ? "border-site-accent" : "border-transparent",
+        )}
+      >
+        <span
+          className={cn(
+            "flex flex-1 items-center justify-center rounded-full font-site-display text-[11px] font-bold",
+            checked ? "bg-site-accent text-site-on-accent" : "bg-site-surface text-site-fg",
+          )}
+        >
+          {initials}
+        </span>
+      </span>
+      <span className={cn("max-w-[72px] truncate text-center text-xs leading-[1.2]", checked && "font-semibold")}>{name}</span>
+    </button>
   );
 }

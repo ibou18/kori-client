@@ -1,9 +1,7 @@
 "use client";
 
-import { Clock } from "lucide-react";
-import { useSalonTheme } from "../theme/SalonThemeProvider";
+import { cn } from "@/lib/utils";
 import type { OpeningHours } from "../types";
-import { SalonSectionHeading } from "./SalonSectionHeading";
 
 const DAYS: Array<{ key: keyof OpeningHours; fr: string; en: string; jsDay: number }> = [
   { key: "monday", fr: "Lundi", en: "Monday", jsDay: 1 },
@@ -34,100 +32,86 @@ function nowInTimezone(timezone?: string): { day: number; hhmm: string } | null 
   }
 }
 
+export function salonHasHours(openingHours?: OpeningHours): boolean {
+  return !!openingHours && DAYS.some((d) => {
+    const h = openingHours[d.key];
+    return !!(h && h.open && h.close);
+  });
+}
+
 /**
- * Horaires d'ouverture avec le jour courant surligné et un badge
- * « Ouvert · ferme à … » calculé dans le fuseau du salon, pas celui du visiteur.
+ * Carte « Heures d'ouverture » (maquette), affichée sous les onglets. Jour
+ * courant en gras et couleur accent, badge « Ouvert · ferme à … » calculé dans
+ * le fuseau du salon, pas celui du visiteur.
  */
 export function SalonHours({
   openingHours,
   timezone,
   isEn,
+  className,
 }: {
   openingHours?: OpeningHours;
   timezone?: string;
   isEn: boolean;
+  className?: string;
 }) {
-  const theme = useSalonTheme();
-  if (!openingHours) return null;
-  const hasAny = DAYS.some((d) => {
-    const h = openingHours[d.key];
-    return h && h.open && h.close;
-  });
-  if (!hasAny) return null;
+  if (!salonHasHours(openingHours)) return null;
+  const hours = openingHours!;
 
   const now = nowInTimezone(timezone);
   const today = now ? DAYS.find((d) => d.jsDay === now.day) : undefined;
-  const todayHours = today ? openingHours[today.key] : undefined;
+  const todayHours = today ? hours[today.key] : undefined;
   const isOpenNow =
-    !!now &&
-    !!todayHours?.open &&
-    !!todayHours?.close &&
-    now.hhmm >= todayHours.open &&
-    now.hhmm < todayHours.close;
+    !!now && !!todayHours?.open && !!todayHours?.close && now.hhmm >= todayHours.open && now.hhmm < todayHours.close;
 
   return (
-    <section id="horaires" className="scroll-mt-28 border-t border-black/[0.06] py-10">
-      <div className="grid gap-6 md:grid-cols-[0.9fr_1.1fr]">
-        <div>
-          <SalonSectionHeading
-            eyebrow={isEn ? "Hours" : "Horaires"}
-            title={isEn ? "When to come" : "Quand venir"}
-          />
-          {now && (
-            <span
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold"
-              style={{
-                background: isOpenNow ? `${theme.primaryColor}1F` : "rgba(15,23,42,.06)",
-                color: isOpenNow ? theme.primaryColor : "#64748b",
-              }}
-            >
-              <span
-                className="size-2 rounded-full"
-                style={{ background: isOpenNow ? theme.primaryColor : "#94a3b8" }}
-              />
-              {isOpenNow
-                ? `${isEn ? "Open · closes at" : "Ouvert · ferme à"} ${todayHours!.close}`
-                : isEn
-                  ? "Closed right now"
-                  : "Fermé en ce moment"}
-            </span>
-          )}
-        </div>
-        <div
-          className="rounded-2xl border bg-white p-5 shadow-sm"
-          style={{ borderColor: `${theme.primaryColor}33` }}
+    <section className={cn("flex flex-col gap-2.5 rounded-2xl border border-site-border p-4", className)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2
+          className="font-site-display text-xl font-bold"
+          style={{ textTransform: "var(--site-display-transform)" as never }}
         >
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <Clock className="size-4" style={{ color: theme.primaryColor }} />
-            {isEn ? "Opening hours" : "Horaires d'ouverture"}
-          </div>
-          <ul>
-            {DAYS.map((d) => {
-              const h = openingHours[d.key];
-              const open = !!(h && h.open && h.close);
-              const isToday = today?.key === d.key;
-              return (
-                <li
-                  key={d.key}
-                  className="flex items-center justify-between border-b border-slate-100 py-2 text-sm last:border-0"
-                  style={isToday ? { color: theme.primaryColor, fontWeight: 700 } : undefined}
-                >
-                  <span className={isToday ? "" : "font-medium text-slate-700"}>
-                    {isEn ? d.en : d.fr}
-                  </span>
-                  <span
-                    className={`tabular-nums ${
-                      open ? (isToday ? "" : "font-semibold text-slate-800") : "text-slate-400"
-                    }`}
-                  >
-                    {open ? `${h!.open} – ${h!.close}` : isEn ? "Closed" : "Fermé"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+          {isEn ? "Opening hours" : "Heures d'ouverture"}
+        </h2>
+        {now && (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+              isOpenNow ? "bg-site-accent-soft text-site-fg" : "bg-site-surface text-site-muted",
+            )}
+          >
+            <span className={cn("size-2 rounded-full", isOpenNow ? "bg-site-accent" : "bg-site-border-strong")} />
+            {isOpenNow
+              ? `${isEn ? "Open · closes at" : "Ouvert · ferme à"} ${todayHours!.close}`
+              : isEn
+                ? "Closed right now"
+                : "Fermé en ce moment"}
+          </span>
+        )}
       </div>
+      <ul className="flex flex-col">
+        {DAYS.map((d, i) => {
+          const h = hours[d.key];
+          const open = !!(h && h.open && h.close);
+          const isToday = today?.key === d.key;
+          return (
+            <li
+              key={d.key}
+              className={cn(
+                "flex min-h-11 items-center justify-between gap-3 text-sm",
+                i < DAYS.length - 1 && "border-b border-site-border",
+                isToday ? "font-semibold text-site-accent" : open ? "text-site-fg" : "text-site-muted",
+              )}
+            >
+              <span>{isEn ? d.en : d.fr}</span>
+              <span className="tabular-nums">{open ? `${h!.open} – ${h!.close}` : isEn ? "Closed" : "Fermé"}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-[13px] text-site-muted">
+        {isEn ? "Available slots are shown when you book." : "Les créneaux disponibles s'affichent au moment de réserver."}
+      </p>
     </section>
   );
 }

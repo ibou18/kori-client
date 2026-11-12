@@ -1,21 +1,16 @@
 "use client";
 
-import {
-  getSalonApi,
-  getSalonReviewsApi,
-  getSalonServicesApi,
-} from "@/app/data/services";
-import { CalendarCheck } from "lucide-react";
+import { getSalonApi, getSalonReviewsApi, getSalonServicesApi } from "@/app/data/services";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { SalonAbout } from "./sections/SalonAbout";
-import { SalonContact, salonHasContact } from "./sections/SalonContact";
+import { SalonAbout, salonHasAbout } from "./sections/SalonAbout";
 import { SalonFooter } from "./sections/SalonFooter";
-import { SalonHero } from "./sections/SalonHero";
-import { SalonHours } from "./sections/SalonHours";
+import { SalonGallery } from "./sections/SalonGallery";
+import { SalonHeader } from "./sections/SalonHeader";
+import { SalonHours, salonHasHours } from "./sections/SalonHours";
 import { SalonReviews } from "./sections/SalonReviews";
-import { SalonSectionNav, type SalonNavItem } from "./sections/SalonSectionNav";
 import { SalonServices } from "./sections/SalonServices";
+import { SalonTabs, type SalonTab, type SalonTabKey } from "./sections/SalonTabs";
 import {
   resolveSalonTheme,
   SALON_SITE_PREVIEW_MESSAGE,
@@ -26,11 +21,14 @@ import {
 import { SalonThemeProvider } from "./theme/SalonThemeProvider";
 import type { PublicReview, PublicSalon, PublicService } from "./types";
 
+const TAB_KEYS: SalonTabKey[] = ["prestations", "avis", "a-propos", "galerie"];
+
 /**
- * Mini-site public d'un salon : bandeau photos aux couleurs du salon, services,
- * à propos, horaires, avis, contact. Le thème vient de `salon.site` (null =
- * thème korí). En mode `?preview=1`, l'éditeur pousse un brouillon de thème
- * par `postMessage` sans rien enregistrer.
+ * Mini-site public d'un salon (maquette KAN-16) : entête selon le gabarit choisi
+ * (carrousel, bannière ou compact, avec ou sans logo), onglets Prestations ·
+ * Avis · À propos · Galerie, carte des horaires, pied de page. Le thème vient de
+ * `salon.site` (null = gabarit carrousel, noir-blanc-gris). En mode `?preview=1`,
+ * l'éditeur pousse un brouillon de thème par `postMessage` sans rien enregistrer.
  */
 export default function SalonSharePage() {
   const params = useParams();
@@ -46,11 +44,14 @@ export default function SalonSharePage() {
   const [error, setError] = useState<string | null>(null);
   const [previewSite, setPreviewSite] = useState<SalonSiteDto | null | undefined>(undefined);
   const [isPreview, setIsPreview] = useState(false);
+  const [tab, setTab] = useState<SalonTabKey>("prestations");
 
   // Mode aperçu : pas de deep link, écoute des brouillons de l'éditeur (même origine).
   useEffect(() => {
     const preview = new URLSearchParams(window.location.search).get("preview") === "1";
     setIsPreview(preview);
+    const hash = window.location.hash.replace("#", "") as SalonTabKey;
+    if (TAB_KEYS.includes(hash)) setTab(hash);
     if (!preview) return;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -114,10 +115,6 @@ export default function SalonSharePage() {
     [previewSite, salon?.site],
   );
 
-  const scrollToServices = useCallback(() => {
-    document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   const bookService = useCallback(
     (service: PublicService) => {
       if (isPreview) return;
@@ -126,12 +123,19 @@ export default function SalonSharePage() {
     [isPreview, locale, router, salonId],
   );
 
+  const changeTab = useCallback((next: SalonTabKey) => {
+    setTab(next);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", `#${next}`);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div data-salon-page className="mx-auto flex min-h-screen max-w-3xl items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-b-2 border-[#53745D]" />
-          <p className="text-slate-600">{isEn ? "Loading salon…" : "Chargement du salon..."}</p>
+          <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-b-2 border-neutral-900" />
+          <p className="text-neutral-600">{isEn ? "Loading salon…" : "Chargement du salon..."}</p>
         </div>
       </div>
     );
@@ -139,17 +143,15 @@ export default function SalonSharePage() {
 
   if (error || !salon) {
     return (
-      <div data-salon-page className="mx-auto flex min-h-screen max-w-3xl items-center justify-center">
+      <div data-salon-page className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-5">
         <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-slate-800">
-            {isEn ? "Salon not found" : "Salon non trouvé"}
-          </h1>
-          <p className="mb-6 text-slate-600">
+          <h1 className="mb-4 text-2xl font-bold text-neutral-900">{isEn ? "Salon not found" : "Salon non trouvé"}</h1>
+          <p className="mb-6 text-neutral-600">
             {error || (isEn ? "This salon does not exist" : "Ce salon n'existe pas")}
           </p>
           <button
             onClick={() => router.push("/")}
-            className="rounded-xl bg-gradient-to-r from-[#53745D] to-[#3a5a47] px-6 py-3 font-semibold text-white shadow-md transition-all hover:brightness-110"
+            className="h-12 rounded-full bg-neutral-900 px-6 font-semibold text-white"
           >
             {isEn ? "Back to home" : "Retour à l'accueil"}
           </button>
@@ -158,56 +160,47 @@ export default function SalonSharePage() {
     );
   }
 
-  const hasDescription = !!salon.description?.trim();
-  const photoCount = (salon.photos ?? []).filter((p) => p.url).length;
-  const hasHours = !!salon.openingHours && Object.values(salon.openingHours).some((h) => h?.open && h?.close);
-  const hasReviews = reviews.some((r) => r.comment?.trim());
-  const hasContact = salonHasContact(salon);
-
-  const navItems: SalonNavItem[] = [
-    services.length > 0 && { id: "services", label: isEn ? "Services" : "Services" },
-    hasDescription && { id: "a-propos", label: isEn ? "About" : "À propos" },
-    photoCount >= 2 && { id: "galerie", label: isEn ? "Gallery" : "Galerie" },
-    hasHours && { id: "horaires", label: isEn ? "Hours" : "Horaires" },
-    hasReviews && { id: "avis", label: isEn ? "Reviews" : "Avis" },
-    hasContact && { id: "contact", label: "Contact" },
-  ].filter(Boolean) as SalonNavItem[];
+  const hasReviews = (salon.reviewCount ?? 0) > 0 || reviews.length > 0;
+  const hasGallery = (salon.photos ?? []).filter((p) => p.url).length >= 1;
+  const tabs: SalonTab[] = [
+    { key: "prestations" as const, label: isEn ? "Services" : "Prestations" },
+    hasReviews && { key: "avis" as const, label: isEn ? "Reviews" : "Avis" },
+    salonHasAbout(salon) && { key: "a-propos" as const, label: isEn ? "About" : "À propos" },
+    hasGallery && { key: "galerie" as const, label: isEn ? "Gallery" : "Galerie" },
+  ].filter(Boolean) as SalonTab[];
+  const activeTab = tabs.some((t) => t.key === tab) ? tab : "prestations";
+  const showHours = salonHasHours(salon.openingHours);
 
   return (
-    <SalonThemeProvider theme={theme} className="-mt-4 min-h-screen">
-      <SalonHero salon={salon} isEn={isEn} onBook={scrollToServices} />
-      <SalonSectionNav items={navItems} />
+    <SalonThemeProvider theme={theme} className="-mx-4 -mb-12 -mt-4 flex min-h-screen flex-col lg:-mx-8">
+      <SalonHeader salon={salon} isEn={isEn} onShowReviews={hasReviews ? () => changeTab("avis") : undefined} />
 
-      <div className="mx-auto max-w-5xl sm:px-4">
-        <SalonServices services={services} isEn={isEn} onBookService={bookService} />
-        <SalonAbout salon={salon} isEn={isEn} />
-        <SalonHours openingHours={salon.openingHours} timezone={salon.timezone} isEn={isEn} />
-        <SalonReviews
-          reviews={reviews}
-          rating={salon.rating}
-          reviewCount={salon.reviewCount}
-          isEn={isEn}
-        />
-        <SalonContact salon={salon} isEn={isEn} />
+      <div className="mx-auto w-full max-w-5xl flex-1 lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-8 lg:px-8 lg:pt-2">
+        <div className="min-w-0">
+          <SalonTabs tabs={tabs} active={activeTab} onChange={changeTab} />
+          <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
+            {activeTab === "prestations" && (
+              <SalonServices services={services} isEn={isEn} onBookService={bookService} disabled={isPreview} />
+            )}
+            {activeTab === "avis" && (
+              <SalonReviews reviews={reviews} rating={salon.rating} reviewCount={salon.reviewCount} isEn={isEn} />
+            )}
+            {activeTab === "a-propos" && <SalonAbout salon={salon} isEn={isEn} />}
+            {activeTab === "galerie" && <SalonGallery salon={salon} isEn={isEn} />}
+          </div>
+        </div>
+
+        {showHours && (
+          <SalonHours
+            openingHours={salon.openingHours}
+            timezone={salon.timezone}
+            isEn={isEn}
+            className="mx-5 mb-7 mt-2 lg:sticky lg:top-20 lg:mx-0 lg:mt-14"
+          />
+        )}
       </div>
 
-      <SalonFooter salonId={salonId} isEn={isEn} />
-
-      {/* Barre d'action mobile : Réserver toujours à portée de pouce */}
-      {services.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-white/[0.92] p-3 backdrop-blur sm:hidden">
-          <button
-            type="button"
-            onClick={scrollToServices}
-            className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-bold shadow-lg"
-            style={{ background: theme.secondaryColor, color: theme.onSecondary }}
-          >
-            <CalendarCheck className="size-5" />
-            {isEn ? "Book an appointment" : "Réserver un rendez-vous"}
-          </button>
-        </div>
-      )}
-      <div className="h-20 sm:hidden" aria-hidden />
+      <SalonFooter locale={locale} isEn={isEn} />
     </SalonThemeProvider>
   );
 }

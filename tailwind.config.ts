@@ -53,12 +53,22 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
-        // Mini-site salon : variables posées par SalonThemeProvider
+        // Mini-site salon : variables posées par SalonThemeProvider (theme/salonTheme.ts)
         site: {
-          primary: "var(--site-primary)",
-          secondary: "var(--site-secondary)",
-          "on-primary": "var(--site-on-primary)",
-          "on-secondary": "var(--site-on-secondary)",
+          bg: "var(--site-bg)",
+          fg: "var(--site-fg)",
+          "fg-2": "var(--site-fg-2)",
+          muted: "var(--site-muted)",
+          surface: "var(--site-surface)",
+          "surface-2": "var(--site-surface-2)",
+          border: "var(--site-border)",
+          "border-strong": "var(--site-border-strong)",
+          "chip-border": "var(--site-chip-border)",
+          accent: "var(--site-accent)",
+          "on-accent": "var(--site-on-accent)",
+          "accent-soft": "var(--site-accent-soft)",
+          media: "var(--site-media)",
+          star: "var(--site-star)",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
