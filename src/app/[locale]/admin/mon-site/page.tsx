@@ -508,8 +508,8 @@ export default function MonSitePage() {
           <div className="flex justify-center rounded-2xl border border-slate-200 bg-slate-100 p-3">
             <div
               className={cn(
-                "overflow-hidden bg-white shadow-lg transition-all",
-                device === "mobile" ? "w-[390px] max-w-full rounded-[28px] border-[6px] border-slate-900" : "w-full rounded-xl",
+                "overflow-hidden rounded-xl bg-white shadow-lg transition-all",
+                device === "mobile" ? "w-[390px] max-w-full" : "w-full",
               )}
               style={{ height: "min(80vh, 900px)" }}
             >
