@@ -31,7 +31,7 @@ const inputClass =
   "h-12 w-full rounded-xl border border-site-border-strong bg-site-bg px-3.5 text-[15px] text-site-fg placeholder:text-site-muted focus:border-site-accent focus:outline-none focus:ring-2 focus:ring-site-accent/20 disabled:opacity-60";
 
 const phoneSelectClassName =
-  "h-12 w-[5.5rem] shrink-0 rounded-xl border border-site-border-strong bg-site-bg px-3 text-sm text-site-fg focus:border-site-accent focus:outline-none focus:ring-2 focus:ring-site-accent/20 disabled:cursor-not-allowed disabled:opacity-60";
+  "h-12 w-[6.75rem] rounded-xl border border-site-border-strong bg-site-bg pl-3.5 text-[15px] text-site-fg focus:border-site-accent focus:outline-none focus:ring-2 focus:ring-site-accent/20 disabled:cursor-not-allowed disabled:opacity-60";
 
 function Field({
   id,
@@ -287,6 +287,9 @@ export function ClientQuickAuthPanel({ onAuthenticated, summary }: ClientQuickAu
                 error={phoneFieldError}
                 disabled={loading}
                 selectClassName={phoneSelectClassName}
+                inputClassName={cn(inputClass, "shadow-none md:text-[15px]")}
+                labelClassName="text-sm font-medium text-site-fg"
+                className="space-y-1.5"
                 dialCodeOnly
               />
               <p className="text-xs text-site-muted">Optionnel. Utile pour le rappel par texto la veille.</p>

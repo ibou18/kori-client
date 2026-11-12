@@ -162,7 +162,8 @@ function ServiceRow({
   const detailsId = `service-sizes-${service.id}`;
 
   return (
-    <div className="flex items-center gap-3.5 border-b border-site-border py-3.5">
+    <div className="flex flex-col border-b border-site-border py-3.5">
+      <div className="flex items-center gap-3.5">
       {photo ? (
         <button
           type="button"
@@ -200,23 +201,9 @@ function ServiceRow({
             </strong>
           ) : null}
         </p>
-        {hasSizes && open && (
-          <ul id={detailsId} aria-label={isEn ? "Prices by option" : "Prix selon la formule"} className="mt-0.5 flex flex-col">
-            {opts.map((o, i) => {
-              const discounted = o.discountPrice != null && o.discountPrice < o.price;
-              return (
-                <li key={o.id} className="flex min-h-[26px] items-center gap-2 border-t border-site-border text-[13px]">
-                  <span className="flex-1 truncate">{o.name?.trim() || `Option ${i + 1}`}</span>
-                  {discounted && <s className="text-site-muted">{price(o.price)}</s>}
-                  <span className="font-semibold tabular-nums">{price(effective(o))}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </div>
 
-      <div className={cn("flex shrink-0 flex-col items-center gap-0.5", hasSizes && open && "self-start")}>
+      <div className="flex shrink-0 flex-col items-center gap-0.5">
         <button
           type="button"
           onClick={onBook}
@@ -239,6 +226,27 @@ function ServiceRow({
           </button>
         )}
       </div>
+      </div>
+
+      {/* Tailles / formules : sous la ligne, sur toute la largeur du texte (pas coincées à gauche du bouton). */}
+      {hasSizes && open && (
+        <ul
+          id={detailsId}
+          aria-label={isEn ? "Prices by option" : "Prix selon la formule"}
+          className="mt-2 flex flex-col pl-[78px]"
+        >
+          {opts.map((o, i) => {
+            const discounted = o.discountPrice != null && o.discountPrice < o.price;
+            return (
+              <li key={o.id} className="flex min-h-[28px] items-center gap-3 border-t border-site-border text-[13px]">
+                <span className="min-w-0 flex-1">{o.name?.trim() || `Option ${i + 1}`}</span>
+                {discounted && <s className="shrink-0 text-site-muted">{price(o.price)}</s>}
+                <span className="shrink-0 font-semibold tabular-nums">{price(effective(o))}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

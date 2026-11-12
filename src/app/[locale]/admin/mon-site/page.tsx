@@ -10,6 +10,7 @@ import {
 } from "@/app/data/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   contrastRatio,
   CUSTOM_ACCENT_PRESETS,
@@ -251,9 +252,9 @@ export default function MonSitePage() {
         ) : undefined
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[480px_1fr] xl:grid-cols-[560px_1fr]">
         {/* ---------------- Formulaire ---------------- */}
-        <aside className="space-y-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
+        <aside className="space-y-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:self-start lg:overflow-y-auto">
           {/* Gabarit */}
           <Field label="Gabarit d'entête" hint="La différence se joue sur l'entête ; le reste de la page est identique.">
             <div className="grid grid-cols-3 gap-2">
@@ -342,7 +343,7 @@ export default function MonSitePage() {
                   Désactivé : entête sans logo ni initiales, seulement votre nom.
                 </span>
               </span>
-              <Switch checked={draft.showLogo} onChange={(v) => patch({ showLogo: v })} label="Afficher le logo" />
+              <Switch checked={draft.showLogo} onChange={(v) => patch({ showLogo: v })} aria-label="Afficher le logo" className="shrink-0" />
             </label>
           </Field>
 
@@ -378,7 +379,7 @@ export default function MonSitePage() {
                     </span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-slate-800">{t.label}</span>
-                      <span className="block truncate text-[11px] text-slate-500">{t.description}</span>
+                      <span className="block text-[11px] leading-snug text-slate-500">{t.description}</span>
                     </span>
                   </button>
                 );
@@ -443,8 +444,8 @@ export default function MonSitePage() {
                     >
                       Aa
                     </span>
-                    <span className="mt-1.5 text-xs font-semibold text-slate-800">{f.label}</span>
-                    <span className="truncate text-[10px] text-slate-500">{f.mood}</span>
+                    <span className="mt-1.5 w-full text-xs font-semibold leading-tight text-slate-800">{f.label}</span>
+                    <span className="w-full min-w-0 text-[10px] leading-snug text-slate-500">{f.mood}</span>
                   </button>
                 );
               })}
@@ -569,29 +570,6 @@ function TemplateSketch({
         {lines}
       </span>
     </span>
-  );
-}
-
-function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-        checked ? "bg-slate-900" : "bg-slate-300",
-      )}
-    >
-      <span
-        className={cn(
-          "absolute top-0.5 size-5 rounded-full bg-white shadow transition-transform",
-          checked ? "translate-x-[22px]" : "translate-x-0.5",
-        )}
-      />
-    </button>
   );
 }
 

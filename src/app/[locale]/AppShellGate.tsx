@@ -20,8 +20,11 @@ export function AppShellGate({ useAdminShell, children }: { useAdminShell: boole
 
   if (isSitePreview) {
     // Mêmes marges que SalonPublicLayout : la page les annule pour être pleine largeur.
+    // `w-full` est indispensable : ce <main> est un enfant direct du conteneur flex-col
+    // de [locale]/layout.tsx, et un item flex avec `mx-auto` se rétrécit à la largeur
+    // de son contenu (la page changeait de largeur selon l'onglet affiché).
     return (
-      <main className="mx-auto px-4 lg:px-8">
+      <main className="mx-auto w-full px-4 lg:px-8">
         <div className="mt-4 min-h-screen">{children}</div>
       </main>
     );
