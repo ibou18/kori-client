@@ -10,7 +10,7 @@ import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Info, Loader2, Lock, Pencil, Plus } from "lucide-react";
+import { CalendarX2, Info, Loader2, Lock, Pencil, Plus } from "lucide-react";
 import Image from "next/image";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -29,6 +29,7 @@ import {
   normalizeOrder,
 } from "./bookingSelection";
 import { formatSalonPriceDollars, getOptionPriceDollars } from "./pricing";
+import { cancellationPolicyText, type QuoteCancellationPolicy } from "./cancellationPolicy";
 import { WebBookingProductsDialog } from "./WebBookingProductsDialog";
 import { WebBookingCta, WebBookingStepActions } from "./WebBookingStepActions";
 
@@ -84,6 +85,7 @@ interface PaymentQuote {
   productsAmount: number;
   onlineCharge: number;
   payOnSite: number;
+  cancellationPolicy?: QuoteCancellationPolicy;
 }
 
 const money = (v: number) => `${formatSalonPriceDollars(v)} $`;
@@ -259,6 +261,23 @@ export function WebBookingPayPanel({
   return (
     <>
       <div className="flex flex-1 flex-col gap-[18px] px-5 pb-5 pt-5">
+        {/* Politique d'annulation, discrète, juste sous le titre « Paiement ». */}
+        {quote && (
+          <p className="-mt-2 flex items-start gap-2 text-[13px] leading-[1.45] text-site-muted">
+            <CalendarX2 aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+            <span>
+              {cancellationPolicyText(quote.cancellationPolicy, quote.depositAmount > 0)}{" "}
+              <a
+                href={`/${locale}/cgv`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-site-fg"
+              >
+                Conditions
+              </a>
+            </span>
+          </p>
+        )}
         <div className="flex flex-col gap-1.5 rounded-2xl border border-site-border bg-site-surface-2 px-4 py-3.5 text-sm">
           {orderedLines.map((line) => (
             <Row

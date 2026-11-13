@@ -59,14 +59,44 @@ export default function CGVPage() {
               4. Annulation et Remboursement
             </h2>
             <p>
-              Les services sont payés à la prestation. Les remboursements sont
-              autorisés dans les cas suivants :
+              Les services sont payés à la prestation. Les remboursements suivent
+              les règles ci-dessous. La politique applicable à une réservation
+              est affichée en tête de l&apos;écran de paiement et reste celle en
+              vigueur au moment de la réservation, même si le salon la modifie
+              ensuite.
             </p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
+            <ul className="list-disc list-inside mt-2 space-y-2">
               <li>
-                <strong>Annulation par le client :</strong> Remboursement
-                intégral si l&apos;annulation est effectuée au moins 24h avant
-                la date et l&apos;heure du rendez-vous.
+                <strong>Politique d&apos;annulation du salon :</strong> chaque
+                salon peut définir sa propre politique pour l&apos;acompte, avec
+                deux paramètres : un délai avant le rendez-vous (de 1 heure à 7
+                jours) et un pourcentage de l&apos;acompte remboursé si le client
+                annule après ce délai. Si le client annule avant le délai,
+                l&apos;acompte est remboursé en entier. S&apos;il annule après,
+                il est remboursé selon le pourcentage choisi par le salon ; un
+                pourcentage de 0 % signifie qu&apos;aucun remboursement de
+                l&apos;acompte n&apos;est accordé.
+              </li>
+              <li>
+                <strong>Salon sans politique propre :</strong> si le client
+                annule au moins 24 h avant le rendez-vous, les frais de
+                réservation sont remboursés et l&apos;acompte reste acquis au
+                salon ; en deçà de 24 h, aucun remboursement n&apos;est accordé.
+              </li>
+              <li>
+                <strong>Frais de réservation Kori :</strong> remboursés si
+                l&apos;annulation par le client est effectuée au moins 24 h avant
+                la date et l&apos;heure du rendez-vous, quelle que soit la
+                politique du salon.
+              </li>
+              <li>
+                <strong>Réservation sans acompte :</strong> remboursement
+                intégral du montant payé en ligne si l&apos;annulation est
+                effectuée au moins 24 h avant le rendez-vous.
+              </li>
+              <li>
+                <strong>Produits achetés avec la réservation :</strong>
+                remboursés en entier en cas d&apos;annulation.
               </li>
               <li>
                 <strong>Annulation par le salon :</strong> Remboursement
@@ -119,7 +149,7 @@ export default function CGVPage() {
           </section>
 
           <p className="text-sm text-gray-500">
-            Dernière mise à jour : 26 Octobre 2025
+            Dernière mise à jour : 13 novembre 2026
           </p>
         </CardContent>
       </Card>
