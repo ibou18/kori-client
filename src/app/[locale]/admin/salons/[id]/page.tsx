@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { ADMIN } from "@/shared/constantes";
+import { ADMIN, OWNER } from "@/shared/constantes";
 import { SalonStatusBadge } from "@/utils/statusUtils";
 import dayjs from "dayjs";
 import type { LucideIcon } from "lucide-react";
@@ -38,6 +38,7 @@ import {
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
+import { SalonPhotosManager } from "./SalonPhotosManager";
 
 interface Address {
   id: string;
@@ -238,6 +239,8 @@ export default function SalonDetailPage() {
 
   const mainPhoto = salon.photos?.find((p) => p.isMain) || salon.photos?.[0];
   const isAdmin = (session.user as any)?.role === ADMIN;
+  // Propriétaire ou admin : le serveur revérifie la propriété du salon.
+  const canManagePhotos = isAdmin || (session.user as any)?.role === OWNER;
 
   const DAYS: [key: string, label: string][] = [
     ["monday", "Lundi"],
@@ -502,30 +505,33 @@ export default function SalonDetailPage() {
             )}
           </div>
 
-          {photos.length > 0 && (
-            <Section title="Photos" icon={ImageIcon} count={photos.length}>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-                {photos.map((photo) => (
-                  <div
-                    key={photo.id}
-                    className="relative aspect-square overflow-hidden rounded-lg bg-slate-100"
-                  >
-                    <Image
-                      src={photo.url}
-                      alt={photo.alt || salon.name}
-                      fill
-                      sizes="(min-width: 768px) 160px, 33vw"
-                      className="object-cover"
-                    />
-                    {photo.isMain && (
-                      <span className="absolute left-1.5 top-1.5 rounded-full bg-[#53745D] px-2 py-0.5 text-[10px] font-semibold text-white">
-                        Principale
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {canManagePhotos ? (
+            <Section title="Photos du salon" icon={ImageIcon} count={photos.length}>
+              <SalonPhotosManager salonId={salon.id} salonName={salon.name} />
             </Section>
+          ) : (
+            photos.length > 0 && (
+              <Section title="Photos" icon={ImageIcon} count={photos.length}>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="relative aspect-square overflow-hidden rounded-lg bg-slate-100">
+                      <Image
+                        src={photo.url}
+                        alt={photo.alt || salon.name}
+                        fill
+                        sizes="(min-width: 768px) 160px, 33vw"
+                        className="object-cover"
+                      />
+                      {photo.isMain && (
+                        <span className="absolute left-1.5 top-1.5 rounded-full bg-[#53745D] px-2 py-0.5 text-[10px] font-semibold text-white">
+                          Principale
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            )
           )}
 
           {services.length > 0 && (

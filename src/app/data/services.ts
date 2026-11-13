@@ -1612,6 +1612,32 @@ export const deleteSalonPhotoApi = async (photoId: string) => {
   }
 };
 
+/**
+ * Espace pro « Mon salon » : photos du salon. Erreurs axios brutes (lues par l'écran).
+ * Nom de fichier rendu unique : la clé S3 reprend le nom d'origine, deux « IMG_0001.jpg »
+ * s'écraseraient (et supprimer l'une effacerait l'autre).
+ */
+export const uploadSalonPhotoProApi = async (salonId: string, file: File, isMain = false) => {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const formData = new FormData();
+  formData.append("photo", file, `salon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`);
+  if (isMain) formData.append("isMain", "true");
+  const response = await requestWrapper.post(`/photos/salon/${salonId}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data as { success: boolean; data: any };
+};
+
+export const setMainSalonPhotoApi = async (salonId: string, photoId: string) => {
+  const response = await requestWrapper.put(`/photos/salon/${salonId}/main/${photoId}`);
+  return response.data as { success: boolean; data: any };
+};
+
+export const deleteSalonPhotoProApi = async (photoId: string) => {
+  const response = await requestWrapper.delete(`/photos/salon/${photoId}`);
+  return response.data as { success: boolean; data: any };
+};
+
 export const uploadBookingPhotoApi = async (bookingId: string, file: File) => {
   const formData = new FormData();
   formData.append("photo", file);
