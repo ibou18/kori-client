@@ -90,7 +90,7 @@ const money = (v: number) => `${formatSalonPriceDollars(v)} $`;
 
 /**
  * Étape paiement (maquette) : récapitulatif de la réservation, détail de ce qui
- * est payé maintenant (acompte éventuel, frais de service + taxes, produits) et de
+ * est payé maintenant (acompte éventuel, frais de service, produits) et de
  * ce qui reste dû au salon, puis redirection vers Stripe Checkout.
  * Les montants viennent du devis serveur (`POST /payments/quote`), calculé comme à
  * la création de la réservation : l'écran annonce exactement ce que Stripe débitera.
@@ -293,7 +293,7 @@ export function WebBookingPayPanel({
             <Row
               label={
                 <>
-                  Frais de service{quote ? ` (${Math.round(quote.commissionRate * 100)} %)` : ""}
+                  Frais de service
                   <button
                     type="button"
                     onClick={() => setFeeInfoOpen((v) => !v)}
@@ -306,7 +306,9 @@ export function WebBookingPayPanel({
                   </button>
                 </>
               }
-              value={quote ? money(quote.platformFee) : <Loader2 className="size-4 animate-spin" />}
+              // Kori ne facture plus de taxes sur ses frais : `tax` vaut 0 ; additionné par
+              // sécurité pour que les lignes affichées tombent toujours sur le total.
+              value={quote ? money(quote.platformFee + quote.tax) : <Loader2 className="size-4 animate-spin" />}
             />
             {feeInfoOpen && (
               <div
@@ -314,14 +316,12 @@ export function WebBookingPayPanel({
                 role="note"
                 className="rounded-xl bg-site-accent px-3 py-2.5 text-[13px] leading-[1.45] text-site-on-accent"
               >
-                Ces frais couvrent le paiement sécurisé et le fonctionnement de korí. Ils sont payés une seule fois,
-                au moment de la réservation.
+                Merci de votre confiance ! Ces frais de service
+                {quote ? ` (${Math.round(quote.commissionRate * 100)} % du prix de la prestation)` : ""} font vivre
+                korí : paiement sécurisé, rappels de rendez-vous et une équipe à votre écoute. Ils sont payés une seule
+                fois, au moment de la réservation.
               </div>
             )}
-            <Row
-              label={`Taxes${province ? ` (${province})` : ""}`}
-              value={quote ? money(quote.tax) : <Loader2 className="size-4 animate-spin" />}
-            />
           </div>
 
           {(products.length > 0 || canEditProducts) && (
