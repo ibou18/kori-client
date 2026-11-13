@@ -10,14 +10,14 @@ import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Info, Loader2, Lock } from "lucide-react";
+import { Info, Loader2, Lock, Pencil, Plus } from "lucide-react";
 import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { formatCents, readApiError } from "../../shop/format";
 import { cartToOrderItems } from "../../shop/productCart";
-import type { CartItem } from "../../shop/types";
+import type { CartItem, PublicProduct } from "../../shop/types";
 
 import type { SalonBookingTimeSlot, WebBookingAssignmentMode, WebBookingSelectedService } from "./types";
 import {
@@ -29,6 +29,7 @@ import {
   normalizeOrder,
 } from "./bookingSelection";
 import { formatSalonPriceDollars, getOptionPriceDollars } from "./pricing";
+import { WebBookingProductsDialog } from "./WebBookingProductsDialog";
 import { WebBookingCta, WebBookingStepActions } from "./WebBookingStepActions";
 
 /** Motifs de refus de POST /bookings, en français (aligné app mobile). */
@@ -66,6 +67,10 @@ interface WebBookingPayPanelProps {
   referencePhotoPreview?: string | null;
   /** Produits à récupérer pendant le rendez-vous, payés en entier avec la réservation. */
   products?: CartItem[];
+  /** Produits en vente du salon : permet de modifier le panier depuis cette étape (vide = boutique fermée). */
+  shopProducts?: PublicProduct[];
+  /** 0 = retirer. Requis avec `shopProducts`. */
+  onSetProductQuantity?: (product: PublicProduct, quantity: number) => void;
 }
 
 /** Réponse de POST /payments/quote (montants en dollars), source unique des montants. */
@@ -107,10 +112,14 @@ export function WebBookingPayPanel({
   referencePhotoFile = null,
   referencePhotoPreview = null,
   products = [],
+  shopProducts = [],
+  onSetProductQuantity,
 }: WebBookingPayPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [feeInfoOpen, setFeeInfoOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
+  const canEditProducts = shopProducts.length > 0 && !!onSetProductQuantity;
 
   const orderedLines = normalizeOrder(lines);
   const servicePrice = getServicesTotalDollars(orderedLines);
@@ -121,7 +130,7 @@ export function WebBookingPayPanel({
   const productItems = cartToOrderItems(products);
   const {
     data: quote,
-    isLoading: quoteLoading,
+    isFetching: quoteFetching,
     error: quoteError,
   } = useQuery({
     queryKey: ["web-booking-quote", salonId, clientSubtotalDollars, province, productItems],
@@ -136,11 +145,14 @@ export function WebBookingPayPanel({
       return res.data;
     },
     retry: false,
+    // Panier modifié : on garde l'ancien devis affiché pendant le recalcul (pas de saut
+    // de mise en page) ; total et bouton Payer restent en attente tant qu'il tourne.
+    placeholderData: keepPreviousData,
   });
   const quoteErrorMessage = quoteError ? readApiError(quoteError, BOOKING_ERROR_MESSAGES).message : null;
 
   const payNow = quote?.onlineCharge ?? null;
-  const taxLoading = quoteLoading;
+  const taxLoading = quoteFetching;
   const trimmedNotes = clientNotes.trim();
   const hasClientRemarks = trimmedNotes.length > 0 || !!referencePhotoFile;
   const slotDate = new Date(selectedSlot.startDateTime);
@@ -312,16 +324,43 @@ export function WebBookingPayPanel({
             />
           </div>
 
-          {products.length > 0 && (
+          {(products.length > 0 || canEditProducts) && (
             <div className="mt-1 flex flex-col gap-1.5 border-t border-site-border pt-2.5">
-              <p className="text-[13px] font-semibold">Produits · payés en entier, à récupérer au salon</p>
-              {products.map((item) => (
-                <Row
-                  key={item.productId}
-                  label={`${item.name} × ${item.quantity}`}
-                  value={formatCents(item.priceCents * item.quantity)}
-                />
-              ))}
+              {products.length > 0 ? (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[13px] font-semibold">Produits · payés en entier, à récupérer au salon</p>
+                    {canEditProducts && (
+                      <button
+                        type="button"
+                        onClick={() => setProductsOpen(true)}
+                        disabled={loading}
+                        className="-my-2 inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-semibold text-site-accent hover:underline disabled:opacity-50"
+                      >
+                        <Pencil className="size-3.5" />
+                        Modifier
+                      </button>
+                    )}
+                  </div>
+                  {products.map((item) => (
+                    <Row
+                      key={item.productId}
+                      label={`${item.name} × ${item.quantity}`}
+                      value={formatCents(item.priceCents * item.quantity)}
+                    />
+                  ))}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setProductsOpen(true)}
+                  disabled={loading}
+                  className="-my-1 inline-flex min-h-11 items-center gap-1.5 self-start text-[13px] font-semibold text-site-accent hover:underline disabled:opacity-50"
+                >
+                  <Plus className="size-4" />
+                  Ajouter des produits du salon
+                </button>
+              )}
             </div>
           )}
 
@@ -364,6 +403,16 @@ export function WebBookingPayPanel({
         )}
         {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
       </div>
+
+      {canEditProducts && onSetProductQuantity && (
+        <WebBookingProductsDialog
+          open={productsOpen}
+          onClose={() => setProductsOpen(false)}
+          products={shopProducts}
+          cartItems={products}
+          onSetQuantity={onSetProductQuantity}
+        />
+      )}
 
       <WebBookingStepActions>
         <WebBookingCta type="button" disabled={loading || taxLoading || payNow == null || !!quoteError} onClick={handlePay}>

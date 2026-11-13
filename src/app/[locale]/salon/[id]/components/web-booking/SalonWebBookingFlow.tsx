@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatCents } from "../../shop/format";
 import { useProductCart } from "../../shop/productCart";
 import { useSalonProducts } from "../../shop/useSalonProducts";
+import type { PublicProduct } from "../../shop/types";
 import { getCombinedAvailableLocations } from "./bookingLocation";
 import {
   canAddService,
@@ -131,6 +132,12 @@ export function SalonWebBookingFlow({
   );
   const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
   const cartTotalCents = cartItems.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
+  /** Quantité d'un produit dans le panier (0 = retiré), depuis l'étape paiement. */
+  const setProductQuantity = (p: PublicProduct, quantity: number) => {
+    if (quantity <= 0) cart.remove(p.id);
+    else if (cart.has(p.id)) cart.setQuantity(p.id, quantity);
+    else cart.add({ productId: p.id, name: p.name, priceCents: p.priceCents, imageUrl: p.mainPhotoUrl }, quantity);
+  };
 
   const lastPageServiceIdRef = useRef<string | null>(null);
   const pageHistoryInitializedRef = useRef(false);
@@ -506,6 +513,8 @@ export function SalonWebBookingFlow({
           referencePhotoFile={referencePhotoFile}
           referencePhotoPreview={referencePhotoPreview}
           products={cartItems}
+          shopProducts={shopProducts}
+          onSetProductQuantity={setProductQuantity}
         />
       )}
     </div>
