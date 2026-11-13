@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ImagePlus, Loader2, Star, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { EMPTY_PRODUCT_FORM, formToPayload, productToForm, type ProductFormValues } from "./productForm";
 import type { AdminProduct } from "./types";
 import { useProductMutations } from "./useShopAdmin";
@@ -69,7 +69,6 @@ export function ProductFormDialog({
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const productId = product?.id ?? createdId;
 
@@ -282,31 +281,33 @@ export function ProductFormDialog({
                   </div>
                 ))}
                 {photos.length < MAX_PHOTOS && (
-                  <button
-                    type="button"
-                    onClick={() => fileInput.current?.click()}
-                    disabled={uploadPhoto.isPending}
-                    className="grid size-20 place-items-center rounded-lg border border-dashed text-muted-foreground hover:bg-accent"
+                  <label
                     aria-label="Ajouter une photo"
+                    aria-disabled={uploadPhoto.isPending}
+                    className={cn(
+                      "grid size-20 cursor-pointer place-items-center rounded-lg border border-dashed text-muted-foreground hover:bg-accent focus-within:ring-2 focus-within:ring-ring",
+                      uploadPhoto.isPending && "pointer-events-none opacity-60",
+                    )}
                   >
                     {uploadPhoto.isPending ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
-                  </button>
+                    {/* sr-only (et non display:none) : le clic sur le label ouvre le sélecteur dans tous les navigateurs. */}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      disabled={uploadPhoto.isPending}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadPhoto.mutate({ id: productId, file });
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
                 PNG, JPG ou WebP, 5 Mo maximum, {MAX_PHOTOS} photos au plus. La première est la photo principale.
               </p>
-              <input
-                ref={fileInput}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) uploadPhoto.mutate({ id: productId, file });
-                  e.target.value = "";
-                }}
-              />
             </>
           )}
         </div>
