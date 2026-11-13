@@ -38,6 +38,7 @@ const PAGE_TITLES: [prefix: string, title: string][] = [
   ["/admin/calendrier", "Calendrier"],
   ["/admin/bookings", "Réservations"],
   ["/admin/mes-services", "Mes services"],
+  ["/admin/ma-boutique", "Ma boutique"],
   ["/admin/payments", "Paiements"],
   ["/admin/users", "Utilisateurs"],
   ["/admin/prospect", "Prospects"],

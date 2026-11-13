@@ -1057,6 +1057,60 @@ export const createProductOrderCheckoutApi = async (
   }
 };
 
+// --- Espace pro (OWNER du salon / ADMIN) ---------------------------------
+
+/** Catalogue complet du salon, produits retirés de la vente inclus. */
+export const getSalonProductsManageApi = async (salonId: string) => {
+  const response = await requestWrapper.get(`/salons/${salonId}/products/manage`);
+  return response.data as { success: boolean; data: { salesEnabled: boolean; products: any[] } };
+};
+
+export const createProductApi = async (salonId: string, data: object) => {
+  const response = await requestWrapper.post(`/salons/${salonId}/products`, data);
+  return response.data as { success: boolean; data: any };
+};
+
+export const updateProductApi = async (productId: string, data: object) => {
+  const response = await requestWrapper.put(`/products/${productId}`, data);
+  return response.data as { success: boolean; data: any };
+};
+
+/** Supprime un produit jamais commandé ; sinon le retire de la vente (`deactivated`). */
+export const deleteProductApi = async (productId: string) => {
+  const response = await requestWrapper.delete(`/products/${productId}`);
+  return response.data as { success: boolean; data: { deleted: boolean; deactivated: boolean } };
+};
+
+export const uploadProductPhotoApi = async (productId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const response = await requestWrapper.post(`/products/${productId}/photos`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data as { success: boolean; data: any };
+};
+
+export const deleteProductPhotoApi = async (productId: string, photoId: string) => {
+  const response = await requestWrapper.delete(`/products/${productId}/photos/${photoId}`);
+  return response.data as { success: boolean; data: any };
+};
+
+/** Commandes payées du salon (paniers abandonnés masqués) ; `status` pour filtrer. */
+export const getSalonProductOrdersApi = async (salonId: string, status?: string) => {
+  const response = await requestWrapper.get(`/salons/${salonId}/product-orders`, {
+    params: status ? { status } : undefined,
+  });
+  return response.data as { success: boolean; data: any[] };
+};
+
+export const updateProductOrderStatusApi = async (
+  orderId: string,
+  action: "ready" | "picked-up" | "cancel"
+) => {
+  const response = await requestWrapper.post(`/product-orders/${orderId}/${action}`);
+  return response.data as { success: boolean; data: any };
+};
+
 export const getProductOrderApi = async (orderId: string) => {
   try {
     const response = await requestWrapper.get(`/product-orders/${orderId}`);

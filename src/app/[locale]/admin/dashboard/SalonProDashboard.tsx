@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Loader2,
   Scissors,
+  ShoppingBag,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -225,6 +226,7 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
         actions={[
           { label: "Calendrier", href: "/admin/calendrier", icon: Calendar },
           { label: "Mes services", href: "/admin/mes-services", icon: Scissors },
+          { label: "Ma boutique", href: "/admin/ma-boutique", icon: ShoppingBag },
           { label: "Paiements", href: "/admin/payments", icon: DollarSign },
           {
             label: "Voir mon site",

@@ -9,6 +9,7 @@ import {
   ClipboardList,
   MapIcon,
   Scissors,
+  ShoppingBag,
   Settings,
   Store,
   UserPlus,
@@ -153,6 +154,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Mes services",
           url: "/admin/mes-services",
           icon: Scissors,
+        },
+        {
+          title: "Ma boutique",
+          url: "/admin/ma-boutique",
+          icon: ShoppingBag,
         },
         {
           title: "Paiements",
