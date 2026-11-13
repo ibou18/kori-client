@@ -981,6 +981,92 @@ export const calculateTaxesApi = async (data: any) => {
   }
 };
 
+/**
+ * Devis de paiement serveur (source unique des montants, voir kori-server
+ * BookingService.computePaymentBreakdown). `subtotal` = prestations + déplacement
+ * en dollars ; `products` = produits à récupérer pendant le rendez-vous.
+ */
+export const quotePaymentApi = async (data: {
+  salonId: string;
+  subtotal: number;
+  province?: string;
+  products?: { productId: string; quantity: number }[];
+}) => {
+  try {
+    const response = await requestWrapper.post("/payments/quote", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors du calcul du montant à payer");
+    return null;
+  }
+};
+
+// ============================================================================
+// BOUTIQUE SALON (produits) — kori-server docs/PRODUCT_SALES.md
+// ============================================================================
+
+/** Boutique publique : `{ salesEnabled, products }`, liste vide sans Stripe Connect. */
+export const getSalonProductsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/salons/${salonId}/products`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la boutique");
+    return null;
+  }
+};
+
+export const getProductApi = async (productId: string) => {
+  try {
+    const response = await requestWrapper.get(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du produit");
+    return null;
+  }
+};
+
+/** Commande en retrait sans rendez-vous (PENDING_PAYMENT). */
+export const createProductOrderApi = async (data: {
+  salonId: string;
+  items: { productId: string; quantity: number }[];
+  clientNotes?: string;
+}) => {
+  try {
+    const response = await requestWrapper.post("/product-orders", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de la commande");
+    return null;
+  }
+};
+
+export const createProductOrderCheckoutApi = async (
+  orderId: string,
+  data: { successUrl: string; cancelUrl: string }
+) => {
+  try {
+    const response = await requestWrapper.post(
+      `/product-orders/${orderId}/checkout-session`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création du paiement");
+    return null;
+  }
+};
+
+export const getProductOrderApi = async (orderId: string) => {
+  try {
+    const response = await requestWrapper.get(`/product-orders/${orderId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la commande");
+    return null;
+  }
+};
+
 // ============================================================================
 // SALON SERVICES
 // ============================================================================

@@ -11,6 +11,7 @@ import { SalonHours, salonHasHours } from "./sections/SalonHours";
 import { SalonReviews } from "./sections/SalonReviews";
 import { SalonServices } from "./sections/SalonServices";
 import { SalonTabs, type SalonTab, type SalonTabKey } from "./sections/SalonTabs";
+import { CartBar, SalonShop, SalonShopTeaser, useSalonProducts } from "./shop";
 import {
   resolveSalonTheme,
   SALON_SITE_PREVIEW_MESSAGE,
@@ -21,12 +22,14 @@ import {
 import { SalonThemeProvider } from "./theme/SalonThemeProvider";
 import type { PublicReview, PublicSalon, PublicService } from "./types";
 
-const TAB_KEYS: SalonTabKey[] = ["prestations", "avis", "a-propos", "galerie"];
+const TAB_KEYS: SalonTabKey[] = ["prestations", "boutique", "avis", "a-propos", "galerie"];
 
 /**
  * Mini-site public d'un salon (maquette KAN-16) : entête selon le gabarit choisi
  * (carrousel, bannière ou compact, avec ou sans logo), onglets Prestations ·
- * Avis · À propos · Galerie, carte des horaires, pied de page. Le thème vient de
+ * Boutique · Avis · À propos · Galerie, carte des horaires, pied de page.
+ * Boutique (docs/PRODUCT_SALES.md côté serveur) : visible seulement si le salon
+ * encaisse via Stripe Connect et a des produits en stock ; panier en sessionStorage. Le thème vient de
  * `salon.site` (null = gabarit carrousel, noir-blanc-gris). En mode `?preview=1`,
  * l'éditeur pousse un brouillon de thème par `postMessage` sans rien enregistrer.
  */
@@ -45,6 +48,7 @@ export default function SalonSharePage() {
   const [previewSite, setPreviewSite] = useState<SalonSiteDto | null | undefined>(undefined);
   const [isPreview, setIsPreview] = useState(false);
   const [tab, setTab] = useState<SalonTabKey>("prestations");
+  const { products } = useSalonProducts(salonId);
 
   // Mode aperçu : pas de deep link, écoute des brouillons de l'éditeur (même origine).
   useEffect(() => {
@@ -161,9 +165,12 @@ export default function SalonSharePage() {
   }
 
   const hasReviews = (salon.reviewCount ?? 0) > 0 || reviews.length > 0;
+  const hasShop = products.length > 0;
+  const proFirstName = salon.owner?.firstName?.trim() || null;
   const hasGallery = (salon.photos ?? []).filter((p) => p.url).length >= 1;
   const tabs: SalonTab[] = [
     { key: "prestations" as const, label: isEn ? "Services" : "Prestations" },
+    hasShop && { key: "boutique" as const, label: isEn ? "Shop" : "Boutique" },
     hasReviews && { key: "avis" as const, label: isEn ? "Reviews" : "Avis" },
     salonHasAbout(salon) && { key: "a-propos" as const, label: isEn ? "About" : "À propos" },
     hasGallery && { key: "galerie" as const, label: isEn ? "Gallery" : "Galerie" },
@@ -180,7 +187,26 @@ export default function SalonSharePage() {
           <SalonTabs tabs={tabs} active={activeTab} onChange={changeTab} />
           <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
             {activeTab === "prestations" && (
-              <SalonServices services={services} isEn={isEn} onBookService={bookService} disabled={isPreview} />
+              <>
+                <SalonServices services={services} isEn={isEn} onBookService={bookService} disabled={isPreview} />
+                <SalonShopTeaser
+                  salonId={salonId}
+                  locale={locale}
+                  products={products}
+                  proFirstName={proFirstName}
+                  onShowShop={() => changeTab("boutique")}
+                  disabled={isPreview}
+                />
+              </>
+            )}
+            {activeTab === "boutique" && (
+              <SalonShop
+                salonId={salonId}
+                locale={locale}
+                products={products}
+                proFirstName={proFirstName}
+                disabled={isPreview}
+              />
             )}
             {activeTab === "avis" && (
               <SalonReviews reviews={reviews} rating={salon.rating} reviewCount={salon.reviewCount} isEn={isEn} />
@@ -199,6 +225,16 @@ export default function SalonSharePage() {
           />
         )}
       </div>
+
+      {hasShop && !isPreview && (
+        <CartBar
+          salonId={salonId}
+          onChooseService={() => {
+            changeTab("prestations");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      )}
 
       <SalonFooter locale={locale} isEn={isEn} />
     </SalonThemeProvider>

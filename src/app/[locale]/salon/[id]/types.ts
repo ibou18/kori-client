@@ -64,6 +64,8 @@ export interface PublicSalon {
   reviewCount?: number;
   offersHomeService?: boolean;
   site?: SalonSiteDto | null;
+  /** Seul le prénom est lu (« Les produits d'Aïcha »). */
+  owner?: { firstName?: string | null } | null;
 }
 
 export interface PublicReview {

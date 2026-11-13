@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  calculateTaxesApi,
   createBookingApi,
   createCheckoutSessionApi,
+  quotePaymentApi,
   uploadBookingPhotoApi,
 } from "@/app/data/services";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
@@ -12,7 +12,12 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Info, Loader2, Lock } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { formatCents, readApiError } from "../../shop/format";
+import { cartToOrderItems } from "../../shop/productCart";
+import type { CartItem } from "../../shop/types";
 
 import type { SalonBookingTimeSlot, WebBookingAssignmentMode, WebBookingSelectedService } from "./types";
 import {
@@ -23,7 +28,7 @@ import {
   getTotalDurationMinutes,
   normalizeOrder,
 } from "./bookingSelection";
-import { computePlatformFeeDollars, formatSalonPriceDollars, getOptionPriceDollars } from "./pricing";
+import { formatSalonPriceDollars, getOptionPriceDollars } from "./pricing";
 import { WebBookingCta, WebBookingStepActions } from "./WebBookingStepActions";
 
 /** Motifs de refus de POST /bookings, en français (aligné app mobile). */
@@ -54,20 +59,36 @@ interface WebBookingPayPanelProps {
   selectedSlot: SalonBookingTimeSlot;
   assignmentMode: WebBookingAssignmentMode;
   employeeId?: string;
-  commissionRate: number;
   isHomeService: boolean;
   homeServiceAddress: AddressData | null;
   clientNotes?: string;
   referencePhotoFile?: File | null;
   referencePhotoPreview?: string | null;
+  /** Produits à récupérer pendant le rendez-vous, payés en entier avec la réservation. */
+  products?: CartItem[];
+}
+
+/** Réponse de POST /payments/quote (montants en dollars), source unique des montants. */
+interface PaymentQuote {
+  paymentModel: "DEPOSIT" | "PLATFORM_FEE_ONLY";
+  depositRate: number;
+  commissionRate: number;
+  depositAmount: number;
+  platformFee: number;
+  tax: number;
+  productsAmount: number;
+  onlineCharge: number;
+  payOnSite: number;
 }
 
 const money = (v: number) => `${formatSalonPriceDollars(v)} $`;
 
 /**
  * Étape paiement (maquette) : récapitulatif de la réservation, détail de ce qui
- * est payé maintenant (frais de service + taxes) et de ce qui reste dû au salon,
- * puis redirection vers Stripe Checkout.
+ * est payé maintenant (acompte éventuel, frais de service + taxes, produits) et de
+ * ce qui reste dû au salon, puis redirection vers Stripe Checkout.
+ * Les montants viennent du devis serveur (`POST /payments/quote`), calculé comme à
+ * la création de la réservation : l'écran annonce exactement ce que Stripe débitera.
  */
 export function WebBookingPayPanel({
   salonId,
@@ -80,17 +101,15 @@ export function WebBookingPayPanel({
   selectedSlot,
   assignmentMode,
   employeeId,
-  commissionRate,
   isHomeService,
   homeServiceAddress,
   clientNotes = "",
   referencePhotoFile = null,
   referencePhotoPreview = null,
+  products = [],
 }: WebBookingPayPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [taxTotal, setTaxTotal] = useState<number | null>(null);
-  const [taxLoading, setTaxLoading] = useState(true);
   const [feeInfoOpen, setFeeInfoOpen] = useState(false);
 
   const orderedLines = normalizeOrder(lines);
@@ -99,31 +118,29 @@ export function WebBookingPayPanel({
   const clientSubtotalDollars = Math.round((servicePrice + travelFeeDollars) * 100) / 100;
   const durationMin = getTotalDurationMinutes(orderedLines);
 
-  const platformFee = useMemo(
-    () => computePlatformFeeDollars(clientSubtotalDollars, commissionRate),
-    [clientSubtotalDollars, commissionRate],
-  );
+  const productItems = cartToOrderItems(products);
+  const {
+    data: quote,
+    isLoading: quoteLoading,
+    error: quoteError,
+  } = useQuery({
+    queryKey: ["web-booking-quote", salonId, clientSubtotalDollars, province, productItems],
+    queryFn: async () => {
+      const res = (await quotePaymentApi({
+        salonId,
+        subtotal: clientSubtotalDollars,
+        province,
+        ...(productItems.length ? { products: productItems } : {}),
+      })) as { data?: PaymentQuote } | null;
+      if (!res?.data) throw new Error("Devis indisponible");
+      return res.data;
+    },
+    retry: false,
+  });
+  const quoteErrorMessage = quoteError ? readApiError(quoteError, BOOKING_ERROR_MESSAGES).message : null;
 
-  useEffect(() => {
-    let cancelled = false;
-    setTaxLoading(true);
-    (async () => {
-      try {
-        const res = await calculateTaxesApi({ amount: platformFee, province });
-        const t = res?.data?.taxes?.totalTax;
-        if (!cancelled) setTaxTotal(typeof t === "number" ? t : 0);
-      } catch {
-        if (!cancelled) setTaxTotal(0);
-      } finally {
-        if (!cancelled) setTaxLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [platformFee, province]);
-
-  const payNow = taxTotal != null ? Math.round((platformFee + taxTotal) * 100) / 100 : null;
+  const payNow = quote?.onlineCharge ?? null;
+  const taxLoading = quoteLoading;
   const trimmedNotes = clientNotes.trim();
   const hasClientRemarks = trimmedNotes.length > 0 || !!referencePhotoFile;
   const slotDate = new Date(selectedSlot.startDateTime);
@@ -154,6 +171,7 @@ export function WebBookingPayPanel({
         assignmentMode,
         ...(trimmedNotes ? { clientNotes: trimmedNotes } : {}),
         ...(assignmentMode === "SPECIFIC_EMPLOYEE" && employeeId ? { employeeId } : {}),
+        ...(productItems.length ? { products: productItems } : {}),
         ...(isHomeService &&
           homeServiceAddress && {
             serviceAddress: {
@@ -196,7 +214,8 @@ export function WebBookingPayPanel({
 
       const checkoutRes = await createCheckoutSessionApi({
         bookingId,
-        amount: platformFee,
+        // Indicatif : le serveur débite les montants enregistrés sur la réservation.
+        amount: quote?.platformFee ?? 0,
         province,
         customerEmail: clientEmail,
         successUrl,
@@ -212,19 +231,7 @@ export function WebBookingPayPanel({
       }
       window.location.href = url;
     } catch (e: unknown) {
-      // handleError (requestsConfig) relance l'erreur axios enrichie de
-      // errorDetails.responseData = corps de la réponse serveur.
-      const details = (e as { errorDetails?: { responseData?: Record<string, unknown> } })?.errorDetails?.responseData;
-      const nested = details?.error as Record<string, unknown> | undefined;
-      const errorCode = (details?.errorCode ?? nested?.errorCode) as string | undefined;
-      const serverMessage = (details?.message ?? nested?.message) as string | undefined;
-      setError(
-        (errorCode && BOOKING_ERROR_MESSAGES[errorCode]) ||
-          serverMessage ||
-          (e as { formattedMessage?: string })?.formattedMessage ||
-          (e as { message?: string })?.message ||
-          "Une erreur est survenue. Réessayez.",
-      );
+      setError(readApiError(e, BOOKING_ERROR_MESSAGES).message);
     } finally {
       setLoading(false);
     }
@@ -265,10 +272,16 @@ export function WebBookingPayPanel({
 
           <div className="mt-1 flex flex-col gap-1.5 border-t border-site-border pt-2.5">
             {isHomeService && travelFeeDollars > 0 && <Row label="Déplacement à domicile" value={money(travelFeeDollars)} />}
+            {quote && quote.depositAmount > 0 && (
+              <Row
+                label={`Acompte (${Math.round(quote.depositRate * 100)} % de la prestation)`}
+                value={money(quote.depositAmount)}
+              />
+            )}
             <Row
               label={
                 <>
-                  Frais de service ({Math.round(commissionRate * 100)} %)
+                  Frais de service{quote ? ` (${Math.round(quote.commissionRate * 100)} %)` : ""}
                   <button
                     type="button"
                     onClick={() => setFeeInfoOpen((v) => !v)}
@@ -281,7 +294,7 @@ export function WebBookingPayPanel({
                   </button>
                 </>
               }
-              value={money(platformFee)}
+              value={quote ? money(quote.platformFee) : <Loader2 className="size-4 animate-spin" />}
             />
             {feeInfoOpen && (
               <div
@@ -295,9 +308,22 @@ export function WebBookingPayPanel({
             )}
             <Row
               label={`Taxes${province ? ` (${province})` : ""}`}
-              value={taxLoading ? <Loader2 className="size-4 animate-spin" /> : money(taxTotal ?? 0)}
+              value={quote ? money(quote.tax) : <Loader2 className="size-4 animate-spin" />}
             />
           </div>
+
+          {products.length > 0 && (
+            <div className="mt-1 flex flex-col gap-1.5 border-t border-site-border pt-2.5">
+              <p className="text-[13px] font-semibold">Produits · payés en entier, à récupérer au salon</p>
+              {products.map((item) => (
+                <Row
+                  key={item.productId}
+                  label={`${item.name} × ${item.quantity}`}
+                  value={formatCents(item.priceCents * item.quantity)}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-site-border pt-2.5">
             <span className="text-base font-bold">À payer maintenant</span>
@@ -306,7 +332,7 @@ export function WebBookingPayPanel({
             </span>
           </div>
           <p className="text-[13px] text-site-muted">
-            Reste à régler au salon le jour du rendez-vous : {money(clientSubtotalDollars)}
+            Reste à régler au salon le jour du rendez-vous : {money(quote?.payOnSite ?? clientSubtotalDollars)}
           </p>
         </div>
 
@@ -328,15 +354,19 @@ export function WebBookingPayPanel({
         )}
 
         <p className="text-[13px] text-site-muted">
-          Vous serez redirigé vers Stripe pour régler les frais de service. Le solde de la prestation est dû au salon le
-          jour du rendez-vous.
+          Vous serez redirigé vers Stripe pour régler {quote && quote.depositAmount > 0 ? "l'acompte, " : ""}les frais de
+          service{products.length ? " et vos produits" : ""}. Le solde de la prestation est dû au salon le jour du
+          rendez-vous.
         </p>
 
+        {quoteErrorMessage && (
+          <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{quoteErrorMessage}</p>
+        )}
         {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
       </div>
 
       <WebBookingStepActions>
-        <WebBookingCta type="button" disabled={loading || taxLoading || payNow == null} onClick={handlePay}>
+        <WebBookingCta type="button" disabled={loading || taxLoading || payNow == null || !!quoteError} onClick={handlePay}>
           {loading ? <Loader2 className="size-5 animate-spin" /> : payNow != null ? `Payer ${money(payNow)}` : "Payer"}
         </WebBookingCta>
         <p className="flex items-center justify-center gap-1.5 text-xs text-site-muted">

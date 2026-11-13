@@ -1,6 +1,5 @@
 "use client";
 
-import { useGetPlatformConfig } from "@/app/data/hooks";
 import { getSalonApi, getSalonServicesApi } from "@/app/data/services";
 import type { AddressData } from "@/components/ui/GoogleAddressAutocomplete";
 import { useSession } from "next-auth/react";
@@ -8,6 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { formatCents } from "../../shop/format";
+import { useProductCart } from "../../shop/productCart";
+import { useSalonProducts } from "../../shop/useSalonProducts";
 import { getCombinedAvailableLocations } from "./bookingLocation";
 import {
   canAddService,
@@ -40,6 +42,7 @@ import { WebBookingHeader } from "./WebBookingHeader";
 import { WebBookingLocationPanel } from "./WebBookingLocationPanel";
 import { WebBookingNotesPanel } from "./WebBookingNotesPanel";
 import { WebBookingPayPanel } from "./WebBookingPayPanel";
+import { WebBookingProductsBlock } from "./WebBookingProductsBlock";
 import { WebBookingServicePanel } from "./WebBookingServicePanel";
 import { WebBookingSlotPanel } from "./WebBookingSlotPanel";
 import type { WebBookingFooterSummary } from "./WebBookingStepActions";
@@ -101,9 +104,6 @@ export function SalonWebBookingFlow({
   const router = useRouter();
   const { data: session, status } = useSession();
   const sessionUser = session?.user as { id?: string; email?: string | null } | undefined;
-  const { data: platformConfigData } = useGetPlatformConfig();
-  const commissionRate =
-    platformConfigData?.data?.defaultCommissionRate ?? platformConfigData?.defaultCommissionRate ?? 0.06;
 
   const [step, setStep] = useState<WebBookingStep>("service");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -120,6 +120,17 @@ export function SalonWebBookingFlow({
   const [clientNotes, setClientNotes] = useState("");
   const [referencePhotoFile, setReferencePhotoFile] = useState<File | null>(null);
   const [referencePhotoPreview, setReferencePhotoPreview] = useState<string | null>(null);
+
+  // Boutique : produits du panier (page salon / fiche produit), payés avec la réservation.
+  const cart = useProductCart(salonId);
+  const { products: shopProducts } = useSalonProducts(salonId);
+  // Sans boutique active (pas de Connect, produits retirés), le panier n'est pas envoyé.
+  const cartItems = useMemo(
+    () => cart.items.filter((item) => shopProducts.some((p) => p.id === item.productId)),
+    [cart.items, shopProducts],
+  );
+  const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+  const cartTotalCents = cartItems.reduce((sum, i) => sum + i.priceCents * i.quantity, 0);
 
   const lastPageServiceIdRef = useRef<string | null>(null);
   const pageHistoryInitializedRef = useRef(false);
@@ -235,12 +246,36 @@ export function SalonWebBookingFlow({
 
   const footerSummary: WebBookingFooterSummary | null = selectedLines.length
     ? {
-        label: `${selectionLabel} · ${formatDurationMinutes(totalDurationMin)}${
+        label: `${selectionLabel}${cartCount ? ` + ${cartCount} produit${cartCount > 1 ? "s" : ""}` : ""} · ${formatDurationMinutes(totalDurationMin)}${
           selectedSlot && step !== "slot" ? ` · ${selectedSlot.startTime}` : ""
         }`,
-        price: `${formatSalonPriceDollars(getServicesTotalDollars(selectedLines))} $`,
+        price: formatCents(Math.round(getServicesTotalDollars(selectedLines) * 100) + cartTotalCents),
       }
     : null;
+
+  // « Souvent pris avec … » : produits liés aux prestations choisies, pas encore au panier.
+  const selectedServiceIds = selectedServices.map((s) => s.id);
+  const productSuggestions = shopProducts
+    .filter(
+      (p) =>
+        !cart.has(p.id) && p.recommendedServices.some((service) => selectedServiceIds.includes(service.id)),
+    )
+    .slice(0, 3);
+  const suggestionFor = selectedServices.find((s) =>
+    productSuggestions.some((p) => p.recommendedServices.some((r) => r.id === s.id)),
+  );
+  const productsBlock = (
+    <WebBookingProductsBlock
+      cartItems={cartItems}
+      suggestions={productSuggestions}
+      suggestionTitle={`Souvent pris avec : ${suggestionFor?.name ?? "cette prestation"}`}
+      shopHref={`/${locale}/salon/${salonId}#boutique`}
+      onRemove={cart.remove}
+      onAdd={(p) =>
+        cart.add({ productId: p.id, name: p.name, priceCents: p.priceCents, imageUrl: p.mainPhotoUrl })
+      }
+    />
+  );
 
   const addServiceCheck = canAddService(selectedLines);
   const addServiceHelp = !primaryOption ? "Choisissez d'abord une formule" : addServiceCheck.ok ? null : addServiceCheck.message;
@@ -425,6 +460,7 @@ export function SalonWebBookingFlow({
           selectionMeta={`${formatDurationMinutes(totalDurationMin)} · ${formatSalonPriceDollars(getServicesTotalDollars(selectedLines))} $`}
           onEditSelection={goToService}
           summary={footerSummary}
+          extra={productsBlock}
         />
       )}
 
@@ -464,12 +500,12 @@ export function SalonWebBookingFlow({
           selectedSlot={selectedSlot}
           assignmentMode={assignmentMode}
           employeeId={assignmentMode === "SPECIFIC_EMPLOYEE" ? employeeId : undefined}
-          commissionRate={commissionRate}
           isHomeService={isHomeService}
           homeServiceAddress={homeServiceAddress}
           clientNotes={clientNotes}
           referencePhotoFile={referencePhotoFile}
           referencePhotoPreview={referencePhotoPreview}
+          products={cartItems}
         />
       )}
     </div>

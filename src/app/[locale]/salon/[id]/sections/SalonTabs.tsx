@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type SalonTabKey = "prestations" | "avis" | "a-propos" | "galerie";
+export type SalonTabKey = "prestations" | "boutique" | "avis" | "a-propos" | "galerie";
 
 export interface SalonTab {
   key: SalonTabKey;
@@ -10,7 +10,7 @@ export interface SalonTab {
 }
 
 /**
- * Onglets du profil (maquette : Prestations · Avis · À propos · Galerie),
+ * Onglets du profil (maquette : Prestations · Boutique · Avis · À propos · Galerie),
  * collants sous la barre korí. Masqués s'il n'y a qu'une section à montrer.
  */
 export function SalonTabs({

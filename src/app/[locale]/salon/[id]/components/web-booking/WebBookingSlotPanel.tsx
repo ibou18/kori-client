@@ -37,6 +37,8 @@ interface WebBookingSlotPanelProps {
   selectionMeta: string;
   onEditSelection: () => void;
   summary: WebBookingFooterSummary | null;
+  /** Bloc affiché sous le récapitulatif (produits à récupérer au salon). */
+  extra?: React.ReactNode;
 }
 
 const DAY_STRIP_LENGTH = 5;
@@ -80,6 +82,7 @@ export function WebBookingSlotPanel({
   selectionMeta,
   onEditSelection,
   summary,
+  extra,
 }: WebBookingSlotPanelProps) {
   const today = useMemo(() => startOfDay(new Date()), []);
   const [date, setDate] = useState(() => localDateToISO(today));
@@ -159,6 +162,8 @@ export function WebBookingSlotPanel({
             Modifier
           </button>
         </div>
+
+        {extra}
 
         {/* Professionnelle */}
         {hasEmployees && staffOptions.length > 0 && (
