@@ -42,6 +42,7 @@ export default function MaBoutiquePage() {
 
   const products = data?.products ?? [];
   const editing = products.find((p) => p.id === editingId) ?? null;
+  // Services actifs du salon, pour le formulaire de création/édition de produit
   const services = useMemo(() => {
     const raw = (servicesRes as { data?: unknown } | null)?.data;
     return (Array.isArray(raw) ? raw : [])
