@@ -92,10 +92,15 @@ export default function MaBoutiquePage() {
           <div className="flex flex-col gap-1">
             <p className="font-semibold">Votre boutique n&apos;est pas encore visible par vos clients</p>
             <p>
-              Les produits sont payés en ligne et versés sur votre compte : finalisez la configuration de vos paiements
-              (Stripe Connect) depuis l&apos;app korí, onglet Profil → Paiements. Vous pouvez déjà préparer votre
-              catalogue ici.
+              Les produits sont payés en ligne et versés sur votre compte : activez d&apos;abord l&apos;encaissement en
+              ligne. Vous pouvez déjà préparer votre catalogue ici.
             </p>
+            <Link
+              href={`/${locale}/admin/encaissement`}
+              className="mt-1 inline-flex w-fit items-center gap-1 font-semibold underline-offset-2 hover:underline"
+            >
+              Configurer l&apos;encaissement en ligne →
+            </Link>
           </div>
         </div>
       )}

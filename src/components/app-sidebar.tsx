@@ -16,6 +16,7 @@ import {
   Users,
   Wrench,
   Palette,
+  CreditCard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import * as React from "react";
@@ -164,6 +165,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           title: "Paiements",
           url: "/admin/payments",
           icon: DollarSign,
+        },
+        {
+          title: "Encaissement en ligne",
+          url: "/admin/encaissement",
+          icon: CreditCard,
         },
       ];
     }

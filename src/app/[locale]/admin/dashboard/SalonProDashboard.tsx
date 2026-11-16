@@ -42,6 +42,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { StripeSetupBanner } from "../encaissement/StripeSetupBanner";
 import { DashboardHero } from "./components/DashboardHero";
 
 dayjs.extend(isoWeek);
@@ -236,6 +237,8 @@ export function SalonProDashboard({ salonId }: { salonId: string }) {
           },
         ]}
       />
+
+      <StripeSetupBanner className="mt-6" />
 
       {/* KPI Cards */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">

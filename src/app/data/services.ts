@@ -2014,6 +2014,27 @@ export const getStripeConnectAccountStatusApi = async (accountId: string) => {
   }
 };
 
+// Parcours propriétaire (espace pro web) : le salon est déduit du compte connecté.
+// Les erreurs remontent telles quelles (errorCode lu par la page Encaissement).
+
+export const getMyStripeAccountApi = async () => {
+  const response = await requestWrapper.get("/stripe-connect/me");
+  return response.data as { success: boolean; data: unknown };
+};
+
+export const startMyStripeOnboardingApi = async (data: {
+  returnUrl: string;
+  refreshUrl: string;
+}) => {
+  const response = await requestWrapper.post("/stripe-connect/me/onboarding", data);
+  return response.data as { success: boolean; data: { url: string; expiresAt: number } };
+};
+
+export const openMyStripeDashboardApi = async () => {
+  const response = await requestWrapper.post("/stripe-connect/me/dashboard");
+  return response.data as { success: boolean; data: { url: string } };
+};
+
 // ============================================================================
 // SALON TYPES
 // ============================================================================
