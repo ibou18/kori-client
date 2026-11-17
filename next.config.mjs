@@ -42,6 +42,12 @@ const nextConfig = {
         pathname: "/**",
       },
       {
+        // Médias Kori servis par Cloudflare R2 (domaine personnalisé du bucket kori-media)
+        protocol: "https",
+        hostname: "media.koribeauty.win",
+        pathname: "/**",
+      },
+      {
         protocol: "https",
         hostname: "i.pravatar.cc",
         pathname: "/**",
