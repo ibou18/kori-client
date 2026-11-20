@@ -103,7 +103,7 @@ export function SalonServices({
           {isEn ? "Services" : "Prestations"}
         </h2>
         {groups.map(([key, group]) => (
-          <section key={key} className="flex flex-col">
+          <section key={key} className="flex flex-col [&:last-child>div:last-child]:border-b-0">
             {(groups.length > 1 || categories.length > 0) && (
               <h3 className="mb-1 text-[13px] font-semibold uppercase tracking-[1px] text-site-muted">{group.name}</h3>
             )}
@@ -221,7 +221,7 @@ function ServiceRow({
             aria-controls={detailsId}
             className="flex min-h-8 items-center gap-0.5 px-1 text-xs font-semibold text-site-fg-2"
           >
-            {open ? (isEn ? "Hide" : "Masquer") : isEn ? "Prices" : "Prix"}
+            {open ? (isEn ? "Hide" : "Masquer") : isEn ? "Options" : "Options"}
             <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} strokeWidth={2.2} />
           </button>
         )}

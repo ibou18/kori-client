@@ -114,6 +114,8 @@ interface Salon {
   commissionRate?: number;
   depositEnabled?: boolean;
   depositPercentage?: number | null;
+  cancellationNoticeHours?: number | null;
+  cancellationLateRefundPercent?: number | null;
   stripeChargesEnabled?: boolean;
   dashboardUrl?: string | null;
   providerCancellationCount?: number;
@@ -722,6 +724,26 @@ export default function SalonDetailPage() {
                     ) : (
                       <Badge variant="outline" className="text-slate-600">
                         Désactivé
+                      </Badge>
+                    )}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-slate-500">Politique d&apos;annulation</dt>
+                  <dd className="text-right">
+                    {salon.cancellationNoticeHours != null &&
+                    salon.cancellationLateRefundPercent != null ? (
+                      <>
+                        <span className="font-semibold text-[#53745D]">
+                          {salon.cancellationNoticeHours} h · {salon.cancellationLateRefundPercent} %
+                        </span>
+                        <span className="block text-xs text-slate-500">
+                          délai · acompte remboursé si tardif
+                        </span>
+                      </>
+                    ) : (
+                      <Badge variant="outline" className="text-slate-600">
+                        Règle Kori
                       </Badge>
                     )}
                   </dd>
