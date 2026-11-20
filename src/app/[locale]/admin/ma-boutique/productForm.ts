@@ -85,3 +85,27 @@ export function formToPayload(
     },
   };
 }
+
+/** Règles des photos produit (miroir du serveur, ProductService). */
+export const PRODUCT_PHOTO_MAX = 6;
+export const PRODUCT_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+export const PRODUCT_PHOTO_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+/** Message si le fichier sera refusé par le serveur, sinon null. */
+export function checkProductPhoto(file: { type: string; size: number; name: string }): string | null {
+  if (!PRODUCT_PHOTO_TYPES.includes(file.type)) return `« ${file.name} » : format non accepté (PNG, JPG ou WebP).`;
+  if (file.size > PRODUCT_PHOTO_MAX_BYTES) return `« ${file.name} » : 5 Mo maximum.`;
+  return null;
+}
+
+/**
+ * Message après un enregistrement dont certaines photos ont été refusées.
+ * Le produit, lui, est enregistré : on le dit d'abord.
+ */
+export function photoErrorsMessage(errors: { fileName: string; message: string }[]): string | null {
+  if (!errors.length) return null;
+  const detail = errors.map((e) => `${e.fileName} (${e.message.toLowerCase()})`).join(", ");
+  return errors.length === 1
+    ? `Produit enregistré, mais une photo n'a pas pu être ajoutée : ${detail}.`
+    : `Produit enregistré, mais ${errors.length} photos n'ont pas pu être ajoutées : ${detail}.`;
+}

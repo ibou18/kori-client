@@ -12,6 +12,7 @@ import {
 } from "@/app/data/services";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { photoErrorsMessage } from "./productForm";
 import type { AdminProduct, AdminProductOrder, ProductPayload } from "./types";
 
 const PRODUCTS_KEY = "admin-salon-products";
@@ -69,20 +70,27 @@ export function useProductMutations(salonId: string) {
   const onError = (error: unknown) => toast.error(adminErrorMessage(error));
 
   return {
+    // Produit et photos en un seul envoi : produit refusé → aucune photo envoyée ;
+    // photo refusée → produit enregistré quand même, la photo est signalée.
     create: useMutation({
-      mutationFn: (data: ProductPayload) => createProductApi(salonId, data),
-      onSuccess: () => {
+      mutationFn: ({ data, files }: { data: ProductPayload; files?: File[] }) =>
+        createProductApi(salonId, data, files),
+      onSuccess: (res) => {
         refresh();
-        toast.success("Produit ajouté. Ajoutez maintenant ses photos.");
+        const warning = photoErrorsMessage(res.data?.photoErrors ?? []);
+        if (warning) toast.warning(warning, { duration: 8000 });
+        else toast.success("Produit ajouté");
       },
       onError,
     }),
     update: useMutation({
-      mutationFn: ({ id, data }: { id: string; data: Partial<ProductPayload> }) =>
-        updateProductApi(id, data),
-      onSuccess: () => {
+      mutationFn: ({ id, data, files }: { id: string; data: Partial<ProductPayload>; files?: File[] }) =>
+        updateProductApi(id, data, files),
+      onSuccess: (res) => {
         refresh();
-        toast.success("Produit enregistré");
+        const warning = photoErrorsMessage(res.data?.photoErrors ?? []);
+        if (warning) toast.warning(warning, { duration: 8000 });
+        else toast.success("Produit enregistré");
       },
       onError,
     }),

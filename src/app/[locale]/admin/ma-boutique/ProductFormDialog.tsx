@@ -6,12 +6,24 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ImagePlus, Loader2, Star, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { EMPTY_PRODUCT_FORM, formToPayload, productToForm, type ProductFormValues } from "./productForm";
+import { useEffect, useRef, useState } from "react";
+import {
+  checkProductPhoto,
+  EMPTY_PRODUCT_FORM,
+  formToPayload,
+  PRODUCT_PHOTO_MAX,
+  productToForm,
+  type ProductFormValues,
+} from "./productForm";
 import type { AdminProduct } from "./types";
 import { useProductMutations } from "./useShopAdmin";
 
-const MAX_PHOTOS = 6;
+/** Photo choisie, pas encore envoyée : envoyée avec le produit à l'enregistrement. */
+interface PendingPhoto {
+  key: string;
+  file: File;
+  previewUrl: string;
+}
 
 const textareaClass =
   "flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -45,8 +57,10 @@ function Field({
 }
 
 /**
- * Création / modification d'un produit. Les photos s'ajoutent une fois le produit
- * enregistré : après une création, la fenêtre bascule sur le produit créé.
+ * Création / modification d'un produit, photos comprises, en un seul enregistrement.
+ * Les photos choisies sont prévisualisées localement puis envoyées avec le produit :
+ * si le produit est refusé, aucune photo n'est envoyée ; si une photo est refusée,
+ * le produit est enregistré quand même et la photo est signalée.
  */
 export function ProductFormDialog({
   salonId,
@@ -54,7 +68,6 @@ export function ProductFormDialog({
   onOpenChange,
   product,
   services,
-  onCreated,
 }: {
   salonId: string;
   open: boolean;
@@ -62,24 +75,34 @@ export function ProductFormDialog({
   /** null = création. Toujours la version fraîche (relue depuis la liste). */
   product: AdminProduct | null;
   services: { id: string; name: string }[];
-  /** Après création : la page passe le produit créé (pour ajouter les photos). */
-  onCreated?: (productId: string) => void;
 }) {
-  const { create, update, uploadPhoto, deletePhoto } = useProductMutations(salonId);
+  const { create, update, deletePhoto } = useProductMutations(salonId);
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
-  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const pendingRef = useRef<PendingPhoto[]>([]);
+  pendingRef.current = pending;
 
-  const productId = product?.id ?? createdId;
+  const productId = product?.id ?? null;
+
+  const clearPending = () => {
+    pendingRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    setPending([]);
+  };
 
   // Réinitialise à l'ouverture (et seulement à l'ouverture : pas à chaque relecture de la liste).
   useEffect(() => {
     if (!open) return;
     setForm(product ? productToForm(product) : EMPTY_PRODUCT_FORM);
     setErrors({});
-    setCreatedId(null);
+    setPhotoError(null);
+    clearPending();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, product?.id]);
+
+  // Libère les aperçus locaux au démontage.
+  useEffect(() => () => pendingRef.current.forEach((p) => URL.revokeObjectURL(p.previewUrl)), []);
 
   const set = <K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -94,6 +117,45 @@ export function ProductFormDialog({
 
   const saving = create.isPending || update.isPending;
 
+  const photos = product?.photos ?? [];
+  const remainingSlots = PRODUCT_PHOTO_MAX - photos.length - pending.length;
+
+  const addFiles = (fileList: FileList | null) => {
+    if (!fileList?.length) return;
+    const accepted: PendingPhoto[] = [];
+    const refused: string[] = [];
+    for (const file of Array.from(fileList)) {
+      if (accepted.length >= remainingSlots) {
+        refused.push(`${PRODUCT_PHOTO_MAX} photos maximum par produit.`);
+        break;
+      }
+      const problem = checkProductPhoto(file);
+      if (problem) {
+        refused.push(problem);
+        continue;
+      }
+      accepted.push({
+        key: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    }
+    if (accepted.length) setPending((current) => [...current, ...accepted]);
+    setPhotoError(refused.length ? refused.join(" ") : null);
+  };
+
+  const removePending = (key: string) =>
+    setPending((current) => {
+      const target = current.find((p) => p.key === key);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return current.filter((p) => p.key !== key);
+    });
+
+  const close = () => {
+    clearPending();
+    onOpenChange(false);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const result = formToPayload(form);
@@ -102,23 +164,16 @@ export function ProductFormDialog({
       return;
     }
     setErrors({});
+    const files = pending.map((p) => p.file);
     if (productId) {
-      update.mutate({ id: productId, data: result.payload }, { onSuccess: () => onOpenChange(false) });
+      update.mutate({ id: productId, data: result.payload, files }, { onSuccess: close });
     } else {
-      create.mutate(result.payload, {
-        onSuccess: (res) => {
-          const id = res.data?.id ?? null;
-          setCreatedId(id);
-          if (id) onCreated?.(id);
-        },
-      });
+      create.mutate({ data: result.payload, files }, { onSuccess: close });
     }
   };
 
-  const photos = product?.photos ?? [];
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{productId ? "Modifier le produit" : "Nouveau produit"}</DialogTitle>
@@ -256,69 +311,99 @@ export function ProductFormDialog({
 
         <div className="flex flex-col gap-2 border-t pt-4">
           <p className="text-sm font-medium">Photos</p>
-          {!productId ? (
-            <p className="text-xs text-muted-foreground">Enregistrez le produit pour ajouter ses photos.</p>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {photos.map((photo) => (
-                  <div key={photo.id} className="relative size-20 overflow-hidden rounded-lg border bg-muted">
-                    <Image src={photo.url} alt="" fill sizes="80px" className="object-cover" />
-                    {photo.isMain && (
-                      <span className="absolute left-1 top-1 rounded bg-black/70 p-0.5 text-white" title="Photo principale">
-                        <Star className="size-3" />
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      aria-label="Supprimer la photo"
-                      disabled={deletePhoto.isPending}
-                      onClick={() => deletePhoto.mutate({ id: productId, photoId: photo.id })}
-                      className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/70 text-white"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </div>
-                ))}
-                {photos.length < MAX_PHOTOS && (
-                  <label
-                    aria-label="Ajouter une photo"
-                    aria-disabled={uploadPhoto.isPending}
-                    className={cn(
-                      "grid size-20 cursor-pointer place-items-center rounded-lg border border-dashed text-muted-foreground hover:bg-accent focus-within:ring-2 focus-within:ring-ring",
-                      uploadPhoto.isPending && "pointer-events-none opacity-60",
-                    )}
+          <div className="flex flex-wrap gap-2">
+            {photos.map((photo) => (
+              <div key={photo.id} className="relative size-20 overflow-hidden rounded-lg border bg-muted">
+                <Image src={photo.url} alt="" fill sizes="80px" className="object-cover" />
+                {photo.isMain && (
+                  <span className="absolute left-1 top-1 rounded bg-black/70 p-0.5 text-white" title="Photo principale">
+                    <Star className="size-3" />
+                  </span>
+                )}
+                <button
+                  type="button"
+                  aria-label="Supprimer la photo"
+                  disabled={deletePhoto.isPending || saving}
+                  onClick={() => productId && deletePhoto.mutate({ id: productId, photoId: photo.id })}
+                  className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/70 text-white"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ))}
+            {pending.map((p, i) => (
+              <div key={p.key} className="relative size-20 overflow-hidden rounded-lg border border-dashed bg-muted">
+                {/* Aperçu local (blob:) : next/image ne l'optimise pas. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.previewUrl} alt="" className="size-full object-cover" />
+                {photos.length === 0 && i === 0 && (
+                  <span className="absolute left-1 top-1 rounded bg-black/70 p-0.5 text-white" title="Photo principale">
+                    <Star className="size-3" />
+                  </span>
+                )}
+                <span className="absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[10px] font-medium text-white">
+                  {saving ? "Envoi…" : "À enregistrer"}
+                </span>
+                {!saving && (
+                  <button
+                    type="button"
+                    aria-label="Retirer cette photo"
+                    onClick={() => removePending(p.key)}
+                    className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/70 text-white"
                   >
-                    {uploadPhoto.isPending ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
-                    {/* sr-only (et non display:none) : le clic sur le label ouvre le sélecteur dans tous les navigateurs. */}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="sr-only"
-                      disabled={uploadPhoto.isPending}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) uploadPhoto.mutate({ id: productId, file });
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
+                    <X className="size-3.5" />
+                  </button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                PNG, JPG ou WebP, 5 Mo maximum, {MAX_PHOTOS} photos au plus. La première est la photo principale.
-              </p>
-            </>
+            ))}
+            {remainingSlots > 0 && (
+              <label
+                aria-label="Ajouter des photos"
+                aria-disabled={saving}
+                className={cn(
+                  "grid size-20 cursor-pointer place-items-center rounded-lg border border-dashed text-muted-foreground hover:bg-accent focus-within:ring-2 focus-within:ring-ring",
+                  saving && "pointer-events-none opacity-60",
+                )}
+              >
+                <ImagePlus className="size-5" />
+                {/* sr-only (et non display:none) : le clic sur le label ouvre le sélecteur dans tous les navigateurs. */}
+                <input
+                  type="file"
+                  multiple
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={saving}
+                  onChange={(e) => {
+                    addFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          {photoError ? (
+            <p className="text-xs text-red-600">{photoError}</p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG ou WebP, 5 Mo maximum, {PRODUCT_PHOTO_MAX} photos au plus. La première est la photo
+              principale. Les nouvelles photos sont envoyées avec le produit quand vous enregistrez.
+            </p>
           )}
         </div>
 
         <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {productId ? "Fermer" : "Annuler"}
+          <Button type="button" variant="outline" onClick={close} disabled={saving}>
+            Annuler
           </Button>
           <Button type="submit" form="product-form" disabled={saving}>
             {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {productId ? "Enregistrer" : "Créer le produit"}
+            {saving
+              ? pending.length
+                ? `Enregistrement et envoi de ${pending.length} photo${pending.length > 1 ? "s" : ""}…`
+                : "Enregistrement…"
+              : productId
+                ? "Enregistrer"
+                : "Créer le produit"}
           </Button>
         </DialogFooter>
       </DialogContent>

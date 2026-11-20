@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_PRODUCT_FORM, formToPayload, parsePriceToCents } from "./productForm";
+import {
+  checkProductPhoto,
+  EMPTY_PRODUCT_FORM,
+  formToPayload,
+  parsePriceToCents,
+  photoErrorsMessage,
+  PRODUCT_PHOTO_MAX_BYTES,
+} from "./productForm";
 
 describe("formulaire produit", () => {
   it("convertit le prix saisi en centimes", () => {
@@ -29,5 +36,32 @@ describe("formulaire produit", () => {
   it("vide les champs texte facultatifs en null", () => {
     const result = formToPayload({ ...EMPTY_PRODUCT_FORM, name: " Huile ", price: "24", tip: "  " });
     expect(result.ok && result.payload).toMatchObject({ name: "Huile", tip: null, category: null });
+  });
+});
+
+describe("checkProductPhoto", () => {
+  it("accepte PNG, JPG et WebP jusqu'à 5 Mo", () => {
+    expect(checkProductPhoto({ name: "a.png", type: "image/png", size: 1000 })).toBeNull();
+    expect(checkProductPhoto({ name: "b.webp", type: "image/webp", size: PRODUCT_PHOTO_MAX_BYTES })).toBeNull();
+  });
+  it("refuse les autres formats et les fichiers trop lourds", () => {
+    expect(checkProductPhoto({ name: "c.gif", type: "image/gif", size: 10 })).toContain("format");
+    expect(checkProductPhoto({ name: "d.jpg", type: "image/jpeg", size: PRODUCT_PHOTO_MAX_BYTES + 1 })).toContain("5 Mo");
+  });
+});
+
+describe("photoErrorsMessage", () => {
+  it("ne dit rien quand toutes les photos sont passées", () => {
+    expect(photoErrorsMessage([])).toBeNull();
+  });
+  it("dit que le produit est enregistré et liste les photos refusées", () => {
+    const one = photoErrorsMessage([{ fileName: "a.jpg", message: "Photo trop volumineuse (5 Mo maximum)" }]);
+    expect(one).toMatch(/^Produit enregistré, mais une photo/);
+    expect(one).toContain("a.jpg");
+    const two = photoErrorsMessage([
+      { fileName: "a.jpg", message: "x" },
+      { fileName: "b.png", message: "y" },
+    ]);
+    expect(two).toContain("2 photos");
   });
 });

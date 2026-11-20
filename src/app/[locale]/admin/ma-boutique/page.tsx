@@ -193,7 +193,6 @@ export default function MaBoutiquePage() {
         onOpenChange={setDialogOpen}
         product={editing}
         services={services}
-        onCreated={setEditingId}
       />
 
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>

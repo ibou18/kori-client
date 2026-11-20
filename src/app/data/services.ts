@@ -1065,14 +1065,37 @@ export const getSalonProductsManageApi = async (salonId: string) => {
   return response.data as { success: boolean; data: { salesEnabled: boolean; products: any[] } };
 };
 
-export const createProductApi = async (salonId: string, data: object) => {
-  const response = await requestWrapper.post(`/salons/${salonId}/products`, data);
-  return response.data as { success: boolean; data: any };
+/** Photo refusée lors d'un enregistrement produit + photos (le produit, lui, est enregistré). */
+export interface ProductPhotoUploadError {
+  fileName: string;
+  errorCode: string;
+  message: string;
+}
+
+/**
+ * Corps d'un enregistrement produit : JSON seul, ou multipart `data` + `photos[]`
+ * quand des photos accompagnent l'envoi (kori-server docs/PRODUCT_SALES.md).
+ */
+function productBody(data: object, files?: File[]) {
+  if (!files?.length) return { body: data, config: undefined };
+  const formData = new FormData();
+  formData.append("data", JSON.stringify(data));
+  files.forEach((file) => formData.append("photos", file));
+  return { body: formData, config: { headers: { "Content-Type": "multipart/form-data" } } };
+}
+
+/** Création d'un produit, avec ses photos si fournies (produit d'abord, photos ensuite). */
+export const createProductApi = async (salonId: string, data: object, files?: File[]) => {
+  const { body, config } = productBody(data, files);
+  const response = await requestWrapper.post(`/salons/${salonId}/products`, body, config);
+  return response.data as { success: boolean; data: any & { photoErrors?: ProductPhotoUploadError[] } };
 };
 
-export const updateProductApi = async (productId: string, data: object) => {
-  const response = await requestWrapper.put(`/products/${productId}`, data);
-  return response.data as { success: boolean; data: any };
+/** Modification d'un produit, avec de nouvelles photos si fournies (même contrat que la création). */
+export const updateProductApi = async (productId: string, data: object, files?: File[]) => {
+  const { body, config } = productBody(data, files);
+  const response = await requestWrapper.put(`/products/${productId}`, body, config);
+  return response.data as { success: boolean; data: any & { photoErrors?: ProductPhotoUploadError[] } };
 };
 
 /** Supprime un produit jamais commandé ; sinon le retire de la vente (`deactivated`). */
