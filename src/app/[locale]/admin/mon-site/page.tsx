@@ -18,15 +18,20 @@ import {
   FEATURED_FONT_OPTIONS,
   getFontOption,
   normalizeHex,
+  resolveColorMode,
   resolvePalette,
   resolveSalonTheme,
+  SALON_APPEARANCES,
   SALON_COLOR_THEMES,
+  SALON_PRESET_DARK_PALETTES,
   SALON_PRESET_PALETTES,
   SALON_TEMPLATES,
   SALON_SITE_PREVIEW_MESSAGE,
   SALON_SITE_PREVIEW_READY,
   salonInitials,
+  type SalonColorMode,
   type SalonPalette,
+  type SalonSiteAppearance,
   type SalonSiteColorTheme,
   type SalonSiteDto,
   type SalonSiteFontKey,
@@ -41,8 +46,11 @@ import {
   ImagePlus,
   Loader2,
   Monitor,
+  Moon,
   RotateCcw,
   Smartphone,
+  Sun,
+  SunMoon,
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
@@ -54,11 +62,14 @@ interface Draft {
   template: SalonSiteTemplate;
   showLogo: boolean;
   colorTheme: SalonSiteColorTheme;
+  appearance: SalonSiteAppearance;
   primaryColor: string;
   secondaryColor: string;
   font: SalonSiteFontKey;
   tagline: string;
 }
+
+const APPEARANCE_ICONS: Record<SalonSiteAppearance, typeof Sun> = { LIGHT: Sun, DARK: Moon, AUTO: SunMoon };
 
 const draftFromSite = (site: SalonSiteDto | null | undefined): Draft => {
   const t = resolveSalonTheme(site);
@@ -66,6 +77,7 @@ const draftFromSite = (site: SalonSiteDto | null | undefined): Draft => {
     template: t.template,
     showLogo: t.showLogo,
     colorTheme: t.colorTheme,
+    appearance: t.appearance,
     primaryColor: t.primaryColor,
     secondaryColor: t.secondaryColor,
     font: t.font,
@@ -99,6 +111,8 @@ export default function MonSitePage() {
   const [draft, setDraft] = useState<Draft>(() => draftFromSite(null));
   const [dirty, setDirty] = useState(false);
   const [device, setDevice] = useState<"desktop" | "mobile">("mobile");
+  // Apparence « Automatique » : l'aperçu se bascule à la main entre clair et sombre.
+  const [autoPreviewMode, setAutoPreviewMode] = useState<SalonColorMode>("light");
   const [iframeReady, setIframeReady] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,22 +126,37 @@ export default function MonSitePage() {
     setDraft(draftFromSite(savedSite));
   }, [savedSite, isLoading]);
 
+  const previewMode: SalonColorMode =
+    draft.appearance === "AUTO" ? autoPreviewMode : resolveColorMode(draft.appearance);
+
   const previewSite: SalonSiteDto = useMemo(
     () => ({
       template: draft.template,
       showLogo: draft.showLogo,
       colorTheme: draft.colorTheme,
+      // L'aperçu force le mode montré, quel que soit le réglage de l'appareil de l'éditeur.
+      appearance: previewMode === "dark" ? "DARK" : "LIGHT",
       primaryColor: draft.primaryColor,
       secondaryColor: draft.secondaryColor,
       font: draft.font,
       tagline: draft.tagline || null,
       logoUrl: savedSite?.logoUrl ?? null,
     }),
-    [draft, savedSite?.logoUrl],
+    [draft, previewMode, savedSite?.logoUrl],
   );
 
+  /** Palette du mode affiché dans l'aperçu (croquis, pastilles, logo). */
   const palette = useMemo(
-    () => resolvePalette(draft.colorTheme, draft.primaryColor, draft.secondaryColor),
+    () => resolvePalette(draft.colorTheme, draft.primaryColor, draft.secondaryColor, previewMode),
+    [draft.colorTheme, draft.primaryColor, draft.secondaryColor, previewMode],
+  );
+  /** Le contrôle de lisibilité porte sur les couleurs choisies, donc la palette claire. */
+  const lightPalette = useMemo(
+    () => resolvePalette(draft.colorTheme, draft.primaryColor, draft.secondaryColor, "light"),
+    [draft.colorTheme, draft.primaryColor, draft.secondaryColor],
+  );
+  const darkPalette = useMemo(
+    () => resolvePalette(draft.colorTheme, draft.primaryColor, draft.secondaryColor, "dark"),
     [draft.colorTheme, draft.primaryColor, draft.secondaryColor],
   );
 
@@ -173,9 +202,15 @@ export default function MonSitePage() {
     patch({ colorTheme: key });
   };
 
+  const pickAppearance = (key: SalonSiteAppearance) => {
+    if (key !== "AUTO") setAutoPreviewMode(resolveColorMode(key));
+    patch({ appearance: key });
+  };
+
   // Lisibilité du thème personnalisé : texte sur le bouton, bouton sur le fond doux.
-  const ctaContrast = contrastRatio(palette.accent, palette.onAccent);
-  const accentOnSurface = contrastRatio(palette.accent, palette.surface);
+  // En sombre, l'accent est éclairci automatiquement (buildCustomDarkPalette).
+  const ctaContrast = contrastRatio(lightPalette.accent, lightPalette.onAccent);
+  const accentOnSurface = contrastRatio(lightPalette.accent, lightPalette.surface);
   const lowContrast = draft.colorTheme === "CUSTOM" && (ctaContrast < 4.5 || accentOnSurface < 3);
 
   const onPublish = () => {
@@ -186,6 +221,7 @@ export default function MonSitePage() {
           template: draft.template,
           showLogo: draft.showLogo,
           colorTheme: draft.colorTheme,
+          appearance: draft.appearance,
           primaryColor: draft.primaryColor,
           secondaryColor: draft.secondaryColor,
           font: draft.font,
@@ -352,7 +388,8 @@ export default function MonSitePage() {
             <div className="grid grid-cols-2 gap-2">
               {SALON_COLOR_THEMES.map((t) => {
                 const active = draft.colorTheme === t.key;
-                const p = t.key === "CUSTOM" ? (active ? palette : null) : SALON_PRESET_PALETTES[t.key];
+                const presets = previewMode === "dark" ? SALON_PRESET_DARK_PALETTES : SALON_PRESET_PALETTES;
+                const p = t.key === "CUSTOM" ? (active ? palette : null) : presets[t.key];
                 return (
                   <button
                     key={t.key}
@@ -417,8 +454,58 @@ export default function MonSitePage() {
                       : `Lisibilité OK — bouton ${ctaContrast.toFixed(1)}:1, accent sur fond ${accentOnSurface.toFixed(1)}:1.`}
                   </span>
                 </div>
+                {draft.appearance !== "LIGHT" && (
+                  <p className="text-[11px] text-slate-500">
+                    En sombre, l&apos;accent est éclairci automatiquement pour rester lisible ; le fond doux est remplacé par un gris
+                    teinté de l&apos;accent.
+                  </p>
+                )}
               </div>
             )}
+          </Field>
+
+          {/* Apparence */}
+          <Field label="Apparence" hint="Automatique : clair ou sombre selon le réglage du téléphone ou de l'ordinateur du visiteur.">
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Apparence">
+              {SALON_APPEARANCES.map((a) => {
+                const active = draft.appearance === a.key;
+                const Icon = APPEARANCE_ICONS[a.key];
+                const light = lightPalette;
+                const dark = darkPalette;
+                const swatch =
+                  a.key === "LIGHT"
+                    ? light.bg
+                    : a.key === "DARK"
+                      ? dark.bg
+                      : `linear-gradient(135deg, ${light.bg} 0 50%, ${dark.bg} 50% 100%)`;
+                return (
+                  <button
+                    key={a.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    title={a.description}
+                    onClick={() => pickAppearance(a.key)}
+                    className={cn(
+                      "flex flex-col items-start gap-1.5 rounded-xl border-2 p-2.5 text-left transition-colors",
+                      active ? "border-slate-900" : "border-slate-200 hover:border-slate-300",
+                    )}
+                  >
+                    <span
+                      className="grid h-9 w-full place-items-center rounded-md border border-slate-200"
+                      style={{ background: swatch }}
+                    >
+                      <Icon
+                        className="size-4"
+                        style={{ color: a.key === "DARK" ? dark.fg : a.key === "LIGHT" ? light.fg : dark.accent }}
+                        aria-hidden
+                      />
+                    </span>
+                    <span className="text-sm font-semibold text-slate-800">{a.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </Field>
 
           {/* Police */}
@@ -497,6 +584,17 @@ export default function MonSitePage() {
         <section className="min-w-0">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-sm text-slate-600">Aperçu en direct de votre page publique.</p>
+            <div className="flex items-center gap-2">
+            {draft.appearance === "AUTO" && (
+              <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5" aria-label="Mode de l'aperçu">
+                <DeviceButton active={previewMode === "light"} onClick={() => setAutoPreviewMode("light")} label="Aperçu clair">
+                  <Sun className="size-4" />
+                </DeviceButton>
+                <DeviceButton active={previewMode === "dark"} onClick={() => setAutoPreviewMode("dark")} label="Aperçu sombre">
+                  <Moon className="size-4" />
+                </DeviceButton>
+              </div>
+            )}
             <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5">
               <DeviceButton active={device === "mobile"} onClick={() => setDevice("mobile")} label="Mobile">
                 <Smartphone className="size-4" />
@@ -505,14 +603,15 @@ export default function MonSitePage() {
                 <Monitor className="size-4" />
               </DeviceButton>
             </div>
+            </div>
           </div>
           <div className="flex justify-center rounded-2xl border border-slate-200 bg-slate-100 p-3">
             <div
               className={cn(
-                "overflow-hidden rounded-xl bg-white shadow-lg transition-all",
+                "overflow-hidden rounded-xl shadow-lg transition-all",
                 device === "mobile" ? "w-[390px] max-w-full" : "w-full",
               )}
-              style={{ height: "min(80vh, 900px)" }}
+              style={{ height: "min(80vh, 900px)", background: palette.bg }}
             >
               {previewUrl && (
                 <iframe

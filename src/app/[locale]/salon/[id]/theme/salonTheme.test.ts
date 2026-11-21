@@ -1,17 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCustomDarkPalette,
   buildCustomPalette,
   contrastRatio,
   DEFAULT_SALON_THEME,
   FEATURED_FONT_OPTIONS,
   normalizeHex,
   onColor,
+  resolveColorMode,
   resolveSalonTheme,
   SALON_COLOR_THEMES,
+  SALON_PRESET_DARK_PALETTES,
   SALON_PRESET_PALETTES,
   SALON_TEMPLATES,
   salonInitials,
   themeToCssVars,
+  withColorMode,
 } from "./salonTheme";
 
 describe("resolveSalonTheme", () => {
@@ -111,5 +115,68 @@ describe("salonInitials", () => {
     expect(salonInitials("Aïcha Diallo")).toBe("AD");
     expect(salonInitials("Nova")).toBe("N");
     expect(salonInitials("")).toBe("");
+  });
+});
+
+describe("apparence claire / sombre", () => {
+  const presets = ["MONO", "KORI", "ROSY"] as const;
+
+  it("reste en clair par défaut et pour une valeur inconnue", () => {
+    expect(resolveSalonTheme(null).mode).toBe("light");
+    const theme = resolveSalonTheme({ colorTheme: "KORI", appearance: "NEON" });
+    expect(theme.appearance).toBe("LIGHT");
+    expect(theme.mode).toBe("light");
+    expect(theme.palette).toEqual(SALON_PRESET_PALETTES.KORI);
+  });
+
+  it("affiche la palette sombre du thème en DARK", () => {
+    const theme = resolveSalonTheme({ colorTheme: "ROSY", appearance: "DARK" });
+    expect(theme.mode).toBe("dark");
+    expect(theme.palette).toEqual(SALON_PRESET_DARK_PALETTES.ROSY);
+    expect(theme.lightPalette).toEqual(SALON_PRESET_PALETTES.ROSY);
+  });
+
+  it("AUTO suit l'appareil : clair au rendu serveur, sombre si l'appareil le demande", () => {
+    expect(resolveColorMode("AUTO")).toBe("light");
+    expect(resolveColorMode("AUTO", true)).toBe("dark");
+    expect(resolveColorMode("LIGHT", true)).toBe("light");
+    const theme = resolveSalonTheme({ colorTheme: "MONO", appearance: "AUTO" });
+    expect(theme.mode).toBe("light");
+    const dark = withColorMode(theme, "dark");
+    expect(dark.palette).toEqual(SALON_PRESET_DARK_PALETTES.MONO);
+    expect(withColorMode(dark, "dark")).toBe(dark);
+  });
+
+  it.each(presets)("palette sombre %s lisible (texte, atténué, accent)", (key) => {
+    const p = SALON_PRESET_DARK_PALETTES[key];
+    expect(contrastRatio(p.fg, p.bg)).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(p.muted, p.bg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.accent, p.bg)).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each([
+    ["LIGHT", SALON_PRESET_PALETTES.MONO],
+    ["DARK", SALON_PRESET_DARK_PALETTES.MONO],
+  ] as const)("messages d'état lisibles en %s", (_, p) => {
+    expect(contrastRatio(p.danger, p.dangerBg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.warning, p.warningBg)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(p.success, p.successBg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(["#111111", "#53745D", "#C2185B", "#1F3A5F", "#5B3E8C", "#FFD400"])(
+    "personnalisé sombre : accent %s éclairci jusqu'à rester lisible",
+    (accent) => {
+      const p = buildCustomDarkPalette(accent);
+      expect(contrastRatio(p.fg, p.bg)).toBeGreaterThanOrEqual(7);
+      expect(contrastRatio(p.accent, p.bg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(p.onAccent, p.accent)).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it("expose les teintes d'état en variables CSS", () => {
+    const vars = themeToCssVars(resolveSalonTheme({ appearance: "DARK" }));
+    expect(vars["--site-bg"]).toBe(SALON_PRESET_DARK_PALETTES.MONO.bg);
+    expect(vars["--site-danger"]).toBe(SALON_PRESET_DARK_PALETTES.MONO.danger);
   });
 });

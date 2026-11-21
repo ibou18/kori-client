@@ -230,12 +230,12 @@ export function ClientQuickAuthPanel({ onAuthenticated, summary }: ClientQuickAu
         )}
 
         {forgotSuccess && (
-          <p className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <p className="rounded-xl border border-site-success-border bg-site-success-bg px-3 py-2 text-sm text-site-success">
             Si un compte existe pour cette adresse, un courriel de réinitialisation a été envoyé. Consultez votre boîte
             de réception puis reconnectez-vous ici.
           </p>
         )}
-        {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="rounded-xl border border-site-danger-border bg-site-danger-bg px-3 py-2 text-sm text-site-danger">{error}</p>}
 
         {showForgotPassword ? (
           <form id="wb-forgot-form" onSubmit={handleForgotPassword} className="flex flex-col gap-3.5">

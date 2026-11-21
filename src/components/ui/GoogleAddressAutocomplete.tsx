@@ -82,7 +82,35 @@ interface GoogleAddressAutocompleteProps {
   disabled?: boolean;
   required?: boolean;
   placeholder?: string;
+  /**
+   * `site` : couleurs du mini-site salon (variables `--site-*`, clair ou sombre)
+   * au lieu de celles du back-office.
+   */
+  variant?: "default" | "site";
 }
+
+/** Classes par variante : champ, liste de suggestions, suggestion, textes. */
+const VARIANT_CLASSES = {
+  default: {
+    label: undefined,
+    input: "",
+    list: "bg-white border-gray-200",
+    option: "hover:bg-gray-50 border-gray-100",
+    icon: "text-gray-400",
+    main: "text-gray-900",
+    secondary: "text-gray-500",
+  },
+  site: {
+    label: "text-sm font-medium text-site-fg",
+    input:
+      "h-12 rounded-xl border-site-border-strong bg-site-bg text-[15px] text-site-fg placeholder:text-site-muted focus-visible:ring-site-accent",
+    list: "bg-site-bg border-site-border",
+    option: "hover:bg-site-surface border-site-border",
+    icon: "text-site-muted",
+    main: "text-site-fg",
+    secondary: "text-site-muted",
+  },
+} as const;
 
 export function GoogleAddressAutocomplete({
   id = "address",
@@ -93,7 +121,9 @@ export function GoogleAddressAutocomplete({
   disabled = false,
   required = false,
   placeholder = "Rechercher une adresse...",
+  variant = "default",
 }: GoogleAddressAutocompleteProps) {
+  const vc = VARIANT_CLASSES[variant];
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<GooglePlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -304,7 +334,7 @@ export function GoogleAddressAutocomplete({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <Label htmlFor={id}>
+        <Label htmlFor={id} className={vc.label}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
@@ -326,11 +356,11 @@ export function GoogleAddressAutocomplete({
             }
           }}
           disabled={disabled}
-          className={`pr-10 ${error ? "border-red-500" : ""}`}
+          className={`pr-10 ${vc.input} ${error ? "border-red-500" : ""}`}
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+            <Loader2 className={`w-4 h-4 animate-spin ${vc.icon}`} />
           </div>
         )}
         {!isLoading && selectedAddress && (
@@ -342,21 +372,21 @@ export function GoogleAddressAutocomplete({
 
       {/* Suggestions */}
       {showPredictions && predictions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div className={`absolute z-50 w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-y-auto ${vc.list}`}>
           {predictions.map((prediction) => (
             <button
               key={prediction.place_id}
               type="button"
               onClick={() => handleSelectPrediction(prediction)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+              className={`w-full px-4 py-3 text-left transition-colors border-b last:border-b-0 ${vc.option}`}
             >
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <MapPin className={`w-4 h-4 mt-0.5 flex-shrink-0 ${vc.icon}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className={`text-sm font-medium ${vc.main}`}>
                     {prediction.structured_formatting.main_text}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className={`text-xs mt-0.5 ${vc.secondary}`}>
                     {prediction.structured_formatting.secondary_text}
                   </p>
                 </div>

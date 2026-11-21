@@ -418,9 +418,9 @@ export function WebBookingPayPanel({
         </p>
 
         {quoteErrorMessage && (
-          <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{quoteErrorMessage}</p>
+          <p className="rounded-xl border border-site-danger-border bg-site-danger-bg px-3 py-2 text-sm text-site-danger">{quoteErrorMessage}</p>
         )}
-        {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="rounded-xl border border-site-danger-border bg-site-danger-bg px-3 py-2 text-sm text-site-danger">{error}</p>}
       </div>
 
       {canEditProducts && onSetProductQuantity && (

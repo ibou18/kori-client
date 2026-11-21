@@ -96,7 +96,7 @@ export function WebBookingNotesPanel({
             <p className="text-[13px] text-site-muted">Montrez le style que vous voulez.</p>
           </div>
           {photoError && (
-            <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{photoError}</p>
+            <p className="rounded-lg border border-site-danger-border bg-site-danger-bg px-3 py-2 text-sm text-site-danger">{photoError}</p>
           )}
           <input
             ref={fileInputRef}

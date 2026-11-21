@@ -7,13 +7,19 @@
  * - un **gabarit** d'entête (`template`) parmi trois, chacun avec ou sans logo (`showLogo`) ;
  * - une **palette** complète (fond, texte, surfaces, bordures, accent…) issue d'un
  *   thème prédéfini (`MONO`, `KORI`, `ROSY`) ou dérivée de deux couleurs libres (`CUSTOM`) ;
- * - une **paire de polices** (titres + corps) résolue dans une liste fermée.
+ * - une **paire de polices** (titres + corps) résolue dans une liste fermée ;
+ * - une **apparence** claire, sombre ou automatique (`appearance`) : chaque thème a
+ *   sa palette sombre (maquettes `*-dark`), `AUTO` suit le réglage de l'appareil.
  *
  * Aucune dépendance React : testable en isolation (`salonTheme.test.ts`).
  */
 
 export type SalonSiteTemplate = "CLASSIC" | "BANNER" | "COMPACT";
 export type SalonSiteColorTheme = "MONO" | "KORI" | "ROSY" | "CUSTOM";
+/** Réglage enregistré par le salon. */
+export type SalonSiteAppearance = "LIGHT" | "DARK" | "AUTO";
+/** Mode effectivement affiché (AUTO résolu par `prefers-color-scheme`). */
+export type SalonColorMode = "light" | "dark";
 
 /** Messages `postMessage` entre l'éditeur (`/admin/mon-site`) et l'iframe d'aperçu (`?preview=1`). */
 export const SALON_SITE_PREVIEW_MESSAGE = "kori:salon-site-preview";
@@ -35,6 +41,7 @@ export type SalonSiteFontKey =
 export interface SalonSiteDto {
   template?: string | null;
   colorTheme?: string | null;
+  appearance?: string | null;
   primaryColor?: string | null;
   secondaryColor?: string | null;
   font?: string | null;
@@ -78,17 +85,61 @@ export interface SalonPalette {
   media: string;
   /** Étoiles de notation. */
   star: string;
+  /** Messages d'erreur : fond, texte, bordure. */
+  dangerBg: string;
+  danger: string;
+  dangerBorder: string;
+  /** Avertissements (créneaux indisponibles, mentions) : fond, texte, bordure. */
+  warningBg: string;
+  warning: string;
+  warningBorder: string;
+  /** Confirmations : fond, texte, bordure. */
+  successBg: string;
+  success: string;
+  successBorder: string;
 }
+
+/** Teintes d'état, identiques pour tous les thèmes d'une même apparence. */
+const STATUS_LIGHT = {
+  dangerBg: "#FDECEC",
+  danger: "#B42318",
+  dangerBorder: "#F7C9C9",
+  warningBg: "#FFF6E8",
+  warning: "#8A5200",
+  warningBorder: "#F6D9A8",
+  successBg: "#EAF4EE",
+  success: "#1F5134",
+  successBorder: "#BFDCC8",
+} as const;
+
+const STATUS_DARK = {
+  dangerBg: "#3A1717",
+  danger: "#F4A5A5",
+  dangerBorder: "#5C2626",
+  warningBg: "#3A2A10",
+  warning: "#F2C879",
+  warningBorder: "#5C4417",
+  successBg: "#15291D",
+  success: "#9FD3B2",
+  successBorder: "#28452F",
+} as const;
 
 /** Thème résolu, prêt à être injecté en CSS variables. */
 export interface SalonTheme {
   template: SalonSiteTemplate;
   colorTheme: SalonSiteColorTheme;
+  /** Réglage du salon : clair, sombre ou selon l'appareil du visiteur. */
+  appearance: SalonSiteAppearance;
+  /** Mode affiché. Pour `AUTO`, « light » tant que l'appareil n'est pas connu (rendu serveur). */
+  mode: SalonColorMode;
   /** Accent du thème `CUSTOM` (ignoré pour les thèmes prédéfinis). */
   primaryColor: string;
   /** Fond doux du thème `CUSTOM` (ignoré pour les thèmes prédéfinis). */
   secondaryColor: string;
+  /** Palette affichée (= `lightPalette` ou `darkPalette` selon `mode`). */
   palette: SalonPalette;
+  lightPalette: SalonPalette;
+  darkPalette: SalonPalette;
   font: SalonSiteFontKey;
   /** `false` : entête sans logo ni monogramme, quel que soit `logoUrl`. */
   showLogo: boolean;
@@ -158,6 +209,18 @@ export const SALON_COLOR_THEMES: readonly SalonColorThemeOption[] = [
   { key: "CUSTOM", label: "Personnalisé", description: "Choisissez votre accent et votre fond." },
 ];
 
+export interface SalonAppearanceOption {
+  key: SalonSiteAppearance;
+  label: string;
+  description: string;
+}
+
+export const SALON_APPEARANCES: readonly SalonAppearanceOption[] = [
+  { key: "LIGHT", label: "Clair", description: "Fond clair, toujours." },
+  { key: "DARK", label: "Sombre", description: "Fond sombre, toujours." },
+  { key: "AUTO", label: "Automatique", description: "Suit le réglage de l'appareil du visiteur." },
+];
+
 /** Palettes prédéfinies, valeurs relevées sur la maquette (page de réservation kori). */
 export const SALON_PRESET_PALETTES: Record<Exclude<SalonSiteColorTheme, "CUSTOM">, SalonPalette> = {
   MONO: {
@@ -175,6 +238,7 @@ export const SALON_PRESET_PALETTES: Record<Exclude<SalonSiteColorTheme, "CUSTOM"
     accentSoft: "#ECECEC",
     media: "#E6E6E6",
     star: "#111111",
+    ...STATUS_LIGHT,
   },
   KORI: {
     bg: "#FFFFFF",
@@ -191,6 +255,7 @@ export const SALON_PRESET_PALETTES: Record<Exclude<SalonSiteColorTheme, "CUSTOM"
     accentSoft: "#E6ECE4",
     media: "#DCE5DB",
     star: "#D9A441",
+    ...STATUS_LIGHT,
   },
   ROSY: {
     bg: "#FFFFFF",
@@ -207,6 +272,62 @@ export const SALON_PRESET_PALETTES: Record<Exclude<SalonSiteColorTheme, "CUSTOM"
     accentSoft: "#F6E3EA",
     media: "#F3DCE5",
     star: "#D9A441",
+    ...STATUS_LIGHT,
+  },
+};
+
+/** Palettes sombres, valeurs relevées sur les maquettes `*-dark` (manucure, sauge, rose). */
+export const SALON_PRESET_DARK_PALETTES: Record<Exclude<SalonSiteColorTheme, "CUSTOM">, SalonPalette> = {
+  MONO: {
+    bg: "#121212",
+    fg: "#F2F2F2",
+    fg2: "#CFCFCF",
+    muted: "#A6A6A6",
+    surface: "#1C1C1C",
+    surface2: "#181818",
+    border: "#2C2C2C",
+    borderStrong: "#454545",
+    chipBorder: "#3A3A3A",
+    accent: "#F2F2F2",
+    onAccent: "#121212",
+    accentSoft: "#262626",
+    media: "#262626",
+    star: "#F2F2F2",
+    ...STATUS_DARK,
+  },
+  KORI: {
+    bg: "#141A17",
+    fg: "#EEF2EE",
+    fg2: "#D2DBD4",
+    muted: "#A9B5AD",
+    surface: "#1C2420",
+    surface2: "#18201C",
+    border: "#2B3530",
+    borderStrong: "#3E4A43",
+    chipBorder: "#2F3833",
+    accent: "#8DB59A",
+    onAccent: "#0F1712",
+    accentSoft: "#24302A",
+    media: "#28352E",
+    star: "#E2B455",
+    ...STATUS_DARK,
+  },
+  ROSY: {
+    bg: "#141113",
+    fg: "#F5EFF2",
+    fg2: "#D4CCD0",
+    muted: "#AFA5AA",
+    surface: "#24171D",
+    surface2: "#1C1418",
+    border: "#33292E",
+    borderStrong: "#4A3D43",
+    chipBorder: "#3A3035",
+    accent: "#F06A9B",
+    onAccent: "#1A0A11",
+    accentSoft: "#2A1B22",
+    media: "#301F27",
+    star: "#E2B455",
+    ...STATUS_DARK,
   },
 };
 
@@ -245,6 +366,11 @@ export function onColor(hex: string): string {
 
 /** Mélange `hex` avec du blanc ou du noir (0 ≤ amount ≤ 1) pour fonds/voiles. */
 export function mixHex(hex: string, target: "#FFFFFF" | "#000000", amount: number): string {
+  return blendHex(hex, target, amount);
+}
+
+/** Mélange linéaire de deux couleurs hex (0 = `hex`, 1 = `target`). */
+export function blendHex(hex: string, target: string, amount: number): string {
   const a = parseInt(hex.slice(1), 16);
   const b = parseInt(target.slice(1), 16);
   const ch = (shift: number) => {
@@ -282,6 +408,36 @@ export function buildCustomPalette(accent: string, surface: string): SalonPalett
   };
 }
 
+/**
+ * Variante sombre du thème personnalisé. Le fond doux choisi (une teinte pastel)
+ * n'a pas d'équivalent sombre lisible : les fonds sont des gris très foncés
+ * légèrement teintés de l'accent. L'accent est éclairci jusqu'à rester lisible
+ * sur ce fond (contraste ≥ 4,5:1), puis le texte posé dessus est recalculé.
+ */
+export function buildCustomDarkPalette(accent: string): SalonPalette {
+  const base = SALON_PRESET_DARK_PALETTES.MONO;
+  const tint = (grey: string, amount: number) => blendHex(grey, accent, amount);
+  const bg = tint(base.bg, 0.06);
+  let darkAccent = accent;
+  for (let step = 1; contrastRatio(darkAccent, bg) < 4.5 && step <= 20; step++) {
+    darkAccent = mixHex(accent, "#FFFFFF", step * 0.05);
+  }
+  return {
+    ...base,
+    bg,
+    surface: tint(base.surface, 0.1),
+    surface2: tint(base.surface2, 0.08),
+    border: tint(base.border, 0.08),
+    borderStrong: tint(base.borderStrong, 0.1),
+    chipBorder: tint(base.chipBorder, 0.08),
+    accent: darkAccent,
+    onAccent: onColor(darkAccent),
+    accentSoft: blendHex(bg, darkAccent, 0.16),
+    media: tint(base.media, 0.12),
+    star: darkAccent,
+  };
+}
+
 export function isFontKey(value: unknown): value is SalonSiteFontKey {
   return SALON_FONT_OPTIONS.some((f) => f.key === value);
 }
@@ -294,19 +450,47 @@ export function isColorThemeKey(value: unknown): value is SalonSiteColorTheme {
   return SALON_COLOR_THEMES.some((t) => t.key === value);
 }
 
-/** Palette d'un thème : prédéfinie, ou calculée pour `CUSTOM`. */
-export function resolvePalette(colorTheme: SalonSiteColorTheme, primaryColor: string, secondaryColor: string): SalonPalette {
-  if (colorTheme === "CUSTOM") return buildCustomPalette(primaryColor, secondaryColor);
-  return SALON_PRESET_PALETTES[colorTheme];
+export function isAppearanceKey(value: unknown): value is SalonSiteAppearance {
+  return SALON_APPEARANCES.some((a) => a.key === value);
+}
+
+/** Palette d'un thème : prédéfinie, ou calculée pour `CUSTOM`, en clair ou en sombre. */
+export function resolvePalette(
+  colorTheme: SalonSiteColorTheme,
+  primaryColor: string,
+  secondaryColor: string,
+  mode: SalonColorMode = "light",
+): SalonPalette {
+  if (colorTheme === "CUSTOM") {
+    return mode === "dark" ? buildCustomDarkPalette(primaryColor) : buildCustomPalette(primaryColor, secondaryColor);
+  }
+  return mode === "dark" ? SALON_PRESET_DARK_PALETTES[colorTheme] : SALON_PRESET_PALETTES[colorTheme];
+}
+
+/** Mode affiché pour un réglage, `prefersDark` étant le réglage de l'appareil (inconnu = clair). */
+export function resolveColorMode(appearance: SalonSiteAppearance, prefersDark = false): SalonColorMode {
+  if (appearance === "DARK") return "dark";
+  if (appearance === "AUTO" && prefersDark) return "dark";
+  return "light";
+}
+
+/** Le même thème affiché dans un autre mode (palette basculée). */
+export function withColorMode(theme: SalonTheme, mode: SalonColorMode): SalonTheme {
+  if (theme.mode === mode) return theme;
+  return { ...theme, mode, palette: mode === "dark" ? theme.darkPalette : theme.lightPalette };
 }
 
 /** Thème par défaut : gabarit carrousel, noir-blanc-gris, titres Bricolage Grotesque. */
 export const DEFAULT_SALON_THEME: SalonTheme = {
   template: "CLASSIC",
   colorTheme: "MONO",
+  appearance: "LIGHT",
+  mode: "light",
   primaryColor: "#111111",
   secondaryColor: "#F5F5F5",
   palette: SALON_PRESET_PALETTES.MONO,
+  lightPalette: SALON_PRESET_PALETTES.MONO,
+  darkPalette: SALON_PRESET_DARK_PALETTES.MONO,
   font: "BRICOLAGE",
   showLogo: true,
   logoUrl: null,
@@ -320,12 +504,20 @@ export function resolveSalonTheme(site: SalonSiteDto | null | undefined): SalonT
   const colorTheme = isColorThemeKey(site.colorTheme) ? site.colorTheme : DEFAULT_SALON_THEME.colorTheme;
   const primaryColor = normalizeHex(site.primaryColor) ?? DEFAULT_SALON_THEME.primaryColor;
   const secondaryColor = normalizeHex(site.secondaryColor) ?? DEFAULT_SALON_THEME.secondaryColor;
+  const appearance = isAppearanceKey(site.appearance) ? site.appearance : DEFAULT_SALON_THEME.appearance;
+  const mode = resolveColorMode(appearance);
+  const lightPalette = resolvePalette(colorTheme, primaryColor, secondaryColor, "light");
+  const darkPalette = resolvePalette(colorTheme, primaryColor, secondaryColor, "dark");
   return {
     template: isTemplateKey(site.template) ? site.template : DEFAULT_SALON_THEME.template,
     colorTheme,
+    appearance,
+    mode,
     primaryColor,
     secondaryColor,
-    palette: resolvePalette(colorTheme, primaryColor, secondaryColor),
+    palette: mode === "dark" ? darkPalette : lightPalette,
+    lightPalette,
+    darkPalette,
     font: isFontKey(site.font) ? site.font : DEFAULT_SALON_THEME.font,
     showLogo: site.showLogo !== false,
     logoUrl: site.logoUrl?.trim() ? site.logoUrl : null,
@@ -385,6 +577,15 @@ export function themeToCssVars(theme: SalonTheme): Record<string, string> {
     "--site-accent-soft": p.accentSoft,
     "--site-media": p.media,
     "--site-star": p.star,
+    "--site-danger-bg": p.dangerBg,
+    "--site-danger": p.danger,
+    "--site-danger-border": p.dangerBorder,
+    "--site-warning-bg": p.warningBg,
+    "--site-warning": p.warning,
+    "--site-warning-border": p.warningBorder,
+    "--site-success-bg": p.successBg,
+    "--site-success": p.success,
+    "--site-success-border": p.successBorder,
     "--site-font-display": font.family,
     "--site-font-body": font.bodyFamily,
     "--site-display-transform": font.uppercase ? "uppercase" : "none",
