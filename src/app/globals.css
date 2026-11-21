@@ -22,9 +22,14 @@ main {
    La page ne possède pas son <main> (gabarit public ou coque back-office, dont
    l'aperçu de /admin/mon-site) : on cible le <main> le plus proche qui la contient. */
 main:has([data-salon-theme], [data-salon-page]):not(:has(main)) {
-  background-color: #fff;
+  /* --site-bg est recopié sur <html> par SalonThemeProvider : suit le thème (et le mode sombre). */
+  background-color: var(--site-bg, #fff);
   /* Recouvre la bande crème (py-2 de [locale]/layout.tsx) sous la page. */
-  box-shadow: 0 0.5rem 0 #fff;
+  box-shadow: 0 0.5rem 0 var(--site-bg, #fff);
+}
+/* Mode sombre du mini-site : barres de défilement et contrôles natifs sombres. */
+html[data-salon-mode="dark"] {
+  color-scheme: dark;
 }
 :root {
   /* Mini-site salon : repli du thème MONO quand un composant du parcours de
@@ -43,6 +48,15 @@ main:has([data-salon-theme], [data-salon-page]):not(:has(main)) {
   --site-accent-soft: #ececec;
   --site-media: #e6e6e6;
   --site-star: #111111;
+  --site-danger-bg: #fdecec;
+  --site-danger: #b42318;
+  --site-danger-border: #f7c9c9;
+  --site-warning-bg: #fff6e8;
+  --site-warning: #8a5200;
+  --site-warning-border: #f6d9a8;
+  --site-success-bg: #eaf4ee;
+  --site-success: #1f5134;
+  --site-success-border: #bfdcc8;
   --site-font-display: "Bricolage Grotesque", system-ui, sans-serif;
   --site-font-body: "Inter", system-ui, sans-serif;
   --site-display-transform: none;

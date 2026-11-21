@@ -83,7 +83,7 @@ export function WebBookingServicePanel({
   if (options.length === 0) {
     return (
       <div className="px-5 py-5">
-        <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-xl border border-site-warning-border bg-site-warning-bg px-3 py-2 text-sm text-site-warning">
           Ce service ne propose pas de formule réservable en ligne pour le moment. Utilisez l&apos;application korí.
         </p>
       </div>

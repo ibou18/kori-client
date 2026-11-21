@@ -148,7 +148,7 @@ export default function ProductOrderPage() {
           </div>
           <p className="-mt-3 text-[13px] text-site-muted">Prix toutes taxes comprises, fixé par le salon.</p>
 
-          {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+          {error && <p className="rounded-xl border border-site-danger-border bg-site-danger-bg px-3 py-2 text-sm text-site-danger">{error}</p>}
         </div>
 
         <WebBookingStepActions>

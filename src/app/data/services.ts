@@ -2080,6 +2080,8 @@ export const getSalonTypesApi = async () => {
 export interface SalonSiteInput {
   template?: string;
   colorTheme?: string;
+  /** LIGHT | DARK | AUTO (suit l'appareil du visiteur). */
+  appearance?: string;
   primaryColor?: string;
   secondaryColor?: string;
   font?: string;

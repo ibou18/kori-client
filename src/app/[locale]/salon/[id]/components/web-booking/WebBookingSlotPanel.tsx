@@ -138,7 +138,7 @@ export function WebBookingSlotPanel({
   if (!selectedOptionId) {
     return (
       <div className="px-5 py-5">
-        <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-xl border border-site-warning-border bg-site-warning-bg px-3 py-2 text-sm text-site-warning">
           Choisissez d&apos;abord une formule de prestation.
         </p>
       </div>
@@ -217,7 +217,10 @@ export function WebBookingSlotPanel({
                   Calendrier
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="z-[120] w-auto rounded-2xl border-site-border p-0 shadow-lg" align="end">
+              <PopoverContent
+                className="z-[120] w-auto rounded-2xl border-site-border bg-site-bg p-0 text-site-fg shadow-lg"
+                align="end"
+              >
                 <Calendar
                   mode="single"
                   locale={fr}
@@ -231,6 +234,14 @@ export function WebBookingSlotPanel({
                   disabled={{ before: today }}
                   initialFocus
                   classNames={{
+                    // Couleurs du thème du salon (shadcn utilise sinon les tokens du back-office, clairs).
+                    head_cell: "w-9 rounded-md text-[0.8rem] font-normal text-site-muted",
+                    nav_button:
+                      "inline-flex size-7 items-center justify-center rounded-md border border-site-border-strong bg-transparent text-site-fg opacity-70 hover:bg-site-surface hover:opacity-100",
+                    cell: "relative size-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                    day: "inline-flex size-9 items-center justify-center rounded-md p-0 font-normal text-site-fg transition-colors hover:bg-site-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent aria-selected:opacity-100",
+                    day_outside: "day-outside text-site-muted opacity-60",
+                    day_disabled: "text-site-muted opacity-40 hover:bg-transparent",
                     day_selected:
                       "bg-site-accent text-site-on-accent hover:bg-site-accent hover:text-site-on-accent focus:bg-site-accent focus:text-site-on-accent",
                     day_today: "bg-site-accent-soft text-site-fg font-semibold aria-selected:bg-site-accent aria-selected:text-site-on-accent",
@@ -278,13 +289,13 @@ export function WebBookingSlotPanel({
             </div>
           ) : isError || !data ? (
             <div className="flex flex-col items-start gap-2 py-2">
-              <p className="text-sm text-red-600">Impossible de charger les créneaux.</p>
+              <p className="text-sm text-site-danger">Impossible de charger les créneaux.</p>
               <button type="button" onClick={() => refetch()} className="text-sm font-semibold text-site-accent underline">
                 Réessayer
               </button>
             </div>
           ) : data.day?.hasHoliday ? (
-            <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            <p className="rounded-xl border border-site-warning-border bg-site-warning-bg px-3 py-2 text-sm text-site-warning">
               {data.day.holidayReason || "Le salon est fermé ce jour-là."}
             </p>
           ) : slots.length === 0 ? (

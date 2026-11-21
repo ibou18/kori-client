@@ -128,6 +128,7 @@ export function WebBookingLocationPanel({
               onAddressSelect={(addr) => onHomeServiceAddressChange(addr)}
               placeholder="Rechercher votre adresse…"
               required
+              variant="site"
             />
             <p className="text-xs text-site-muted">
               Saisie assistée par Google : choisissez une suggestion pour valider l&apos;adresse.
