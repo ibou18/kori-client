@@ -1,7 +1,9 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 import React from "react";
 
 interface PageWrapperProps {
@@ -25,38 +27,53 @@ export default function PageWrapper({
   className,
   actions,
 }: PageWrapperProps) {
+  const pathname = usePathname() ?? "";
+  // Dans le back-office, le fil d'Ariane du header (AdminHeader) situe déjà la page :
+  // on n'affiche pas de gros titre en plus. Ailleurs (pages sans ce header), il reste affiché.
+  const titleInHeader = /^\/(fr|en)\/admin(\/|$)/.test(pathname);
+  const showTitle = Boolean(title) && !titleInHeader;
+  const hasActions = Boolean(actions || buttonTitle);
+  const hasHeader = showTitle || Boolean(description) || hasActions;
+
   return (
-    <div className={cn("container mx-auto px-2 py-6", className)}>
-      <div className="mb-8 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-          <div className="space-y-1.5">
-            {title && (
-              <h1 className="text-3xl font-bold tracking-tight">
-                <span className="text-5xl text-primary font-extrabold">
-                  {title.charAt(0)}
-                </span>
-                {title.slice(1)}
+    <div className={cn("container mx-auto px-2 py-5", className)}>
+      {/* Titre conservé pour les lecteurs d'écran quand il n'est pas affiché ici */}
+      {title && !showTitle && <h1 className="sr-only">{title}</h1>}
+
+      {hasHeader && (
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            {showTitle && (
+              <h1 className="truncate text-2xl font-semibold tracking-tight text-slate-900">
+                {title}
               </h1>
             )}
             {description && (
-              <p className="text-muted-foreground">{description}</p>
+              <p
+                className={cn(
+                  "text-sm text-muted-foreground",
+                  showTitle && "mt-0.5",
+                )}
+              >
+                {description}
+              </p>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            {actions}
+          {hasActions && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {actions}
 
-            {buttonTitle && (
-              <Button onClick={handleClick} className="gap-2" size="sm">
-                {icon || <PlusCircle className="h-4 w-4" />}
-                {buttonTitle}
-              </Button>
-            )}
-          </div>
+              {buttonTitle && (
+                <Button onClick={handleClick} className="gap-2" size="sm">
+                  {icon || <PlusCircle className="h-4 w-4" />}
+                  {buttonTitle}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
-
-        <Separator />
-      </div>
+      )}
 
       {children}
     </div>

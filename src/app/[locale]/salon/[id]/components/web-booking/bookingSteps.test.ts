@@ -90,7 +90,7 @@ describe("buildWebBookingSteps", () => {
 describe("getWebBookingStepLabel / Title", () => {
   it("returns French labels", () => {
     expect(getWebBookingStepLabel("slot")).toBe("Créneau");
-    expect(getWebBookingStepTitle("pay")).toBe("Paiement de l'acompte");
+    expect(getWebBookingStepTitle("pay")).toBe("Paiement");
   });
 });
 

@@ -9,23 +9,23 @@ import {
   ClipboardList,
   MapIcon,
   Scissors,
+  ShoppingBag,
   Settings,
   Store,
   UserPlus,
   Users,
   Wrench,
+  Palette,
+  CreditCard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import * as React from "react";
 import { useMemo } from "react";
 
-import LanguageToggle from "@/app/components/LanguageToggle";
 import { NavMainSimple } from "@/components/nav-main-simple";
-import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -137,6 +137,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: Store,
         },
         {
+          title: "Mon mini-site",
+          url: "/admin/mon-site",
+          icon: Palette,
+        },
+        {
           title: "Calendrier",
           url: "/admin/calendrier",
           icon: Calendar,
@@ -152,9 +157,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: Scissors,
         },
         {
+          title: "Ma boutique",
+          url: "/admin/ma-boutique",
+          icon: ShoppingBag,
+        },
+        {
           title: "Paiements",
           url: "/admin/payments",
           icon: DollarSign,
+        },
+        {
+          title: "Encaissement en ligne",
+          url: "/admin/encaissement",
+          icon: CreditCard,
         },
       ];
     }
@@ -167,14 +182,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Page d'accueil du shell selon le rôle (employé → planning uniquement)
   const homeUrl = role === EMPLOYEE ? "/admin/calendrier" : "/admin/dashboard";
 
-  const data = {
-    user: {
-      name: session?.user?.firstName + " " + session?.user?.lastName,
-      email: session?.user?.email,
-      avatar: session?.user?.image || "",
-    },
-  };
-
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -185,8 +192,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#F0F4F1]">
                   <Image src={LOGO_BLACK} alt="Kori" width={32} height={32} />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate text-xs">{shellLabel}</span>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-semibold">Korí</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {shellLabel}
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -197,12 +207,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMainSimple items={navMain} />
         <NavSecondary items={EMPTY_SECONDARY} className="mt-auto" />
       </SidebarContent>
-      <div className="flex justify-center p-1">
-        <LanguageToggle />
-      </div>
-      <SidebarFooter className="mb-5">
-        <NavUser user={data.user} />
-      </SidebarFooter>
     </Sidebar>
   );
 }

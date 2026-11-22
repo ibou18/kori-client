@@ -109,6 +109,11 @@ const DEPOSIT_PERCENT_MIN = 5;
 const DEPOSIT_PERCENT_MAX = 50;
 const DEPOSIT_PERCENT_PRESETS = [10, 15, 20, 25, 30, 50];
 
+/** Bornes de la politique d'annulation (miroir du serveur, cancellationPolicyUtils). */
+const CANCELLATION_NOTICE_HOURS_MAX = 168;
+const CANCELLATION_NOTICE_PRESETS = [12, 24, 48, 72];
+const CANCELLATION_REFUND_PRESETS = [0, 25, 50, 100];
+
 const salonFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   description: z.string().optional(),
@@ -135,6 +140,31 @@ const salonFormSchema = z.object({
         );
       },
       { message: `Entre ${DEPOSIT_PERCENT_MIN} % et ${DEPOSIT_PERCENT_MAX} %` }
+    ),
+  // Politique d'annulation (kori-server docs/CANCELLATION_POLICY.md) : délai en heures et part de
+  // l'acompte remboursée après ce délai. Désactivée = règle Kori (les deux champs envoyés à null).
+  cancellationPolicyEnabled: z.boolean().default(false),
+  cancellationNoticeHours: z
+    .string()
+    .optional()
+    .refine(
+      (v) => {
+        if (v === undefined || v === "") return true;
+        const n = Number(v);
+        return Number.isInteger(n) && n >= 1 && n <= CANCELLATION_NOTICE_HOURS_MAX;
+      },
+      { message: `Entre 1 et ${CANCELLATION_NOTICE_HOURS_MAX} heures` }
+    ),
+  cancellationLateRefundPercent: z
+    .string()
+    .optional()
+    .refine(
+      (v) => {
+        if (v === undefined || v === "") return true;
+        const n = Number(v);
+        return Number.isInteger(n) && n >= 0 && n <= 100;
+      },
+      { message: "Entre 0 et 100 %" }
     ),
   isActive: z.boolean().default(true),
   isVerified: z.boolean().default(false),
@@ -195,6 +225,9 @@ export function SalonForm({
       offersHomeService: false,
       depositEnabled: false,
       depositPercentage: "",
+      cancellationPolicyEnabled: false,
+      cancellationNoticeHours: "24",
+      cancellationLateRefundPercent: "0",
       isActive: true,
       isVerified: false,
       address: {
@@ -221,6 +254,10 @@ export function SalonForm({
       ? Math.round(parsedDepositPercent)
       : platformDepositPercent;
 
+  const cancellationPolicyEnabled = form.watch("cancellationPolicyEnabled");
+  const cancellationNoticeInput = form.watch("cancellationNoticeHours");
+  const cancellationRefundInput = form.watch("cancellationLateRefundPercent");
+
   useEffect(() => {
     if (!salon?.id) {
       return;
@@ -240,6 +277,17 @@ export function SalonForm({
         salon.depositPercentage != null
           ? String(Math.round(salon.depositPercentage * 100))
           : "",
+      cancellationPolicyEnabled:
+        salon.cancellationNoticeHours != null &&
+        salon.cancellationLateRefundPercent != null,
+      cancellationNoticeHours:
+        salon.cancellationNoticeHours != null
+          ? String(salon.cancellationNoticeHours)
+          : "24",
+      cancellationLateRefundPercent:
+        salon.cancellationLateRefundPercent != null
+          ? String(salon.cancellationLateRefundPercent)
+          : "0",
       isActive: salon.isActive !== undefined ? salon.isActive : true,
       isVerified: salon.isVerified !== undefined ? salon.isVerified : false,
       address: {
@@ -271,6 +319,15 @@ export function SalonForm({
         values.depositPercentage && values.depositPercentage !== ""
           ? Number(values.depositPercentage) / 100
           : null,
+      // Politique d'annulation : les deux valeurs ensemble, ou les deux à null (règle Kori).
+      cancellationNoticeHours:
+        values.cancellationPolicyEnabled && values.cancellationNoticeHours
+          ? Number(values.cancellationNoticeHours)
+          : null,
+      cancellationLateRefundPercent:
+        values.cancellationPolicyEnabled && values.cancellationLateRefundPercent !== ""
+          ? Number(values.cancellationLateRefundPercent ?? 0)
+          : null,
       address: {
         ...values.address,
         province: values.address.province || undefined,
@@ -282,6 +339,8 @@ export function SalonForm({
         ]),
       ),
     };
+
+    delete submitData.cancellationPolicyEnabled;
 
     onSubmit(submitData);
   };
@@ -881,6 +940,158 @@ export function SalonForm({
               <p className="text-sm text-muted-foreground px-1">
                 Collecte désactivée : aucun acompte n&apos;est demandé, le client
                 paie seulement les frais de service en ligne.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Politique d'annulation : délai et part de l'acompte remboursée (docs/CANCELLATION_POLICY.md) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Politique d&apos;annulation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="cancellationPolicyEnabled"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Politique personnalisée
+                    </FormLabel>
+                    <FormDescription>
+                      Fixez le délai d&apos;annulation et la part de l&apos;acompte
+                      remboursée après ce délai. Désactivée : règle Kori (les
+                      frais de service sont remboursés jusqu&apos;à 24 h avant,
+                      l&apos;acompte reste au salon).
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onChange={(checked: boolean) => field.onChange(checked)}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {cancellationPolicyEnabled ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="cancellationNoticeHours"
+                  render={({ field }) => (
+                    <FormItem className="rounded-lg border p-4 space-y-3">
+                      <div>
+                        <FormLabel className="text-base">
+                          Délai avant le rendez-vous
+                        </FormLabel>
+                        <FormDescription>
+                          Jusqu&apos;à ce délai, l&apos;acompte est remboursé en
+                          entier.
+                        </FormDescription>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {CANCELLATION_NOTICE_PRESETS.map((preset) => (
+                          <Button
+                            key={preset}
+                            type="button"
+                            size="sm"
+                            variant={String(preset) === (field.value ?? "") ? "default" : "outline"}
+                            onClick={() => field.onChange(String(preset))}
+                          >
+                            {preset >= 48 ? `${preset / 24} jours` : `${preset} h`}
+                          </Button>
+                        ))}
+                      </div>
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={CANCELLATION_NOTICE_HOURS_MAX}
+                            step={1}
+                            className="w-28 text-lg font-semibold"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                          <span className="text-base text-muted-foreground">heures</span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cancellationLateRefundPercent"
+                  render={({ field }) => (
+                    <FormItem className="rounded-lg border p-4 space-y-3">
+                      <div>
+                        <FormLabel className="text-base">
+                          Remboursement après ce délai
+                        </FormLabel>
+                        <FormDescription>
+                          Part de l&apos;acompte rendue au client s&apos;il annule
+                          trop tard. 0 % = aucun remboursement.
+                        </FormDescription>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {CANCELLATION_REFUND_PRESETS.map((preset) => (
+                          <Button
+                            key={preset}
+                            type="button"
+                            size="sm"
+                            variant={String(preset) === (field.value ?? "") ? "default" : "outline"}
+                            onClick={() => field.onChange(String(preset))}
+                          >
+                            {preset} %
+                          </Button>
+                        ))}
+                      </div>
+                      <FormControl>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="w-28 text-lg font-semibold"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                          <span className="text-base text-muted-foreground">%</span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <p className="text-sm text-muted-foreground md:col-span-2 px-1">
+                  Affiché au client au moment du paiement :{" "}
+                  <span className="text-foreground">
+                    « Acompte remboursé si vous annulez plus de{" "}
+                    {cancellationNoticeInput || "…"} h avant le rendez-vous ;
+                    ensuite,{" "}
+                    {Number(cancellationRefundInput) >= 100
+                      ? "l'acompte reste remboursé en entier"
+                      : Number(cancellationRefundInput) > 0
+                        ? `${cancellationRefundInput} % de l'acompte est remboursé`
+                        : "l'acompte n'est pas remboursé"}
+                    . »
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground px-1">
+                Règle Kori appliquée : annulation gratuite jusqu&apos;à 24 h avant
+                le rendez-vous.
               </p>
             )}
           </CardContent>

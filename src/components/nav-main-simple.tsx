@@ -2,6 +2,7 @@
 
 import { type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -23,6 +24,15 @@ export function NavMainSimple({
     }[];
   }[];
 }) {
+  const path = (usePathname() ?? "").replace(/^\/(en|fr)(?=\/|$)/, "");
+  const isActive = (url: string) => path === url || path.startsWith(`${url}/`);
+  // Un seul élément actif : le préfixe le plus long l'emporte
+  // (« Mon salon » /admin/salons/:id plutôt que « Salons » /admin/salons).
+  const activeUrl = items
+    .map((item) => item.url)
+    .filter(isActive)
+    .sort((a, b) => b.length - a.length)[0];
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -30,7 +40,12 @@ export function NavMainSimple({
         {items.map((item) => (
           <div key={item.title}>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={item.url === activeUrl}
+                className="data-[active=true]:bg-[#F0F4F1] data-[active=true]:text-[#3a5a47]"
+              >
                 <Link href={item.url}>
                   <item.icon />
                   <span>{item.title}</span>

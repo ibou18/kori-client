@@ -15,6 +15,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "media.koribeauty.win",
+      },
+      {
+        protocol: "https",
         hostname: "res.cloudinary.com",
       },
       {

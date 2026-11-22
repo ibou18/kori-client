@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import PageWrapper from "@/app/components/block/PageWrapper";
@@ -7,90 +8,385 @@ import {
   useGetTopSalons,
   useGetTopServices,
 } from "@/app/data/hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import dayjs from "dayjs";
+import type { LucideIcon } from "lucide-react";
 import {
   Building2,
   Calendar,
-  CheckCircle,
-  Clock,
+  CalendarRange,
   DollarSign,
   Star,
-  TrendingUp,
-  Users,
-  XCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import { AdminKpiCards } from "../dashboard/components/AdminKpiCards";
+
 type DateRange = "7days" | "month" | "3months" | "6months" | "year" | "custom";
+
+const RANGES: { value: DateRange; label: string }[] = [
+  { value: "7days", label: "7 jours" },
+  { value: "month", label: "Mois en cours" },
+  { value: "3months", label: "3 mois" },
+  { value: "6months", label: "6 mois" },
+  { value: "year", label: "Année en cours" },
+  { value: "custom", label: "Personnalisée" },
+];
+
+const BRAND = "#53745D";
+const CARD = "rounded-xl border border-slate-200 bg-white shadow-sm";
+
+const formatCurrency = (amount: number) =>
+  (amount || 0).toLocaleString("fr-CA", { style: "currency", currency: "CAD" });
+
+const formatCompact = (value: number) =>
+  new Intl.NumberFormat("fr-CA", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+
+/** L'API renvoie des jours (YYYY-MM-DD) ou des mois (YYYY-MM) selon la longueur de la période. */
+const formatEvolutionDateLabel = (value: string) => {
+  if (/^\d{4}-\d{2}$/.test(value)) {
+    const [year, month] = value.split("-");
+    return new Intl.DateTimeFormat("fr-CA", {
+      month: "short",
+      year: "2-digit",
+    }).format(new Date(Number(year), Number(month) - 1, 1));
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return dayjs(value).format("DD MMM");
+  }
+  return value;
+};
+
+function resolveDateParams(range: DateRange, start: string, end: string) {
+  const today = dayjs();
+  const from: Record<Exclude<DateRange, "custom">, dayjs.Dayjs> = {
+    "7days": today.subtract(7, "days"),
+    month: today.startOf("month"),
+    "3months": today.subtract(3, "months"),
+    "6months": today.subtract(6, "months"),
+    year: today.startOf("year"),
+  };
+  if (range === "custom") {
+    if (!start || !end) return null;
+    return {
+      startDate: dayjs(start).format("YYYY-MM-DD"),
+      endDate: dayjs(end).format("YYYY-MM-DD"),
+    };
+  }
+  return {
+    startDate: from[range].format("YYYY-MM-DD"),
+    endDate: today.format("YYYY-MM-DD"),
+  };
+}
+
+function SectionTitle({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-baseline gap-x-3">
+      <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
+function PeriodKpi({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  highlighted = false,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  icon: LucideIcon;
+  highlighted?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-5 shadow-sm",
+        highlighted
+          ? "border-transparent bg-gradient-to-br from-[#53745D] to-[#34503F] text-white"
+          : "border-slate-200 bg-white",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p
+          className={cn(
+            "text-xs font-semibold uppercase tracking-wide",
+            highlighted ? "text-white/75" : "text-slate-500",
+          )}
+        >
+          {label}
+        </p>
+        <span
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-lg",
+            highlighted ? "bg-white/15" : "bg-[#F0F4F1] text-[#53745D]",
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="mt-3 text-3xl font-bold tracking-tight tabular-nums">
+        {value}
+      </p>
+      {hint && (
+        <p
+          className={cn(
+            "mt-1 text-xs",
+            highlighted ? "text-white/70" : "text-slate-500",
+          )}
+        >
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function EvolutionChart({
+  title,
+  icon: Icon,
+  data,
+  dataKey,
+  seriesLabel,
+  format,
+  isLoading,
+}: {
+  title: string;
+  icon: LucideIcon;
+  data: any[];
+  dataKey: string;
+  seriesLabel: string;
+  format: (value: number) => string;
+  isLoading: boolean;
+}) {
+  const values = data.map((item) => Number(item[dataKey]) || 0);
+  const total = values.reduce((sum, v) => sum + v, 0);
+  const average = values.length ? total / values.length : 0;
+  const peak = values.length ? Math.max(...values) : 0;
+  const gradientId = `gradient-${dataKey}`;
+
+  return (
+    <div className={cn(CARD, "p-5")}>
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F0F4F1] text-[#53745D]">
+          <Icon className="h-4 w-4" />
+        </span>
+        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      </div>
+
+      <div className="mt-4 h-64">
+        {isLoading ? (
+          <Skeleton className="h-full w-full" />
+        ) : data.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-slate-400">
+            Aucune donnée sur la période sélectionnée
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={data}
+              margin={{ top: 4, right: 8, left: -8, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={BRAND} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={BRAND} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#F1F5F9"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatEvolutionDateLabel}
+                tick={{ fontSize: 11, fill: "#64748B" }}
+                tickLine={false}
+                axisLine={false}
+                minTickGap={24}
+              />
+              <YAxis
+                allowDecimals={false}
+                tickFormatter={formatCompact}
+                tick={{ fontSize: 11, fill: "#64748B" }}
+                tickLine={false}
+                axisLine={false}
+                width={44}
+              />
+              <Tooltip
+                formatter={(value: number) => [format(value), seriesLabel]}
+                labelFormatter={(value) =>
+                  formatEvolutionDateLabel(String(value))
+                }
+                contentStyle={{
+                  backgroundColor: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  fontSize: 12,
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey={dataKey}
+                stroke={BRAND}
+                strokeWidth={2.5}
+                fill={`url(#${gradientId})`}
+                dot={data.length <= 31 ? { r: 3, fill: BRAND } : false}
+                activeDot={{ r: 5 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      <dl className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-100 pt-4">
+        {[
+          { label: "Total", value: format(total), strong: true },
+          { label: "Moyenne / intervalle", value: format(average) },
+          { label: "Pic", value: format(peak) },
+        ].map((item) => (
+          <div key={item.label}>
+            <dt className="text-xs text-slate-500">{item.label}</dt>
+            <dd
+              className={cn(
+                "text-base font-semibold tabular-nums",
+                item.strong ? "text-[#53745D]" : "text-slate-900",
+              )}
+            >
+              {item.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+interface RankItem {
+  id: string;
+  name: string;
+  bookings: number;
+  revenue: number;
+  href?: string;
+}
+
+/** Classement avec barre proportionnelle à la mesure choisie. */
+function RankList({
+  title,
+  hint,
+  icon: Icon,
+  items,
+  metric,
+  emptyLabel,
+}: {
+  title: string;
+  hint: string;
+  icon: LucideIcon;
+  items: RankItem[];
+  metric: "bookings" | "revenue";
+  emptyLabel: string;
+}) {
+  const max = Math.max(...items.map((item) => item[metric] || 0), 0);
+
+  return (
+    <div className={cn(CARD, "p-5")}>
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#F0F4F1] text-[#53745D]">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+          <p className="text-xs text-slate-500">{hint}</p>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="py-10 text-center text-sm text-slate-400">{emptyLabel}</p>
+      ) : (
+        <ol className="mt-4 space-y-1">
+          {items.map((item, index) => {
+            const row = (
+              <>
+                <div className="flex items-center gap-3 text-sm">
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      index < 3
+                        ? "bg-[#53745D] text-white"
+                        : "bg-slate-100 text-slate-500",
+                    )}
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-medium text-slate-900">
+                    {item.name}
+                  </span>
+                  <span className="shrink-0 text-xs text-slate-500">
+                    {item.bookings} rés.
+                  </span>
+                  <span className="w-24 shrink-0 text-right font-semibold tabular-nums text-[#53745D]">
+                    {formatCurrency(item.revenue)}
+                  </span>
+                </div>
+                <div className="ml-9 mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-[#A3BDA8]"
+                    style={{
+                      width: `${max > 0 ? ((item[metric] || 0) / max) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+              </>
+            );
+            return (
+              <li key={item.id}>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="block rounded-lg px-2 py-2 transition-colors hover:bg-slate-50"
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <div className="px-2 py-2">{row}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
 
 export default function StatsPage() {
   const [dateRange, setDateRange] = useState<DateRange>("7days");
-  const [customStartDate, setCustomStartDate] = useState<string>("");
-  const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
-  const getDateRange = (range: DateRange) => {
-    const today = dayjs();
-    let startDate: dayjs.Dayjs;
-    const endDate: dayjs.Dayjs = today;
-
-    switch (range) {
-      case "7days":
-        startDate = today.subtract(7, "days");
-        break;
-      case "month":
-        startDate = today.startOf("month");
-        break;
-      case "3months":
-        startDate = today.subtract(3, "months");
-        break;
-      case "6months":
-        startDate = today.subtract(6, "months");
-        break;
-      case "year":
-        startDate = today.startOf("year");
-        break;
-      case "custom":
-        if (customStartDate && customEndDate) {
-          return {
-            startDate: dayjs(customStartDate).format("YYYY-MM-DD"),
-            endDate: dayjs(customEndDate).format("YYYY-MM-DD"),
-          };
-        }
-        return null;
-      default:
-        startDate = today.subtract(7, "days");
-    }
-
-    return {
-      startDate: startDate.format("YYYY-MM-DD"),
-      endDate: endDate.format("YYYY-MM-DD"),
-    };
-  };
-
-  const dateParams = getDateRange(dateRange);
-  const router = useRouter();
+  const dateParams = resolveDateParams(
+    dateRange,
+    customStartDate,
+    customEndDate,
+  );
 
   const { data: statsData, isLoading } = useGetAdminStats(
     dateParams || undefined,
@@ -104,899 +400,200 @@ export default function StatsPage() {
   const { data: evolutionData, isLoading: evolutionLoading } =
     useGetRevenueEvolution(dateParams || undefined);
 
-  const stats = statsData?.data || statsData;
-  const topServices = topServicesData?.data || topServicesData || [];
-  const topSalons = topSalonsData?.data || topSalonsData || [];
-  const evolution = evolutionData?.data || evolutionData || [];
-  const hasEvolutionData = Array.isArray(evolution) && evolution.length > 0;
-  const evolutionSeries = hasEvolutionData
-    ? evolution
-    : [
-        {
-          date: dayjs().format("YYYY-MM-DD"),
-          revenue: 0,
-          bookings: 0,
-          platformFees: 0,
-        },
-      ];
-
-  const formatEvolutionDateLabel = (value: string) => {
-    if (/^\d{4}-\d{2}$/.test(value)) {
-      const [year, month] = value.split("-");
-      return new Intl.DateTimeFormat("fr-CA", {
-        month: "short",
-        year: "2-digit",
-      }).format(new Date(Number(year), Number(month) - 1, 1));
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      return dayjs(value).format("DD MMM");
-    }
-    return value;
+  const asArray = (res: any): any[] => {
+    const value = res?.data ?? res;
+    return Array.isArray(value) ? value : [];
   };
 
-  const totalBookingsEvolution = evolutionSeries.reduce(
-    (sum: number, item: { bookings?: number }) => sum + (item.bookings || 0),
+  const stats = statsData?.data || statsData;
+  const evolution = asArray(evolutionData);
+  const topServices: RankItem[] = asArray(topServicesData).map((s) => ({
+    id: s.serviceId,
+    name: s.serviceName,
+    bookings: s.bookings || 0,
+    revenue: s.revenue || 0,
+  }));
+  const topSalons: RankItem[] = asArray(topSalonsData).map((s) => ({
+    id: s.salonId,
+    name: s.salonName,
+    bookings: s.bookings || 0,
+    revenue: s.revenue || 0,
+    href: `/admin/salons/${s.salonId}`,
+  }));
+
+  const platformFees = evolution.reduce(
+    (sum, item) => sum + (item.platformFees || 0),
     0,
   );
-  const totalPlatformFeesEvolution = evolutionSeries.reduce(
-    (sum: number, item: { platformFees?: number }) =>
-      sum + (item.platformFees || 0),
-    0,
-  );
-  const formatCurrency = (amount: number) =>
-    amount.toLocaleString("fr-CA", { style: "currency", currency: "CAD" });
-  const StatCard = ({
-    title,
-    value,
-    icon: Icon,
-    trend,
-    subtitle,
-  }: {
-    title: string;
-    value: string | number;
-    icon: any;
-    trend?: string;
-    subtitle?: string;
-  }) => (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        )}
-        {trend && (
-          <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-            <TrendingUp className="h-3 w-3" />
-            {trend}
-          </p>
-        )}
-      </CardContent>
-    </Card>
-  );
+  const revenueInPeriod = stats?.revenue?.inPeriod || 0;
+  const periodLabel = dateParams
+    ? `${dayjs(dateParams.startDate).format("D MMM YYYY")} – ${dayjs(
+        dateParams.endDate,
+      ).format("D MMM YYYY")}`
+    : "Choisissez une date de début et de fin";
+
+  const dateInputClass =
+    "h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#53745D] focus:ring-2 focus:ring-[#53745D]/20";
 
   return (
     <PageWrapper
       title="Statistiques"
       description="Analyse de la performance de la plateforme"
     >
-      <div className="space-y-6">
-        {/* Sélection de la plage de dates */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Période d'analyse</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <Select
-                  value={dateRange}
-                  onValueChange={(v: string) => setDateRange(v as DateRange)}
+      <div className="space-y-8">
+        {/* Période d'analyse */}
+        <div
+          className={cn(
+            CARD,
+            "flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between",
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              role="group"
+              aria-label="Période d'analyse"
+              className="flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1"
+            >
+              {RANGES.map((range) => (
+                <button
+                  key={range.value}
+                  type="button"
+                  onClick={() => setDateRange(range.value)}
+                  aria-pressed={dateRange === range.value}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    dateRange === range.value
+                      ? "bg-white text-[#3a5a47] shadow-sm"
+                      : "text-slate-500 hover:text-slate-800",
+                  )}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Sélectionner une période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7days">7 derniers jours</SelectItem>
-                    <SelectItem value="month">Mois en cours</SelectItem>
-                    <SelectItem value="3months">3 derniers mois</SelectItem>
-                    <SelectItem value="6months">6 derniers mois</SelectItem>
-                    <SelectItem value="year">Année en cours</SelectItem>
-                    <SelectItem value="custom">
-                      Période personnalisée
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {dateRange === "custom" && (
-                <div className="flex gap-2 flex-1">
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                  />
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                  />
-                </div>
-              )}
-              {dateParams && (
-                <div className="text-sm text-gray-600 flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  {dayjs(dateParams.startDate).format("DD MMM YYYY")} -{" "}
-                  {dayjs(dateParams.endDate).format("DD MMM YYYY")}
-                </div>
-              )}
+                  {range.label}
+                </button>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+            {dateRange === "custom" && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  aria-label="Date de début"
+                  value={customStartDate}
+                  max={customEndDate || undefined}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className={dateInputClass}
+                />
+                <span className="text-slate-400">–</span>
+                <input
+                  type="date"
+                  aria-label="Date de fin"
+                  value={customEndDate}
+                  min={customStartDate || undefined}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className={dateInputClass}
+                />
+              </div>
+            )}
+          </div>
+          <p className="flex items-center gap-2 px-2 text-sm text-slate-600">
+            <CalendarRange className="h-4 w-4 text-[#53745D]" />
+            {periodLabel}
+          </p>
+        </div>
 
         {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[...Array(8)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-xl" />
             ))}
           </div>
-        ) : stats ? (
-          <>
-            {/* Statistiques revenus */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Revenus
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                <StatCard
-                  title="Revenus totaux"
-                  value={`${(stats.revenue?.total || 0).toLocaleString(
-                    "fr-CA",
-                    {
-                      style: "currency",
-                      currency: "CAD",
-                    },
-                  )}`}
-                  icon={DollarSign}
-                />
-                <StatCard
-                  title="Revenus de la période"
-                  value={`${(stats.revenue?.inPeriod || 0).toLocaleString(
-                    "fr-CA",
-                    {
-                      style: "currency",
-                      currency: "CAD",
-                    },
-                  )}`}
-                  icon={TrendingUp}
-                  subtitle={
-                    dateParams
-                      ? `Du ${dayjs(dateParams.startDate).format(
-                          "DD MMM",
-                        )} au ${dayjs(dateParams.endDate).format("DD MMM")}`
-                      : ""
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Évolution CA, réservations et frais Korí */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Évolution sur la période
-              </h2>
-              {!hasEvolutionData && !evolutionLoading && (
-                <p className="text-sm text-gray-500 mb-4">
-                  Aucune donnée d&apos;évolution sur la période sélectionnée.
-                </p>
-              )}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
-                <StatCard
-                  title="Réservations (période)"
-                  value={totalBookingsEvolution}
-                  icon={Calendar}
-                  subtitle={
-                    dateParams
-                      ? `Créées du ${dayjs(dateParams.startDate).format("DD MMM")} au ${dayjs(dateParams.endDate).format("DD MMM")}`
-                      : ""
-                  }
-                />
-                <StatCard
-                  title="Frais Korí (période)"
-                  value={formatCurrency(totalPlatformFeesEvolution)}
-                  icon={DollarSign}
-                  subtitle="Commissions sur réservations payées"
-                />
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
-                {/* Graphique en aires pour le CA */}
-                {/* <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      Chiffre d'affaires
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={evolutionSeries}>
-                          <defs>
-                            <linearGradient
-                              id="colorRevenue"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="#53745D"
-                                stopOpacity={0.8}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="#53745D"
-                                stopOpacity={0.1}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="date"
-                            tickFormatter={(value) => {
-                              if (value.includes("-")) {
-                                return dayjs(value).format("DD MMM");
-                              }
-                              return value;
-                            }}
-                          />
-                          <YAxis
-                            tickFormatter={(value) =>
-                              `$${value.toLocaleString("fr-CA")}`
-                            }
-                          />
-                          <Tooltip
-                            formatter={(value: any) => [
-                              `${Number(value).toLocaleString("fr-CA", {
-                                style: "currency",
-                                currency: "CAD",
-                              })}`,
-                              "Chiffre d'affaires",
-                            ]}
-                            labelFormatter={(value) =>
-                              dayjs(value).format("DD MMM YYYY")
-                            }
-                            contentStyle={{
-                              backgroundColor: "white",
-                              border: "1px solid #e5e7eb",
-                              borderRadius: "8px",
-                            }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="revenue"
-                            stroke="#53745D"
-                            strokeWidth={3}
-                            fill="url(#colorRevenue)"
-                            name="Chiffre d'affaires (CAD)"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
-                      <div>
-                        <p className="text-xs text-gray-500">Total CA</p>
-                        <p className="text-lg font-semibold text-[#53745D]">
-                          {evolutionSeries
-                            .reduce(
-                              (sum: number, item: any) =>
-                                sum + (item.revenue || 0),
-                              0,
-                            )
-                            .toLocaleString("fr-CA", {
-                              style: "currency",
-                              currency: "CAD",
-                            })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Moyenne/jour</p>
-                        <p className="text-lg font-semibold">
-                          {evolutionSeries.length > 0
-                            ? (
-                                evolutionSeries.reduce(
-                                  (sum: number, item: any) =>
-                                    sum + (item.revenue || 0),
-                                  0,
-                                ) / evolutionSeries.length
-                              ).toLocaleString("fr-CA", {
-                                style: "currency",
-                                currency: "CAD",
-                              })
-                            : "$0.00"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Pic</p>
-                        <p className="text-lg font-semibold">
-                          {Math.max(
-                            ...evolutionSeries.map(
-                              (item: any) => item.revenue || 0,
-                            ),
-                          ).toLocaleString("fr-CA", {
-                            style: "currency",
-                            currency: "CAD",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card> */}
-
-                {/* Graphique des réservations */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-[#53745D]" />
-                      Évolution des réservations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    {evolutionLoading ? (
-                      <Skeleton className="h-80 w-full" />
-                    ) : (
-                      <>
-                        <div className="h-80">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={evolutionSeries}>
-                              <defs>
-                                <linearGradient
-                                  id="colorBookings"
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="5%"
-                                    stopColor="#53745D"
-                                    stopOpacity={0.7}
-                                  />
-                                  <stop
-                                    offset="95%"
-                                    stopColor="#53745D"
-                                    stopOpacity={0.12}
-                                  />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis
-                                dataKey="date"
-                                tickFormatter={formatEvolutionDateLabel}
-                              />
-                              <YAxis allowDecimals={false} />
-                              <Tooltip
-                                formatter={(value: number) => [
-                                  value,
-                                  "Réservations",
-                                ]}
-                                labelFormatter={(value) =>
-                                  formatEvolutionDateLabel(String(value))
-                                }
-                                contentStyle={{
-                                  backgroundColor: "white",
-                                  border: "1px solid #e5e7eb",
-                                  borderRadius: "8px",
-                                }}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="bookings"
-                                stroke="#53745D"
-                                strokeWidth={3}
-                                fill="url(#colorBookings)"
-                                name="Réservations"
-                                dot={{ r: 4 }}
-                                activeDot={{ r: 6 }}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
-                          <div>
-                            <p className="text-xs text-gray-500">Total</p>
-                            <p className="text-lg font-semibold text-[#53745D]">
-                              {totalBookingsEvolution.toLocaleString("fr-CA")}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">
-                              Moyenne/intervalle
-                            </p>
-                            <p className="text-lg font-semibold">
-                              {evolutionSeries.length > 0
-                                ? Math.round(
-                                    totalBookingsEvolution /
-                                      evolutionSeries.length,
-                                  )
-                                : 0}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Pic</p>
-                            <p className="text-lg font-semibold">
-                              {Math.max(
-                                ...evolutionSeries.map(
-                                  (item: { bookings?: number }) =>
-                                    item.bookings || 0,
-                                ),
-                                0,
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Frais de réservation Korí */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-[#4A6854]" />
-                      Frais de réservation Korí
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    {evolutionLoading ? (
-                      <Skeleton className="h-80 w-full" />
-                    ) : (
-                      <>
-                        <div className="h-80">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={evolutionSeries}>
-                              <defs>
-                                <linearGradient
-                                  id="colorPlatformFees"
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="5%"
-                                    stopColor="#4A6854"
-                                    stopOpacity={0.8}
-                                  />
-                                  <stop
-                                    offset="95%"
-                                    stopColor="#4A6854"
-                                    stopOpacity={0.1}
-                                  />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis
-                                dataKey="date"
-                                tickFormatter={formatEvolutionDateLabel}
-                              />
-                              <YAxis
-                                tickFormatter={(value) =>
-                                  new Intl.NumberFormat("fr-CA", {
-                                    notation: "compact",
-                                    maximumFractionDigits: 1,
-                                  }).format(value)
-                                }
-                              />
-                              <Tooltip
-                                formatter={(value: number) => [
-                                  formatCurrency(value),
-                                  "Frais Korí",
-                                ]}
-                                labelFormatter={(value) =>
-                                  formatEvolutionDateLabel(String(value))
-                                }
-                                contentStyle={{
-                                  backgroundColor: "white",
-                                  border: "1px solid #e5e7eb",
-                                  borderRadius: "8px",
-                                }}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="platformFees"
-                                stroke="#4A6854"
-                                strokeWidth={3}
-                                fill="url(#colorPlatformFees)"
-                                name="Frais Korí (CAD)"
-                                dot={{ r: 4 }}
-                                activeDot={{ r: 6 }}
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t">
-                          <div>
-                            <p className="text-xs text-gray-500">Total</p>
-                            <p className="text-lg font-semibold text-[#4A6854]">
-                              {formatCurrency(totalPlatformFeesEvolution)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">
-                              Moyenne/intervalle
-                            </p>
-                            <p className="text-lg font-semibold">
-                              {evolutionSeries.length > 0
-                                ? formatCurrency(
-                                    totalPlatformFeesEvolution /
-                                      evolutionSeries.length,
-                                  )
-                                : formatCurrency(0)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Pic</p>
-                            <p className="text-lg font-semibold">
-                              {formatCurrency(
-                                Math.max(
-                                  ...evolutionSeries.map(
-                                    (item: { platformFees?: number }) =>
-                                      item.platformFees || 0,
-                                  ),
-                                  0,
-                                ),
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Services les plus commandés */}
-            {topServices.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Services les plus commandés
-                </h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={topServices}
-                          layout="vertical"
-                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis type="number" />
-                          <YAxis
-                            dataKey="serviceName"
-                            type="category"
-                            width={150}
-                            tick={{ fontSize: 12 }}
-                          />
-                          <Tooltip
-                            formatter={(value: any, name: string) => {
-                              if (name === "revenue") {
-                                return [
-                                  `${Number(value).toLocaleString("fr-CA", {
-                                    style: "currency",
-                                    currency: "CAD",
-                                  })}`,
-                                  "Revenus",
-                                ];
-                              }
-                              return [value, "Réservations"];
-                            }}
-                          />
-                          <Legend />
-                          <Bar
-                            dataKey="bookings"
-                            fill="#53745D"
-                            name="Nombre de réservations"
-                            radius={[0, 4, 4, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      {topServices
-                        .slice(0, 5)
-                        .map((service: any, index: number) => (
-                          <div
-                            key={service.serviceId}
-                            className="flex items-center justify-between p-2 border rounded-lg"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-lg text-gray-400">
-                                #{index + 1}
-                              </span>
-                              <span className="font-medium">
-                                {service.serviceName}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm text-gray-600">
-                                {service.bookings} réservations
-                              </span>
-                              <span className="text-sm font-semibold text-[#53745D]">
-                                {service.revenue.toLocaleString("fr-CA", {
-                                  style: "currency",
-                                  currency: "CAD",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Top salons par revenus */}
-            {topSalons.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Top salons par revenus
-                </h2>
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={topSalons}
-                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="salonName"
-                            angle={-45}
-                            textAnchor="end"
-                            height={100}
-                            tick={{ fontSize: 12 }}
-                          />
-                          <YAxis
-                            tickFormatter={(value) =>
-                              `$${value.toLocaleString("fr-CA")}`
-                            }
-                          />
-                          <Tooltip
-                            formatter={(value: any, name: string) => {
-                              if (name === "revenue") {
-                                return [
-                                  `${Number(value).toLocaleString("fr-CA", {
-                                    style: "currency",
-                                    currency: "CAD",
-                                  })}`,
-                                  "Revenus",
-                                ];
-                              }
-                              return [value, "Réservations"];
-                            }}
-                          />
-                          <Legend />
-                          <Bar
-                            dataKey="revenue"
-                            fill="#53745D"
-                            name="Revenus (CAD)"
-                            radius={[4, 4, 0, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      {topSalons
-                        .slice(0, 5)
-                        .map((salon: any, index: number) => (
-                          <div
-                            key={salon.salonId}
-                            className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                            onClick={() =>
-                              router.push(`/admin/salons/${salon.salonId}`)
-                            }
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-lg text-gray-400">
-                                #{index + 1}
-                              </span>
-                              <span className="font-medium">
-                                {salon.salonName}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm text-gray-600">
-                                {salon.bookings} réservations
-                              </span>
-                              <span className="text-sm font-semibold text-[#53745D]">
-                                {salon.revenue.toLocaleString("fr-CA", {
-                                  style: "currency",
-                                  currency: "CAD",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Statistiques utilisateurs */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Utilisateurs
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                  title="Total utilisateurs"
-                  value={stats.users?.total || 0}
-                  icon={Users}
-                />
-                <StatCard
-                  title="Clients"
-                  value={stats.users?.clients || 0}
-                  icon={Users}
-                  subtitle={`${
-                    stats.users?.total
-                      ? (
-                          (stats.users.clients / stats.users.total) *
-                          100
-                        ).toFixed(1)
-                      : 0
-                  }% du total`}
-                />
-                <StatCard
-                  title="Propriétaires"
-                  value={stats.users?.owners || 0}
-                  icon={Building2}
-                />
-                <StatCard
-                  title="Employés"
-                  value={stats.users?.employees || 0}
-                  icon={Users}
-                />
-                <StatCard
-                  title="Actifs"
-                  value={stats.users?.active || 0}
-                  icon={CheckCircle}
-                  subtitle={`${
-                    stats.users?.total
-                      ? (
-                          (stats.users.active / stats.users.total) *
-                          100
-                        ).toFixed(1)
-                      : 0
-                  }% du total`}
-                />
-                <StatCard
-                  title="Inactifs"
-                  value={stats.users?.inactive || 0}
-                  icon={XCircle}
-                />
-              </div>
-            </div>
-
-            {/* Statistiques salons */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Salons
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                  title="Total salons"
-                  value={stats.salons?.total || 0}
-                  icon={Building2}
-                />
-                <StatCard
-                  title="Actifs"
-                  value={stats.salons?.active || 0}
-                  icon={CheckCircle}
-                  subtitle={`${
-                    stats.salons?.total
-                      ? (
-                          (stats.salons.active / stats.salons.total) *
-                          100
-                        ).toFixed(1)
-                      : 0
-                  }% du total`}
-                />
-                <StatCard
-                  title="Vérifiés"
-                  value={stats.salons?.verified || 0}
-                  icon={CheckCircle}
-                  subtitle={`${
-                    stats.salons?.total
-                      ? (
-                          (stats.salons.verified / stats.salons.total) *
-                          100
-                        ).toFixed(1)
-                      : 0
-                  }% du total`}
-                />
-                <StatCard
-                  title="Non vérifiés"
-                  value={stats.salons?.unverified || 0}
-                  icon={XCircle}
-                />
-              </div>
-            </div>
-            {/* Statistiques réservations */}
-            <div>
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Réservations
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                  title="Total réservations"
-                  value={stats.bookings?.total || 0}
-                  icon={Calendar}
-                />
-                <StatCard
-                  title="Dans la période"
-                  value={stats.bookings?.inPeriod || 0}
-                  icon={Calendar}
-                  subtitle={
-                    dateParams
-                      ? `Du ${dayjs(dateParams.startDate).format(
-                          "DD MMM",
-                        )} au ${dayjs(dateParams.endDate).format("DD MMM")}`
-                      : ""
-                  }
-                />
-                <StatCard
-                  title="Complétées"
-                  value={stats.bookings?.completed || 0}
-                  icon={CheckCircle}
-                  subtitle={
-                    stats.bookings?.inPeriod
-                      ? `${(
-                          (stats.bookings.completed / stats.bookings.inPeriod) *
-                          100
-                        ).toFixed(1)}% de la période`
-                      : ""
-                  }
-                />
-                <StatCard
-                  title="Annulées"
-                  value={stats.bookings?.cancelled || 0}
-                  icon={XCircle}
-                />
-                <StatCard
-                  title="En attente"
-                  value={stats.bookings?.pending || 0}
-                  icon={Clock}
-                />
-              </div>
-            </div>
-          </>
+        ) : !stats ? (
+          <div className={cn(CARD, "p-10 text-center text-sm text-slate-500")}>
+            Aucune statistique disponible
+          </div>
         ) : (
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-center text-gray-500">
-                Aucune statistique disponible
-              </p>
-            </CardContent>
-          </Card>
+          <>
+            {/* Chiffres de la période */}
+            <section>
+              <SectionTitle title="Sur la période" hint={periodLabel} />
+              <div className="grid gap-4 sm:grid-cols-3">
+                <PeriodKpi
+                  label="Revenus"
+                  value={formatCurrency(revenueInPeriod)}
+                  hint={`${formatCurrency(stats.revenue?.total || 0)} depuis le lancement`}
+                  icon={DollarSign}
+                  highlighted
+                />
+                <PeriodKpi
+                  label="Frais Korí"
+                  value={formatCurrency(platformFees)}
+                  hint="Commissions sur réservations payées"
+                  icon={DollarSign}
+                />
+                <PeriodKpi
+                  label="Réservations créées"
+                  value={stats.bookings?.inPeriod || 0}
+                  hint={`${stats.bookings?.total || 0} depuis le lancement`}
+                  icon={Calendar}
+                />
+              </div>
+            </section>
+
+            {/* Évolution */}
+            <section>
+              <SectionTitle title="Évolution" hint={periodLabel} />
+              <div className="grid gap-4 lg:grid-cols-2">
+                <EvolutionChart
+                  title="Réservations"
+                  icon={Calendar}
+                  data={evolution}
+                  dataKey="bookings"
+                  seriesLabel="Réservations"
+                  format={(v) => Math.round(v).toLocaleString("fr-CA")}
+                  isLoading={evolutionLoading}
+                />
+                <EvolutionChart
+                  title="Frais de réservation Korí"
+                  icon={DollarSign}
+                  data={evolution}
+                  dataKey="platformFees"
+                  seriesLabel="Frais Korí"
+                  format={formatCurrency}
+                  isLoading={evolutionLoading}
+                />
+              </div>
+            </section>
+
+            {/* Classements */}
+            <section>
+              <SectionTitle title="Classements" hint={periodLabel} />
+              <div className="grid gap-4 lg:grid-cols-2">
+                <RankList
+                  title="Services les plus commandés"
+                  hint="Classés par nombre de réservations"
+                  icon={Star}
+                  items={topServices}
+                  metric="bookings"
+                  emptyLabel="Aucun service réservé sur la période"
+                />
+                <RankList
+                  title="Top salons"
+                  hint="Classés par revenus"
+                  icon={Building2}
+                  items={topSalons}
+                  metric="revenue"
+                  emptyLabel="Aucun salon avec revenus sur la période"
+                />
+              </div>
+            </section>
+
+            {/* État global, indépendant de la période choisie */}
+            <section>
+              <SectionTitle
+                title="État de la plateforme"
+                hint="Depuis le lancement — indépendant de la période"
+              />
+              <AdminKpiCards data={stats} isLoading={false} />
+            </section>
+          </>
         )}
       </div>
     </PageWrapper>

@@ -10,10 +10,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
+import { BookingProductsRecap } from "./BookingProductsRecap";
 
 type CheckoutSessionPayload = {
   success?: boolean;
-  data?: { status?: string };
+  data?: { status?: string; metadata?: { bookingId?: string } | null };
 };
 
 function getPaymentStatus(payload: unknown): string | undefined {
@@ -160,10 +161,14 @@ export default function SalonBookingSuccessPage() {
                 Paiement confirmé
               </h1>
               <p className="text-slate-600">
-                Merci ! Votre acompte a bien été enregistré. Vous recevrez une
+                Merci ! Votre paiement a bien été enregistré. Vous recevrez une
                 confirmation par email. Vous pouvez aussi suivre vos
                 rendez-vous dans l&apos;application korí.
               </p>
+              <BookingProductsRecap
+                salonId={salonId}
+                bookingId={(sessionPayload as CheckoutSessionPayload)?.data?.metadata?.bookingId}
+              />
               <p className="text-xs text-slate-400 break-all">
                 Référence : {sessionId}
               </p>

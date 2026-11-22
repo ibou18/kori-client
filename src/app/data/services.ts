@@ -981,6 +981,169 @@ export const calculateTaxesApi = async (data: any) => {
   }
 };
 
+/**
+ * Devis de paiement serveur (source unique des montants, voir kori-server
+ * BookingService.computePaymentBreakdown). `subtotal` = prestations + déplacement
+ * en dollars ; `products` = produits à récupérer pendant le rendez-vous.
+ */
+export const quotePaymentApi = async (data: {
+  salonId: string;
+  subtotal: number;
+  province?: string;
+  products?: { productId: string; quantity: number }[];
+}) => {
+  try {
+    const response = await requestWrapper.post("/payments/quote", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors du calcul du montant à payer");
+    return null;
+  }
+};
+
+// ============================================================================
+// BOUTIQUE SALON (produits) — kori-server docs/PRODUCT_SALES.md
+// ============================================================================
+
+/** Boutique publique : `{ salesEnabled, products }`, liste vide sans Stripe Connect. */
+export const getSalonProductsApi = async (salonId: string) => {
+  try {
+    const response = await requestWrapper.get(`/salons/${salonId}/products`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la boutique");
+    return null;
+  }
+};
+
+export const getProductApi = async (productId: string) => {
+  try {
+    const response = await requestWrapper.get(`/products/${productId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération du produit");
+    return null;
+  }
+};
+
+/** Commande en retrait sans rendez-vous (PENDING_PAYMENT). */
+export const createProductOrderApi = async (data: {
+  salonId: string;
+  items: { productId: string; quantity: number }[];
+  clientNotes?: string;
+}) => {
+  try {
+    const response = await requestWrapper.post("/product-orders", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création de la commande");
+    return null;
+  }
+};
+
+export const createProductOrderCheckoutApi = async (
+  orderId: string,
+  data: { successUrl: string; cancelUrl: string }
+) => {
+  try {
+    const response = await requestWrapper.post(
+      `/product-orders/${orderId}/checkout-session`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la création du paiement");
+    return null;
+  }
+};
+
+// --- Espace pro (OWNER du salon / ADMIN) ---------------------------------
+
+/** Catalogue complet du salon, produits retirés de la vente inclus. */
+export const getSalonProductsManageApi = async (salonId: string) => {
+  const response = await requestWrapper.get(`/salons/${salonId}/products/manage`);
+  return response.data as { success: boolean; data: { salesEnabled: boolean; products: any[] } };
+};
+
+/** Photo refusée lors d'un enregistrement produit + photos (le produit, lui, est enregistré). */
+export interface ProductPhotoUploadError {
+  fileName: string;
+  errorCode: string;
+  message: string;
+}
+
+/**
+ * Corps d'un enregistrement produit : JSON seul, ou multipart `data` + `photos[]`
+ * quand des photos accompagnent l'envoi (kori-server docs/PRODUCT_SALES.md).
+ */
+function productBody(data: object, files?: File[]) {
+  if (!files?.length) return { body: data, config: undefined };
+  const formData = new FormData();
+  formData.append("data", JSON.stringify(data));
+  files.forEach((file) => formData.append("photos", file));
+  return { body: formData, config: { headers: { "Content-Type": "multipart/form-data" } } };
+}
+
+/** Création d'un produit, avec ses photos si fournies (produit d'abord, photos ensuite). */
+export const createProductApi = async (salonId: string, data: object, files?: File[]) => {
+  const { body, config } = productBody(data, files);
+  const response = await requestWrapper.post(`/salons/${salonId}/products`, body, config);
+  return response.data as { success: boolean; data: any & { photoErrors?: ProductPhotoUploadError[] } };
+};
+
+/** Modification d'un produit, avec de nouvelles photos si fournies (même contrat que la création). */
+export const updateProductApi = async (productId: string, data: object, files?: File[]) => {
+  const { body, config } = productBody(data, files);
+  const response = await requestWrapper.put(`/products/${productId}`, body, config);
+  return response.data as { success: boolean; data: any & { photoErrors?: ProductPhotoUploadError[] } };
+};
+
+/** Supprime un produit jamais commandé ; sinon le retire de la vente (`deactivated`). */
+export const deleteProductApi = async (productId: string) => {
+  const response = await requestWrapper.delete(`/products/${productId}`);
+  return response.data as { success: boolean; data: { deleted: boolean; deactivated: boolean } };
+};
+
+export const uploadProductPhotoApi = async (productId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("photo", file);
+  const response = await requestWrapper.post(`/products/${productId}/photos`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data as { success: boolean; data: any };
+};
+
+export const deleteProductPhotoApi = async (productId: string, photoId: string) => {
+  const response = await requestWrapper.delete(`/products/${productId}/photos/${photoId}`);
+  return response.data as { success: boolean; data: any };
+};
+
+/** Commandes payées du salon (paniers abandonnés masqués) ; `status` pour filtrer. */
+export const getSalonProductOrdersApi = async (salonId: string, status?: string) => {
+  const response = await requestWrapper.get(`/salons/${salonId}/product-orders`, {
+    params: status ? { status } : undefined,
+  });
+  return response.data as { success: boolean; data: any[] };
+};
+
+export const updateProductOrderStatusApi = async (
+  orderId: string,
+  action: "ready" | "picked-up" | "cancel"
+) => {
+  const response = await requestWrapper.post(`/product-orders/${orderId}/${action}`);
+  return response.data as { success: boolean; data: any };
+};
+
+export const getProductOrderApi = async (orderId: string) => {
+  try {
+    const response = await requestWrapper.get(`/product-orders/${orderId}`);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Erreur lors de la récupération de la commande");
+    return null;
+  }
+};
+
 // ============================================================================
 // SALON SERVICES
 // ============================================================================
@@ -1472,6 +1635,32 @@ export const deleteSalonPhotoApi = async (photoId: string) => {
   }
 };
 
+/**
+ * Espace pro « Mon salon » : photos du salon. Erreurs axios brutes (lues par l'écran).
+ * Nom de fichier rendu unique : la clé S3 reprend le nom d'origine, deux « IMG_0001.jpg »
+ * s'écraseraient (et supprimer l'une effacerait l'autre).
+ */
+export const uploadSalonPhotoProApi = async (salonId: string, file: File, isMain = false) => {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const formData = new FormData();
+  formData.append("photo", file, `salon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`);
+  if (isMain) formData.append("isMain", "true");
+  const response = await requestWrapper.post(`/photos/salon/${salonId}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data as { success: boolean; data: any };
+};
+
+export const setMainSalonPhotoApi = async (salonId: string, photoId: string) => {
+  const response = await requestWrapper.put(`/photos/salon/${salonId}/main/${photoId}`);
+  return response.data as { success: boolean; data: any };
+};
+
+export const deleteSalonPhotoProApi = async (photoId: string) => {
+  const response = await requestWrapper.delete(`/photos/salon/${photoId}`);
+  return response.data as { success: boolean; data: any };
+};
+
 export const uploadBookingPhotoApi = async (bookingId: string, file: File) => {
   const formData = new FormData();
   formData.append("photo", file);
@@ -1848,6 +2037,27 @@ export const getStripeConnectAccountStatusApi = async (accountId: string) => {
   }
 };
 
+// Parcours propriétaire (espace pro web) : le salon est déduit du compte connecté.
+// Les erreurs remontent telles quelles (errorCode lu par la page Encaissement).
+
+export const getMyStripeAccountApi = async () => {
+  const response = await requestWrapper.get("/stripe-connect/me");
+  return response.data as { success: boolean; data: unknown };
+};
+
+export const startMyStripeOnboardingApi = async (data: {
+  returnUrl: string;
+  refreshUrl: string;
+}) => {
+  const response = await requestWrapper.post("/stripe-connect/me/onboarding", data);
+  return response.data as { success: boolean; data: { url: string; expiresAt: number } };
+};
+
+export const openMyStripeDashboardApi = async () => {
+  const response = await requestWrapper.post("/stripe-connect/me/dashboard");
+  return response.data as { success: boolean; data: { url: string } };
+};
+
 // ============================================================================
 // SALON TYPES
 // ============================================================================
@@ -1860,4 +2070,46 @@ export const getSalonTypesApi = async () => {
     handleError(error, "Erreur lors de la récupération des types de salon");
     return null;
   }
+};
+
+// ============================================================================
+// Mini-site salon (docs/SALON_MINI_SITE.md côté serveur)
+// Les erreurs sont relancées telles quelles : l'éditeur lit `errorCode`/`message`.
+// ============================================================================
+
+export interface SalonSiteInput {
+  template?: string;
+  colorTheme?: string;
+  /** LIGHT | DARK | AUTO (suit l'appareil du visiteur). */
+  appearance?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  font?: string;
+  showLogo?: boolean;
+  tagline?: string | null;
+  isPublished?: boolean;
+}
+
+export const getSalonSiteApi = async (salonId: string) => {
+  const response = await requestWrapper.get(`/salons/${salonId}/site`);
+  return response.data as { success: boolean; data: any | null };
+};
+
+export const updateSalonSiteApi = async (salonId: string, data: SalonSiteInput) => {
+  const response = await requestWrapper.put(`/salons/${salonId}/site`, data);
+  return response.data as { success: boolean; data: any };
+};
+
+export const uploadSalonSiteLogoApi = async (salonId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("logo", file);
+  const response = await requestWrapper.post(`/salons/${salonId}/site/logo`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data as { success: boolean; data: any };
+};
+
+export const deleteSalonSiteLogoApi = async (salonId: string) => {
+  const response = await requestWrapper.delete(`/salons/${salonId}/site/logo`);
+  return response.data as { success: boolean; data: any };
 };

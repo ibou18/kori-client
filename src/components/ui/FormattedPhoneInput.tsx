@@ -2,6 +2,8 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
 import {
   formatPhoneNumber,
   getPhoneMaxLength,
@@ -25,9 +27,21 @@ interface FormattedPhoneInputProps {
   id?: string;
   /** Classes pour le select indicatif */
   selectClassName?: string;
-  /** Affiche seulement l’indicatif (« +1 ») au lieu de « Canada / É.-U. (+1) ». */
+  /** Classes pour le champ numéro (pour aligner sa hauteur sur celle du select, ex. `h-12`). */
+  inputClassName?: string;
+  /** Classes pour le libellé (pour reprendre le style des autres champs du formulaire). */
+  labelClassName?: string;
+  /** Classes du conteneur (espacement libellé / champs). */
+  className?: string;
+  /** Affiche seulement le drapeau et l’indicatif (« 🇨🇦 +1 ») au lieu de « Canada / É.-U. (+1) ». */
   dialCodeOnly?: boolean;
 }
+
+/** « CA » → « 🇨🇦 » (indicateurs régionaux Unicode). */
+const flagEmoji = (isoCode: string) =>
+  isoCode
+    .toUpperCase()
+    .replace(/./g, (c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65));
 
 export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   value,
@@ -42,6 +56,9 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
   required = false,
   id = "phone",
   selectClassName,
+  inputClassName,
+  labelClassName,
+  className,
   dialCodeOnly = false,
 }) => {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,30 +84,37 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
 
   const selectCls =
     selectClassName ??
-    "px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed shrink-0 min-w-[9.5rem]";
+    "h-9 px-3 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed min-w-[9.5rem]";
 
   return (
-    <div className="space-y-1">
+    <div className={cn("space-y-1", className)}>
       {label && (
-        <Label htmlFor={id}>
+        <Label htmlFor={id} className={labelClassName}>
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
       )}
       <div className="flex gap-2">
-        <select
-          value={countryCode}
-          onChange={handleCountryCodeChange}
-          disabled={disabled}
-          aria-label="Indicatif pays"
-          className={selectCls}
-        >
-          {PHONE_COUNTRY_OPTIONS.map((cc) => (
-            <option key={cc.dialCode} value={cc.dialCode}>
-              {dialCodeOnly ? cc.dialCode : cc.label}
-            </option>
-          ))}
-        </select>
+        {/* Select natif (clavier, mobile) habillé : flèche custom, apparence système masquée. */}
+        <div className="relative shrink-0">
+          <select
+            value={countryCode}
+            onChange={handleCountryCodeChange}
+            disabled={disabled}
+            aria-label="Indicatif pays"
+            className={cn("appearance-none pr-8 tabular-nums", selectCls)}
+          >
+            {PHONE_COUNTRY_OPTIONS.map((cc) => (
+              <option key={cc.dialCode} value={cc.dialCode}>
+                {dialCodeOnly ? `${flagEmoji(cc.isoCode)} ${cc.dialCode}` : cc.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            aria-hidden
+            className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 opacity-60"
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <Input
             id={id}
@@ -101,9 +125,10 @@ export const FormattedPhoneInput: React.FC<FormattedPhoneInputProps> = ({
             disabled={disabled}
             maxLength={maxLength}
             autoComplete="tel-national"
-            className={
-              error ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
-            }
+            className={cn(
+              inputClassName,
+              error && "border-red-500 focus:border-red-500 focus:ring-red-500",
+            )}
           />
         </div>
       </div>

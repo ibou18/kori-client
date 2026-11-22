@@ -10,13 +10,14 @@ const STEP_LABELS: Record<WebBookingStep, string> = {
   pay: "Paiement",
 };
 
+/** Titres des étapes (maquette KAN-16), posés en police d'affichage du salon. */
 const STEP_TITLES: Record<WebBookingStep, string> = {
-  auth: "Votre compte",
-  service: "Prestation",
-  location: "Lieu du rendez-vous",
-  slot: "Date et créneau",
-  notes: "Remarques pour la prestation",
-  pay: "Paiement de l'acompte",
+  auth: "Vos coordonnées",
+  service: "Sélectionnez votre prestation",
+  location: "Où souhaitez-vous le rendez-vous\u00a0?",
+  slot: "Quand souhaitez-vous venir\u00a0?",
+  notes: "Un détail pour la prestataire\u00a0?",
+  pay: "Paiement",
 };
 
 /**
