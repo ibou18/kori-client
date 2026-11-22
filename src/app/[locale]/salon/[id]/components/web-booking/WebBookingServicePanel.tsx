@@ -1,7 +1,9 @@
 "use client";
 
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Check, Plus, X } from "lucide-react";
+import { useState } from "react";
 
 import {
   formatDurationMinutes,
@@ -15,7 +17,7 @@ import type {
   WebBookingServicePayload,
 } from "./types";
 import { WebBookingServiceInfo } from "./WebBookingServiceInfo";
-import { WebBookingCta, WebBookingStepActions, type WebBookingFooterSummary } from "./WebBookingStepActions";
+import { WebBookingCta, WebBookingSecondaryAction, WebBookingStepActions, type WebBookingFooterSummary } from "./WebBookingStepActions";
 
 interface WebBookingServicePanelProps {
   service: WebBookingServicePayload;
@@ -50,7 +52,10 @@ function splitConditions(text: string): string[] {
 /**
  * Étape 1 (maquette) : carte récapitulative de la sélection, ajout d'une
  * prestation, choix de la formule en liste radio, conditions du service à
- * accepter. Le bouton « Suivant » vit dans la barre basse.
+ * accepter. Le bouton « Suivant » vit dans la barre basse : il reste actif dès
+ * qu'une formule est choisie, et ouvre les conditions à accepter si la case
+ * n'a pas été cochée (un bouton grisé en bas d'écran laissait la cliente
+ * bloquée, la case étant souvent hors de vue sur mobile).
  */
 export function WebBookingServicePanel({
   service,
@@ -70,7 +75,20 @@ export function WebBookingServicePanel({
   const options: WebBookingServiceOption[] = service.options?.length ? service.options : [];
   const conditions = splitConditions(service.particularities?.trim() ?? "");
   const hasConditions = conditions.length > 0;
-  const canContinue = !!selectedOptionId && (!hasConditions || conditionsAccepted);
+  const [conditionsDialogOpen, setConditionsDialogOpen] = useState(false);
+  const handleContinue = () => {
+    if (!selectedOptionId) return;
+    if (hasConditions && !conditionsAccepted) {
+      setConditionsDialogOpen(true);
+      return;
+    }
+    onContinue();
+  };
+  const handleAcceptAndContinue = () => {
+    setConditionsDialogOpen(false);
+    onConditionsAcceptedChange(true);
+    onContinue();
+  };
   const mainOption = options.find((o) => o.id === selectedOptionId) ?? null;
   const mainMeta = [
     mainOption && options.length > 1 ? mainOption.name : null,
@@ -222,13 +240,37 @@ export function WebBookingServicePanel({
             : null)
         }
       >
-        <WebBookingCta type="button" disabled={!canContinue} onClick={onContinue}>
+        <WebBookingCta type="button" disabled={!selectedOptionId} onClick={handleContinue}>
           {continueLabel}
         </WebBookingCta>
-        {hasConditions && !conditionsAccepted && selectedOptionId && (
-          <p className="-mt-1 text-center text-xs text-site-muted">Cochez la case pour confirmer avoir lu les conditions.</p>
-        )}
       </WebBookingStepActions>
+
+      {hasConditions && (
+        <Dialog open={conditionsDialogOpen} onOpenChange={setConditionsDialogOpen}>
+          <DialogContent className="z-[110] flex max-h-[90vh] max-w-lg flex-col gap-4 rounded-3xl border-site-border bg-site-bg text-site-fg">
+            <DialogHeader>
+              <DialogTitle className="pr-8 text-left font-site-display text-xl font-bold">Conditions du service</DialogTitle>
+              <DialogDescription className="text-left text-[13px] text-site-muted">
+                Avant de continuer, merci de lire et d&apos;accepter les conditions de « {service.name} ».
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto rounded-2xl bg-site-surface-2 px-4 py-3.5">
+              {conditions.map((c, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-site-fg-2">
+                  <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-site-accent" />
+                  <span className="whitespace-pre-line">{c}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-col gap-1">
+              <WebBookingCta type="button" onClick={handleAcceptAndContinue}>
+                J&apos;accepte et je continue
+              </WebBookingCta>
+              <WebBookingSecondaryAction onClick={() => setConditionsDialogOpen(false)}>Annuler</WebBookingSecondaryAction>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
