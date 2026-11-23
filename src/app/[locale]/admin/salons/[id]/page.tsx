@@ -34,6 +34,7 @@ import {
   Star,
   User,
   Users,
+  Palette,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -394,6 +395,16 @@ export default function SalonDetailPage() {
               <ExternalLink className="mr-2 h-4 w-4" />
               Page publique
             </Button>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/admin/mon-site?salonId=${salon.id}`)}
+              >
+                <Palette className="mr-2 h-4 w-4" />
+                Mini-site
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={() => router.push(`/admin/salons/${salon.id}/edit`)}
