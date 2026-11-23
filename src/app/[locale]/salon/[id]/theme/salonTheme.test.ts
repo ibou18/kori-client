@@ -25,7 +25,7 @@ describe("resolveSalonTheme", () => {
     expect(theme.template).toBe("CLASSIC");
     expect(theme.colorTheme).toBe("MONO");
     expect(theme.font).toBe("BRICOLAGE");
-    expect(theme.showLogo).toBe(true);
+    expect(theme.showLogo).toBe(false);
     expect(theme.palette).toEqual(SALON_PRESET_PALETTES.MONO);
   });
 
