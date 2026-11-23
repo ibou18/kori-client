@@ -492,7 +492,8 @@ export const DEFAULT_SALON_THEME: SalonTheme = {
   lightPalette: SALON_PRESET_PALETTES.MONO,
   darkPalette: SALON_PRESET_DARK_PALETTES.MONO,
   font: "BRICOLAGE",
-  showLogo: true,
+  // Gabarit par défaut sans logo : le monogramme d'initiales n'apparaît que sur demande.
+  showLogo: false,
   logoUrl: null,
   tagline: null,
   isCustomized: false,
@@ -519,7 +520,7 @@ export function resolveSalonTheme(site: SalonSiteDto | null | undefined): SalonT
     lightPalette,
     darkPalette,
     font: isFontKey(site.font) ? site.font : DEFAULT_SALON_THEME.font,
-    showLogo: site.showLogo !== false,
+    showLogo: site.showLogo ?? DEFAULT_SALON_THEME.showLogo,
     logoUrl: site.logoUrl?.trim() ? site.logoUrl : null,
     tagline: site.tagline?.trim() ? site.tagline.trim() : null,
     isCustomized: true,

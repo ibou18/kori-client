@@ -252,7 +252,9 @@ export default function MonSitePage() {
       alert("Logo : 2 Mo maximum.");
       return;
     }
-    uploadLogo.mutate({ salonId, file });
+    // Le gabarit par défaut est sans logo : importer un logo active son affichage
+    // (à publier), sinon il resterait invisible sur la page.
+    uploadLogo.mutate({ salonId, file }, { onSuccess: () => patch({ showLogo: true }) });
   };
 
   const previewUrl = salonId ? `/${locale}/salon/${salonId}?preview=1` : "";
