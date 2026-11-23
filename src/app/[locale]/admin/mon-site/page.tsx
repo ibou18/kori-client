@@ -41,6 +41,7 @@ import { SALON_FONT_FAMILIES } from "@/app/[locale]/salon/[id]/theme/fonts";
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
+  ArrowLeft,
   Check,
   ExternalLink,
   ImagePlus,
@@ -54,7 +55,9 @@ import {
   Trash2,
 } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { ADMIN } from "@/shared/constantes";
+import { useParams, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -96,8 +99,15 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 export default function MonSitePage() {
   const params = useParams();
   const locale = (params.locale as string) || "fr";
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const salonId = (session?.user as { salonId?: string } | undefined)?.salonId ?? "";
+  const sessionUser = session?.user as { salonId?: string; role?: string } | undefined;
+  // Un ADMIN personnalise le mini-site d'une prestataire depuis sa fiche salon
+  // (`?salonId=`) ; le serveur l'autorise (assertSalonWritableByOwner). Pour un
+  // OWNER, le paramètre est ignoré : il n'édite que son propre salon.
+  const adminSalonId = sessionUser?.role === ADMIN ? searchParams.get("salonId") : null;
+  const isAdminEditing = !!adminSalonId;
+  const salonId = adminSalonId || sessionUser?.salonId || "";
 
   const { data: salonRes } = useGetSalon(salonId);
   const { data: siteRes, isLoading } = useGetSalonSite(salonId);
@@ -119,12 +129,15 @@ export default function MonSitePage() {
 
   // Charger le brouillon depuis la version publiée, une seule fois. Après
   // « Publier », le brouillon est resynchronisé depuis la réponse du serveur.
-  const initializedRef = useRef(false);
+  // Clé = salon chargé : un ADMIN qui passe d'un salon à l'autre (`?salonId=`)
+  // repart du thème publié du nouveau salon.
+  const initializedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (isLoading || initializedRef.current) return;
-    initializedRef.current = true;
+    if (isLoading || !salonId || initializedRef.current === salonId) return;
+    initializedRef.current = salonId;
     setDraft(draftFromSite(savedSite));
-  }, [savedSite, isLoading]);
+    setDirty(false);
+  }, [savedSite, isLoading, salonId]);
 
   const previewMode: SalonColorMode =
     draft.appearance === "AUTO" ? autoPreviewMode : resolveColorMode(draft.appearance);
@@ -277,17 +290,31 @@ export default function MonSitePage() {
 
   return (
     <PageWrapper
-      title="Mon mini-site"
-      description="Gabarit, logo, couleurs, police : votre page de réservation à votre image."
+      title={isAdminEditing ? `Mini-site${salon?.name ? ` de ${salon.name}` : ""}` : "Mon mini-site"}
+      description={
+        isAdminEditing
+          ? `Vous modifiez en tant qu'administrateur le mini-site de ${salon?.name ?? "ce salon"} : « Publier » le met en ligne pour ses clients.`
+          : "Gabarit, logo, couleurs, police : votre page de réservation à votre image."
+      }
       actions={
-        publicUrl ? (
-          <Button asChild variant="outline" size="sm">
-            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="size-4" />
-              Voir la page publique
-            </a>
-          </Button>
-        ) : undefined
+        <div className="flex flex-wrap gap-2">
+          {isAdminEditing && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/${locale}/admin/salons/${salonId}`}>
+                <ArrowLeft className="size-4" />
+                Fiche du salon
+              </Link>
+            </Button>
+          )}
+          {publicUrl && (
+            <Button asChild variant="outline" size="sm">
+              <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-4" />
+                Voir la page publique
+              </a>
+            </Button>
+          )}
+        </div>
       }
     >
       <div className="grid gap-6 lg:grid-cols-[480px_1fr] xl:grid-cols-[560px_1fr]">
