@@ -8,6 +8,7 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: "always",
 });
 
+// Liste des routes publiques accessibles sans authentification
 const isPublicRoute = (pathname: string) => {
   const publicRoutes = [
     "/home",
