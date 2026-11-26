@@ -2,14 +2,42 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Branches et déploiement
 
-Convention commune aux trois dépôts Kori (serveur, web, mobile) : `docs/BRANCHES_ET_ENVIRONNEMENTS.md` dans `kori-server`.
+Convention commune aux trois dépôts Kori (serveur, web, mobile), en vigueur depuis le 2026-11-26. Référence complète : `docs/BRANCHES_ET_ENVIRONNEMENTS.md` dans `kori-server`.
 
-| Branche | Rôle | Vercel |
+| | Production | Pré-production |
 |---|---|---|
-| `master` | production | koribeauty.com |
-| `recette` | pré-production | déploiement de branche `recette` |
+| Branche Git (3 dépôts) | `master` | `recette` |
+| Web — Vercel « kori » | koribeauty.com | déploiement de la branche `recette` |
+| Serveur — Railway | environnement `production` | environnements `recette` et `dev` |
+| Mobile — EAS + OTA | canal `production` | canal `preview` (le nom reste `preview` côté app) |
 
-Les branches de travail (`feat/…`, `fix/…`) partent de `recette` et y reviennent par PR. Une PR « Promotion recette vers master » met en production. Correctif urgent : PR vers `master`, puis fusionner `master` dans `recette`.
+`master` est la branche par défaut GitHub. Vercel déploie `master` en production et toute autre branche en aperçu.
+
+### Cycle normal
+
+```bash
+git fetch origin
+git switch -c feat/mon-sujet origin/recette
+```
+
+1. PR `feat/mon-sujet` → `recette`. La fusion déploie l'aperçu de recette.
+2. Tester en recette.
+3. PR « Promotion recette vers master ». La fusion met en production sur koribeauty.com.
+
+Une fonctionnalité qui dépend d'un changement d'API : promouvoir le **serveur** en premier.
+
+### Correctif urgent
+
+```bash
+git switch -c fix/mon-correctif origin/master
+```
+
+PR → `master`, puis PR `master` → `recette` pour ne pas perdre le correctif à la promotion suivante.
+
+### Points ouverts
+
+- Domaine fixe `recette.koribeauty.com` sur la branche `recette` : bloqué tant que l'équipe Vercel dépasse ses limites d'usage (erreur 402). Il faudra ensuite un CNAME `recette` → `cname.vercel-dns.com` chez GoDaddy.
+- Protéger `master` et `recette` (PR obligatoire).
 
 ## Getting Started
 
