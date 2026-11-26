@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Branches et déploiement
+
+Convention commune aux trois dépôts Kori (serveur, web, mobile) : `docs/BRANCHES_ET_ENVIRONNEMENTS.md` dans `kori-server`.
+
+| Branche | Rôle | Vercel |
+|---|---|---|
+| `master` | production | koribeauty.com |
+| `recette` | pré-production | déploiement de branche `recette` |
+
+Les branches de travail (`feat/…`, `fix/…`) partent de `recette` et y reviennent par PR. Une PR « Promotion recette vers master » met en production. Correctif urgent : PR vers `master`, puis fusionner `master` dans `recette`.
+
 ## Getting Started
 
 First, run the development server:
