@@ -63,6 +63,10 @@ export interface PublicSalon {
   rating?: number;
   reviewCount?: number;
   offersHomeService?: boolean;
+  /** false = la prestataire masque son adresse : ville et code postal seulement. */
+  showFullAddress?: boolean;
+  /** Posé par le serveur quand l'adresse renvoyée est partielle (pas encore de réservation). */
+  addressHidden?: boolean;
   site?: SalonSiteDto | null;
   /** Seul le prénom est lu (« Les produits d'Aïcha »). */
   owner?: { firstName?: string | null } | null;
@@ -90,3 +94,34 @@ export const SALON_TYPE_LABELS: Record<string, string> = {
 
 export const getSalonTypeLabel = (type: string): string =>
   SALON_TYPE_LABELS[type] || type;
+
+type AddressLike = {
+  street?: string | null;
+  apartment?: string | null;
+  city?: string | null;
+  postalCode?: string | null;
+} | null | undefined;
+
+/**
+ * Adresse masquée par la prestataire (docs/SALON_ADDRESS_PRIVACY.md côté serveur) :
+ * le serveur ne renvoie alors que la ville et le code postal, rue vide.
+ */
+export function isSalonAddressHidden(salon: {
+  addressHidden?: boolean;
+  showFullAddress?: boolean;
+  address?: AddressLike;
+} | null | undefined): boolean {
+  if (!salon) return false;
+  return salon.addressHidden === true || (salon.showFullAddress === false && !salon.address?.street?.trim());
+}
+
+/**
+ * Ligne d'adresse à afficher : « rue, ville » si l'adresse est publique,
+ * « ville, code postal » si elle est masquée.
+ */
+export function formatSalonAddress(address: AddressLike): string {
+  if (!address) return "";
+  const street = address.street?.trim();
+  if (street) return [street, address.city?.trim()].filter(Boolean).join(", ");
+  return [address.city?.trim(), address.postalCode?.trim()].filter(Boolean).join(", ");
+}

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { formatCents } from "../../shop";
 import { ShopPageCard, ShopPageHeader } from "../../shop/ShopPageHeader";
 import { useSalonPublic } from "../../shop/useSalonPublic";
+import { formatSalonAddress } from "../../types";
 import { SalonThemeProvider } from "../../theme/SalonThemeProvider";
 
 interface OrderItem {
@@ -109,9 +110,9 @@ export default function ProductOrderConfirmationPage() {
                   <strong className="tabular-nums">{formatCents(order.subtotalCents)}</strong>
                 </p>
               </div>
-              {salon?.address && (
+              {formatSalonAddress(salon?.address) && (
                 <p className="text-sm text-site-fg-2">
-                  {salon.name} · {salon.address.street}, {salon.address.city}
+                  {salon?.name} · {formatSalonAddress(salon?.address)}
                 </p>
               )}
             </>

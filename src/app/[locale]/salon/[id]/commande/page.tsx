@@ -13,6 +13,7 @@ import { WebBookingCta, WebBookingStepActions } from "../components/web-booking/
 import { formatCents, productMeta, readApiError, type PublicProductDetail } from "../shop";
 import { ShopPageCard, ShopPageHeader } from "../shop/ShopPageHeader";
 import { useSalonPublic } from "../shop/useSalonPublic";
+import { formatSalonAddress } from "../types";
 import { SalonThemeProvider } from "../theme/SalonThemeProvider";
 
 /**
@@ -123,7 +124,7 @@ export default function ProductOrderPage() {
               <p className="font-semibold">Retrait au salon sans rendez-vous</p>
               <p className="text-site-fg-2">
                 Le salon prépare votre commande ; vous la récupérez aux heures d&apos;ouverture
-                {salon?.address ? `, ${salon.address.street}, ${salon.address.city}` : ""}.
+                {formatSalonAddress(salon?.address) ? `, ${formatSalonAddress(salon?.address)}` : ""}.
               </p>
             </div>
           </div>

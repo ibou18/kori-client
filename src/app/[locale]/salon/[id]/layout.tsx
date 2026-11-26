@@ -176,7 +176,8 @@ export default async function SalonLayout({
       ? {
           address: {
             "@type": "PostalAddress",
-            streetAddress: salon.address.street,
+            // Adresse masquée par la prestataire : rue vide, on ne publie que ville et code postal.
+            streetAddress: salon.address.street?.trim() || undefined,
             addressLocality: salon.address.city,
             addressRegion: salon.address.province,
             postalCode: salon.address.postalCode,

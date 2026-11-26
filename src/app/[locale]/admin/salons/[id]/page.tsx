@@ -110,6 +110,8 @@ interface Salon {
   isActive: boolean;
   isVerified: boolean;
   offersHomeService: boolean;
+  /** false = adresse masquée au public (ville et code postal seulement). */
+  showFullAddress?: boolean;
   stripeAccountId?: string | null;
   stripeConnectEnabled?: boolean;
   commissionRate?: number;
@@ -372,6 +374,12 @@ export default function SalonDetailPage() {
               <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{addressLine}</span>
+              </p>
+            )}
+            {salon.showFullAddress === false && (
+              <p className="mt-1 text-xs text-slate-500">
+                Adresse masquée au public : ville et code postal seulement, adresse
+                complète après réservation.
               </p>
             )}
           </div>

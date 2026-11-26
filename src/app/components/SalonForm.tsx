@@ -126,6 +126,9 @@ const salonFormSchema = z.object({
   // "auto" (ou vide) ⇒ le serveur déduit le fuseau depuis l'adresse (geo-tz)
   timezone: z.string().optional(),
   offersHomeService: z.boolean().default(false),
+  // Adresse complète publique (défaut). Désactivé : ville et code postal seulement,
+  // adresse complète après réservation (docs/SALON_ADDRESS_PRIVACY.md côté serveur).
+  showFullAddress: z.boolean().default(true),
   // Collecte d'acompte (docs/DEPOSIT_COLLECTION.md). Pourcentage en pourcent (5–50), "" = taux plateforme.
   depositEnabled: z.boolean().default(false),
   depositPercentage: z
@@ -223,6 +226,7 @@ export function SalonForm({
       salonTypes: [],
       timezone: "auto",
       offersHomeService: false,
+      showFullAddress: true,
       depositEnabled: false,
       depositPercentage: "",
       cancellationPolicyEnabled: false,
@@ -272,6 +276,7 @@ export function SalonForm({
       // Par défaut "auto" : le fuseau est re-déduit de l'adresse à l'enregistrement
       timezone: "auto",
       offersHomeService: salon.offersHomeService || false,
+      showFullAddress: salon.showFullAddress !== false,
       depositEnabled: salon.depositEnabled || false,
       depositPercentage:
         salon.depositPercentage != null
@@ -631,6 +636,31 @@ export function SalonForm({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="showFullAddress"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      Afficher l&apos;adresse complète
+                    </FormLabel>
+                    <FormDescription>
+                      {field.value
+                        ? "Les clientes voient la rue sur votre page et dans la recherche."
+                        : "Seuls la ville et le code postal sont affichés. L'adresse complète est communiquée à la cliente après sa réservation."}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onChange={(checked: boolean) => field.onChange(checked)}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 
