@@ -2,7 +2,7 @@
 
 import { ExternalLink, Globe, Home, Mail, MapPin, Phone } from "lucide-react";
 import type { ReactNode } from "react";
-import type { PublicSalon } from "../types";
+import { formatSalonAddress, isSalonAddressHidden, type PublicSalon } from "../types";
 
 /**
  * Téléphone et courriel masqués pour le moment (décision produit) : le code
@@ -15,7 +15,7 @@ const SHOW_EMAIL = false;
 export function salonHasAbout(salon: PublicSalon): boolean {
   return !!(
     salon.description?.trim() ||
-    salon.address?.street?.trim() ||
+    formatSalonAddress(salon.address) ||
     salon.website?.trim() ||
     salon.offersHomeService ||
     (SHOW_PHONE && salon.phone) ||
@@ -47,8 +47,10 @@ function ContactRow({ icon, href, children }: { icon: ReactNode; href?: string; 
 export function SalonAbout({ salon, isEn }: { salon: PublicSalon; isEn: boolean }) {
   const description = salon.description?.trim();
   const a = salon.address;
-  const addressLine = a ? [a.street, a.city].filter(Boolean).join(", ") : "";
-  const mapsHref = a
+  const addressHidden = isSalonAddressHidden(salon);
+  const addressLine = formatSalonAddress(a);
+  // Adresse masquée : pas de lien d'itinéraire, il pointerait sur un quartier.
+  const mapsHref = a && !addressHidden
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
         [a.street, a.city, a.postalCode, a.country].filter(Boolean).join(", "),
       )}`
@@ -80,6 +82,13 @@ export function SalonAbout({ salon, isEn }: { salon: PublicSalon; isEn: boolean 
           {addressLine && (
             <ContactRow icon={<MapPin className="size-[18px]" />} href={mapsHref}>
               {addressLine}
+              {addressHidden && (
+                <span className="block text-xs text-site-muted">
+                  {isEn
+                    ? "The exact address is shared once you book."
+                    : "L'adresse exacte vous est communiquée après la réservation."}
+                </span>
+              )}
             </ContactRow>
           )}
           {websiteHref && (
